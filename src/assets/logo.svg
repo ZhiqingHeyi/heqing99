@@ -1,0 +1,13 @@
+<svg width="200" height="200" viewBox="0 0 200 200" xmlns="http://www.w3.org/2000/svg">
+  <!-- 酒店建筑主体 -->
+  <path d="M40 180 L100 40 L160 180 Z" fill="#409EFF" opacity="0.8"/>
+  
+  <!-- 屋顶装饰 -->
+  <path d="M80 100 L100 60 L120 100 Z" fill="#409EFF"/>
+  
+  <!-- 门 -->
+  <rect x="90" y="140" width="20" height="40" fill="#ffffff"/>
+  
+  <!-- 文字 -->
+  <text x="100" y="195" font-family="Arial" font-size="16" fill="#333333" text-anchor="middle">和庆酒店</text>
+</svg>

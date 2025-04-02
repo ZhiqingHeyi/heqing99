@@ -1,0 +1,29 @@
+package com.hotel.repository;
+
+import com.hotel.entity.Room;
+import com.hotel.entity.RoomType;
+import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.Query;
+import org.springframework.stereotype.Repository;
+
+import java.util.List;
+
+@Repository
+public interface RoomRepository extends JpaRepository<Room, Long> {
+    List<Room> findByStatus(Room.RoomStatus status);
+
+    List<Room> findByRoomType(RoomType type);
+
+    List<Room> findByNeedCleaningTrue();
+
+    @Query("SELECT r FROM Room r WHERE r.status = 'AVAILABLE' AND r.roomType = ?1")
+    List<Room> findAvailableRoomsByType(RoomType type);
+
+    @Query("SELECT COUNT(r) FROM Room r WHERE r.status = ?1")
+    long countByStatus(Room.RoomStatus status);
+
+    @Query("SELECT r FROM Room r WHERE r.status = 'AVAILABLE' OR r.status = 'CLEANING'")
+    List<Room> findAllAvailableAndCleaningRooms();
+
+    boolean existsByRoomNumber(String roomNumber);
+}

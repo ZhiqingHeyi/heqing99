@@ -1,0 +1,237 @@
+0 verbose cli E:\developer_tools\nodejs\node.exe E:\developer_tools\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.9.2
+2 info using node@v22.14.0
+3 silly config load:file:E:\developer_tools\nodejs\node_modules\npm\npmrc
+4 silly config load:file:E:\桌面\javahotel\heqing99\.npmrc
+5 silly config load:file:C:\Users\上善若水\.npmrc
+6 silly config load:file:E:\桌面\javahotel\heqing99\developer_toolsnodejsnode_global\etc\npmrc
+7 verbose title npm install echarts
+8 verbose argv "install" "echarts"
+9 verbose logfile logs-max:10 dir:E:\桌面\javahotel\heqing99\developer_toolsnodejsnode_cache\_logs\2025-04-02T06_26_22_028Z-
+10 verbose logfile E:\桌面\javahotel\heqing99\developer_toolsnodejsnode_cache\_logs\2025-04-02T06_26_22_028Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly logfile done cleaning log files
+14 silly idealTree buildDeps
+15 silly fetch manifest echarts@*
+16 silly packumentCache full:https://registry.npmmirror.com/echarts cache-miss
+17 verbose shrinkwrap failed to load node_modules/.package-lock.json out of date, updated: node_modules
+18 http fetch GET 200 https://registry.npmmirror.com/echarts 349ms (cache miss)
+19 silly packumentCache full:https://registry.npmmirror.com/echarts set size:55673 disposed:false
+20 silly placeDep ROOT echarts@5.6.0 OK for: hotel-frontend@0.0.1 want: *
+21 silly fetch manifest tslib@2.3.0
+22 silly packumentCache full:https://registry.npmmirror.com/tslib cache-miss
+23 silly fetch manifest zrender@5.6.1
+24 silly packumentCache full:https://registry.npmmirror.com/zrender cache-miss
+25 http fetch GET 200 https://registry.npmmirror.com/tslib 72ms (cache miss)
+26 silly packumentCache full:https://registry.npmmirror.com/tslib set size:33193 disposed:false
+27 http fetch GET 200 https://registry.npmmirror.com/zrender 221ms (cache miss)
+28 silly packumentCache full:https://registry.npmmirror.com/zrender set size:32458 disposed:false
+29 silly placeDep ROOT tslib@2.3.0 OK for: echarts@5.6.0 want: 2.3.0
+30 silly placeDep ROOT zrender@5.6.1 OK for: echarts@5.6.0 want: 5.6.1
+31 silly reify moves {}
+32 silly audit bulk request {
+32 silly audit   '@amap/amap-jsapi-loader': [ '1.0.1' ],
+32 silly audit   '@babel/helper-string-parser': [ '7.25.9' ],
+32 silly audit   '@babel/helper-validator-identifier': [ '7.25.9' ],
+32 silly audit   '@babel/parser': [ '7.27.0' ],
+32 silly audit   '@babel/types': [ '7.27.0' ],
+32 silly audit   '@ctrl/tinycolor': [ '3.6.1' ],
+32 silly audit   '@element-plus/icons-vue': [ '2.3.1' ],
+32 silly audit   '@esbuild/android-arm': [ '0.18.20' ],
+32 silly audit   '@esbuild/android-arm64': [ '0.18.20' ],
+32 silly audit   '@esbuild/android-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/darwin-arm64': [ '0.18.20' ],
+32 silly audit   '@esbuild/darwin-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/freebsd-arm64': [ '0.18.20' ],
+32 silly audit   '@esbuild/freebsd-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-arm': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-arm64': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-ia32': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-loong64': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-mips64el': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-ppc64': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-riscv64': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-s390x': [ '0.18.20' ],
+32 silly audit   '@esbuild/linux-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/netbsd-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/openbsd-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/sunos-x64': [ '0.18.20' ],
+32 silly audit   '@esbuild/win32-arm64': [ '0.18.20' ],
+32 silly audit   '@esbuild/win32-ia32': [ '0.18.20' ],
+32 silly audit   '@esbuild/win32-x64': [ '0.18.20' ],
+32 silly audit   '@floating-ui/core': [ '1.6.9' ],
+32 silly audit   '@floating-ui/dom': [ '1.6.13' ],
+32 silly audit   '@floating-ui/utils': [ '0.2.9' ],
+32 silly audit   '@jridgewell/sourcemap-codec': [ '1.5.0' ],
+32 silly audit   '@sxzz/popperjs-es': [ '2.11.7' ],
+32 silly audit   '@types/lodash': [ '4.17.16' ],
+32 silly audit   '@types/lodash-es': [ '4.17.12' ],
+32 silly audit   '@types/web-bluetooth': [ '0.0.16' ],
+32 silly audit   '@vitejs/plugin-vue': [ '4.6.2' ],
+32 silly audit   '@vue/compiler-core': [ '3.5.13' ],
+32 silly audit   '@vue/compiler-dom': [ '3.5.13' ],
+32 silly audit   '@vue/compiler-sfc': [ '3.5.13' ],
+32 silly audit   '@vue/compiler-ssr': [ '3.5.13' ],
+32 silly audit   '@vue/devtools-api': [ '6.6.4' ],
+32 silly audit   '@vue/reactivity': [ '3.5.13' ],
+32 silly audit   '@vue/runtime-core': [ '3.5.13' ],
+32 silly audit   '@vue/runtime-dom': [ '3.5.13' ],
+32 silly audit   '@vue/server-renderer': [ '3.5.13' ],
+32 silly audit   '@vue/shared': [ '3.5.13' ],
+32 silly audit   '@vueuse/core': [ '9.13.0' ],
+32 silly audit   'vue-demi': [ '0.14.10' ],
+32 silly audit   '@vueuse/metadata': [ '9.13.0' ],
+32 silly audit   '@vueuse/shared': [ '9.13.0' ],
+32 silly audit   'async-validator': [ '4.2.5' ],
+32 silly audit   csstype: [ '3.1.3' ],
+32 silly audit   dayjs: [ '1.11.13' ],
+32 silly audit   'element-plus': [ '2.9.7' ],
+32 silly audit   entities: [ '4.5.0' ],
+32 silly audit   esbuild: [ '0.18.20' ],
+32 silly audit   'escape-html': [ '1.0.3' ],
+32 silly audit   'estree-walker': [ '2.0.2' ],
+32 silly audit   fsevents: [ '2.3.3' ],
+32 silly audit   lodash: [ '4.17.21' ],
+32 silly audit   'lodash-es': [ '4.17.21' ],
+32 silly audit   'lodash-unified': [ '1.0.3' ],
+32 silly audit   'magic-string': [ '0.30.17' ],
+32 silly audit   'memoize-one': [ '6.0.0' ],
+32 silly audit   nanoid: [ '3.3.11' ],
+32 silly audit   'normalize-wheel-es': [ '1.2.0' ],
+32 silly audit   picocolors: [ '1.1.1' ],
+32 silly audit   postcss: [ '8.5.3' ],
+32 silly audit   rollup: [ '3.29.5' ],
+32 silly audit   'source-map-js': [ '1.2.1' ],
+32 silly audit   vite: [ '4.5.11' ],
+32 silly audit   vue: [ '3.5.13' ],
+32 silly audit   'vue-router': [ '4.5.0' ],
+32 silly audit   echarts: [ '5.6.0' ],
+32 silly audit   tslib: [ '2.3.0' ],
+32 silly audit   zrender: [ '5.6.1' ]
+32 silly audit }
+33 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\fsevents
+34 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\fsevents' ]
+35 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\win32-ia32
+36 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\win32-ia32' ]
+37 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\win32-arm64
+38 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\win32-arm64' ]
+39 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\sunos-x64
+40 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\sunos-x64' ]
+41 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\openbsd-x64
+42 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\openbsd-x64' ]
+43 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\netbsd-x64
+44 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\netbsd-x64' ]
+45 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-x64
+46 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-x64' ]
+47 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-s390x
+48 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-s390x' ]
+49 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-riscv64
+50 silly reify mark deleted [
+50 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-riscv64'
+50 silly reify ]
+51 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-ppc64
+52 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-ppc64' ]
+53 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-mips64el
+54 silly reify mark deleted [
+54 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-mips64el'
+54 silly reify ]
+55 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-loong64
+56 silly reify mark deleted [
+56 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-loong64'
+56 silly reify ]
+57 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-ia32
+58 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-ia32' ]
+59 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-arm64
+60 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-arm64' ]
+61 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-arm
+62 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-arm' ]
+63 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\freebsd-x64
+64 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\freebsd-x64' ]
+65 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\freebsd-arm64
+66 silly reify mark deleted [
+66 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\freebsd-arm64'
+66 silly reify ]
+67 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\darwin-x64
+68 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\darwin-x64' ]
+69 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\darwin-arm64
+70 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\darwin-arm64' ]
+71 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\android-x64
+72 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\android-x64' ]
+73 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\android-arm64
+74 silly reify mark deleted [
+74 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\android-arm64'
+74 silly reify ]
+75 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\android-arm
+76 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\android-arm' ]
+77 http cache tslib@https://registry.npmmirror.com/tslib/-/tslib-2.3.0.tgz 0ms (cache hit)
+78 http cache zrender@https://registry.npmmirror.com/zrender/-/zrender-5.6.1.tgz 0ms (cache hit)
+79 http cache echarts@https://registry.npmmirror.com/echarts/-/echarts-5.6.0.tgz 0ms (cache hit)
+80 silly tarball no local data for tslib@https://registry.npmmirror.com/tslib/-/tslib-2.3.0.tgz. Extracting by manifest.
+81 silly tarball no local data for zrender@https://registry.npmmirror.com/zrender/-/zrender-5.6.1.tgz. Extracting by manifest.
+82 silly tarball no local data for echarts@https://registry.npmmirror.com/echarts/-/echarts-5.6.0.tgz. Extracting by manifest.
+83 http fetch POST 404 https://registry.npmmirror.com/-/npm/v1/security/advisories/bulk 61ms
+84 silly audit bulk request failed [object Object]
+85 http fetch POST 404 https://registry.npmmirror.com/-/npm/v1/security/audits/quick 45ms
+86 verbose audit error HttpErrorGeneral: 404 Not Found - POST https://registry.npmmirror.com/-/npm/v1/security/audits/quick - [NOT_IMPLEMENTED] /-/npm/v1/security/* not implemented yet
+86 verbose audit error     at E:\developer_tools\nodejs\node_modules\npm\node_modules\npm-registry-fetch\lib\check-response.js:103:15
+86 verbose audit error     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+86 verbose audit error     at async [getReport] (E:\developer_tools\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\audit-report.js:336:21)
+86 verbose audit error     at async AuditReport.run (E:\developer_tools\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\audit-report.js:106:19) {
+86 verbose audit error   headers: [Object: null prototype] {
+86 verbose audit error     server: [ 'Tengine' ],
+86 verbose audit error     date: [ 'Wed, 02 Apr 2025 06:26:24 GMT' ],
+86 verbose audit error     'content-type': [ 'application/json' ],
+86 verbose audit error     'transfer-encoding': [ 'chunked' ],
+86 verbose audit error     connection: [ 'keep-alive' ],
+86 verbose audit error     'strict-transport-security': [ 'max-age=5184000' ],
+86 verbose audit error     via: [ 'kunlun6.cn22[,404666]' ],
+86 verbose audit error     'timing-allow-origin': [ '*' ],
+86 verbose audit error     eagleid: [ '79cfe59a17435751848767864e' ],
+86 verbose audit error     'x-fetch-attempts': [ '1' ]
+86 verbose audit error   },
+86 verbose audit error   statusCode: 404,
+86 verbose audit error   code: 'E404',
+86 verbose audit error   method: 'POST',
+86 verbose audit error   uri: 'https://registry.npmmirror.com/-/npm/v1/security/audits/quick',
+86 verbose audit error   body: {
+86 verbose audit error     error: '[NOT_IMPLEMENTED] /-/npm/v1/security/* not implemented yet'
+86 verbose audit error   },
+86 verbose audit error   pkgid: undefined
+86 verbose audit error }
+87 silly audit error [object Object]
+88 silly audit report null
+89 http fetch GET 200 https://cdn.npmmirror.com/packages/tslib/2.3.0/tslib-2.3.0.tgz 306ms (cache miss)
+90 http fetch GET 200 https://cdn.npmmirror.com/packages/zrender/5.6.1/zrender-5.6.1.tgz 3237ms (cache miss)
+91 http fetch GET 200 https://cdn.npmmirror.com/packages/echarts/5.6.0/echarts-5.6.0.tgz 9932ms (cache miss)
+92 silly ADD node_modules/zrender
+93 silly ADD node_modules/tslib
+94 silly ADD node_modules/echarts
+95 silly ADD
+96 silly ADD
+97 silly ADD
+98 silly ADD
+99 silly ADD
+100 silly ADD
+101 silly ADD
+102 silly ADD
+103 silly ADD
+104 silly ADD
+105 silly ADD
+106 silly ADD
+107 silly ADD
+108 silly ADD
+109 silly ADD
+110 silly ADD
+111 silly ADD
+112 silly ADD
+113 silly ADD
+114 silly ADD
+115 silly ADD
+116 silly ADD
+117 verbose cwd E:\桌面\javahotel\heqing99
+118 verbose os Windows_NT 10.0.22000
+119 verbose node v22.14.0
+120 verbose npm  v10.9.2
+121 verbose exit 0
+122 info ok
