@@ -26,11 +26,13 @@ com\hotel\service\InvitationCodeService.class
 com\hotel\config\DataInitializer.class
 com\hotel\repository\CleaningRecordRepository.class
 com\hotel\service\ReservationService.class
+com\hotel\config\ErrorConfig.class
 com\hotel\config\WebMvcConfig.class
 com\hotel\entity\CheckInRecord$DepositStatus.class
 com\hotel\entity\Task.class
 com\hotel\controller\ApiController.class
 com\hotel\entity\Reservation$ReservationStatus.class
+com\hotel\controller\CustomErrorController.class
 com\hotel\config\JpaConfig.class
 com\hotel\controller\UserController.class
 com\hotel\entity\Booking.class
@@ -38,6 +40,7 @@ com\hotel\service\impl\CleaningServiceImpl.class
 com\hotel\repository\CheckInRecordRepository.class
 com\hotel\entity\Room$RoomStatus.class
 com\hotel\service\impl\ReservationServiceImpl.class
+com\hotel\controller\LoginForwardController.class
 com\hotel\service\impl\RoomServiceImpl.class
 com\hotel\service\TaskService.class
 com\hotel\controller\SpaController.class

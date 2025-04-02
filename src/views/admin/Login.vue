@@ -96,7 +96,15 @@ const handleLogin = async () => {
     // 发送登录请求
     // 根据当前环境确定API请求路径
     const baseUrl = window.location.port === '3000' ? '/api' : '';
-    const response = await fetch(`${baseUrl}/admin/login`, {
+    
+    // 添加额外调试信息
+    console.log('当前环境:', {
+      port: window.location.port,
+      baseUrl: baseUrl,
+      fullUrl: `${baseUrl}/api/admin/login`
+    });
+    
+    const response = await fetch(`${baseUrl}/api/admin/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

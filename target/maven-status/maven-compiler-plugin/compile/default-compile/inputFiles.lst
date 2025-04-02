@@ -18,6 +18,7 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\TaskService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Statistics.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\CleaningRecord.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\SecurityConfig.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\ErrorConfig.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\HotelInfoService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\VisitorRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\UserService.java
@@ -39,6 +40,7 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\RoomServiceImpl.
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\HotelInfo.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\WebMvcConfig.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\dto\TaskDTO.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\LoginForwardController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\CheckInRecord.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\HotelInfoServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\HotelManagementApplication.java
@@ -46,6 +48,7 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\security\CustomUserDetails.ja
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Reservation.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\RoomService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\TaskRepository.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\CustomErrorController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\SpaController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Booking.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\RoomRepository.java
