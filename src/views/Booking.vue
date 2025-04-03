@@ -405,6 +405,59 @@ const submitBooking = async () => {
     if (valid) {
       try {
         loading.value = true
+
+        // 首先检查用户登录状态
+        const userToken = localStorage.getItem('userToken')
+        const userId = localStorage.getItem('userId')
+        
+        // 验证token的有效性
+        try {
+          const validateResponse = await fetch('http://localhost:8080/api/auth/validate', {
+            headers: {
+              'Authorization': `Bearer ${userToken}`
+            }
+          })
+          
+          if (!validateResponse.ok) {
+            throw new Error('Token invalid')
+          }
+          
+          // 验证成功，继续处理预订
+          const validationData = await validateResponse.json()
+          if (!validationData.valid) {
+            throw new Error('Token invalid')
+          }
+        } catch (error) {
+          console.error('Token validation failed:', error)
+          // token无效或验证失败，清除本地存储的token
+          localStorage.removeItem('userToken')
+          localStorage.removeItem('userId')
+          localStorage.removeItem('userName')
+          localStorage.removeItem('userLevel')
+          ElMessage.error('登录已过期，请重新登录')
+          router.push('/login')
+          loading.value = false
+          return
+        }
+        
+        if (!userToken || !userId) {
+          // 保存当前表单数据到localStorage
+          const formData = {
+            checkIn: bookingForm.checkIn,
+            checkOut: bookingForm.checkOut,
+            roomType: bookingForm.roomType,
+            roomCount: bookingForm.roomCount,
+            contactName: bookingForm.contactName,
+            phone: bookingForm.phone,
+            remarks: bookingForm.remarks
+          }
+          localStorage.setItem('tempBookingData', JSON.stringify(formData))
+          localStorage.setItem('redirectAfterLogin', '/booking')
+          ElMessage.warning('请先登录后再进行预订')
+          router.push('/login')
+          loading.value = false
+          return
+        }
         
         // 对于非会员选择"到店支付"的情况进行限制
         if (bookingForm.paymentMethod === 2 && !canPayAtHotel.value) {
@@ -420,6 +473,23 @@ const submitBooking = async () => {
           return
         }
         
+        // 准备预订数据
+        const reservationData = {
+          userId: parseInt(userId),
+          roomType: bookingForm.roomType,
+          checkIn: bookingForm.checkIn instanceof Date 
+            ? bookingForm.checkIn.toISOString() 
+            : new Date(bookingForm.checkIn).toISOString(),
+          checkOut: bookingForm.checkOut instanceof Date 
+            ? bookingForm.checkOut.toISOString() 
+            : new Date(bookingForm.checkOut).toISOString(),
+          roomCount: bookingForm.roomCount,
+          contactName: bookingForm.contactName,
+          phone: bookingForm.phone,
+          remarks: bookingForm.remarks,
+          totalAmount: totalAmount.value
+        }
+
         // 对于在线支付方式，跳转到支付页面
         if (bookingForm.paymentMethod === 1 && depositAmount.value > 0) {
           await ElMessageBox.confirm(
@@ -441,63 +511,90 @@ const submitBooking = async () => {
           await new Promise(resolve => setTimeout(resolve, 1000))
           ElMessage.success('预订提交成功！')
         }
-        
-        // 如果用户已登录，更新会员信息
-        if (isLoggedIn.value) {
-          // 更新累计消费金额
-          const currentTotalSpent = parseInt(localStorage.getItem('userTotalSpent') || '0')
-          const newTotalSpent = currentTotalSpent + totalAmount.value
-          localStorage.setItem('userTotalSpent', newTotalSpent.toString())
+
+        // 调用后端API提交预订
+        try {
+          const response = await fetch('/api/reservations', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${userToken}`
+            },
+            body: JSON.stringify(reservationData)
+          })
           
-          // 更新积分
-          const currentPoints = parseInt(localStorage.getItem('userPoints') || '0')
-          const earnedPoints = estimatedPoints.value
-          const newPoints = currentPoints + earnedPoints
-          localStorage.setItem('userPoints', newPoints.toString())
+          const result = await response.json()
           
-          // 检查是否可以升级会员等级
-          const currentLevel = localStorage.getItem('userLevel')
-          let newLevel = currentLevel
-          
-          if (newTotalSpent >= 30000 && currentLevel !== '钻石会员') {
-            newLevel = '钻石会员'
-            ElMessage({
-              type: 'success',
-              message: '恭喜您！累计消费已满30000元，会员等级已升级为钻石会员！',
-              duration: 5000
-            })
-          } else if (newTotalSpent >= 10000 && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
-            newLevel = '金牌会员'
-            ElMessage({
-              type: 'success',
-              message: '恭喜您！累计消费已满10000元，会员等级已升级为金牌会员！',
-              duration: 5000
-            })
-          } else if (newTotalSpent >= 5000 && currentLevel !== '银牌会员' && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
-            newLevel = '银牌会员'
-            ElMessage({
-              type: 'success',
-              message: '恭喜您！累计消费已满5000元，会员等级已升级为银牌会员！',
-              duration: 5000
-            })
-          } else if (newTotalSpent >= 1500 && currentLevel === '普通用户') {
-            newLevel = '铜牌会员'
-            ElMessage({
-              type: 'success',
-              message: '恭喜您！累计消费已满1500元，会员等级已升级为铜牌会员！',
-              duration: 5000
-            })
+          if (result.success) {
+            console.log('预订已成功提交到后端，预订ID:', result.reservationId)
+            
+            // 如果用户已登录，更新会员信息
+            if (isLoggedIn.value) {
+              // 更新累计消费金额
+              const currentTotalSpent = parseInt(localStorage.getItem('userTotalSpent') || '0')
+              const newTotalSpent = currentTotalSpent + totalAmount.value
+              localStorage.setItem('userTotalSpent', newTotalSpent.toString())
+              
+              // 更新积分
+              const currentPoints = parseInt(localStorage.getItem('userPoints') || '0')
+              const earnedPoints = estimatedPoints.value
+              const newPoints = currentPoints + earnedPoints
+              localStorage.setItem('userPoints', newPoints.toString())
+              
+              // 检查是否可以升级会员等级
+              const currentLevel = localStorage.getItem('userLevel')
+              let newLevel = currentLevel
+              
+              if (newTotalSpent >= 30000 && currentLevel !== '钻石会员') {
+                newLevel = '钻石会员'
+                ElMessage({
+                  type: 'success',
+                  message: '恭喜您！累计消费已满30000元，会员等级已升级为钻石会员！',
+                  duration: 5000
+                })
+              } else if (newTotalSpent >= 10000 && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
+                newLevel = '金牌会员'
+                ElMessage({
+                  type: 'success',
+                  message: '恭喜您！累计消费已满10000元，会员等级已升级为金牌会员！',
+                  duration: 5000
+                })
+              } else if (newTotalSpent >= 5000 && currentLevel !== '银牌会员' && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
+                newLevel = '银牌会员'
+                ElMessage({
+                  type: 'success',
+                  message: '恭喜您！累计消费已满5000元，会员等级已升级为银牌会员！',
+                  duration: 5000
+                })
+              } else if (newTotalSpent >= 1500 && currentLevel === '普通用户') {
+                newLevel = '铜牌会员'
+                ElMessage({
+                  type: 'success',
+                  message: '恭喜您！累计消费已满1500元，会员等级已升级为铜牌会员！',
+                  duration: 5000
+                })
+              }
+              
+              // 更新会员等级
+              localStorage.setItem('userLevel', newLevel)
+            }
+            
+            // 预订成功后跳转到我的预订页面
+            router.push('/user/bookings')
+          } else {
+            // 如果是token过期或无效
+            if (result.message?.includes('token') || result.message?.includes('认证')) {
+              localStorage.setItem('tempBookingData', JSON.stringify(reservationData))
+              localStorage.setItem('redirectAfterLogin', '/user/bookings')
+              ElMessage.warning('登录状态已过期，请重新登录')
+              router.push('/login')
+              return
+            }
+            ElMessage.error('预订提交失败: ' + result.message)
           }
-          
-          // 更新会员等级
-          localStorage.setItem('userLevel', newLevel)
-        }
-        
-        // 预订成功后跳转到我的预订页面(会员)或首页(非会员)
-        if (isLoggedIn.value) {
-          router.push('/user/bookings')
-        } else {
-          resetForm()
+        } catch (apiError) {
+          console.error('调用预订API时出错:', apiError)
+          ElMessage.error('预订提交失败，请稍后重试')
         }
         
       } catch (error) {

@@ -1,5 +1,8 @@
 package com.hotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.annotation.LastModifiedDate;
@@ -13,6 +16,7 @@ import java.time.LocalDateTime;
 @Entity
 @Table(name = "reservations")
 @EntityListeners(AuditingEntityListener.class)
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Reservation {
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -20,11 +24,22 @@ public class Reservation {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"reservations", "password", "authorities", "accountNonExpired", "accountNonLocked", "credentialsNonExpired", "enabled"})
     private User user;
 
     @ManyToOne
     @JoinColumn(name = "room_id", nullable = false)
+    @JsonIgnoreProperties("reservations")
     private Room room;
+
+    @Column(name = "guest_name", nullable = false)
+    private String guestName;
+    
+    @Column(name = "guest_phone", nullable = false)
+    private String guestPhone;
+    
+    @Column(name = "room_count", nullable = false)
+    private Integer roomCount = 1;
 
     @Column(nullable = false)
     private LocalDateTime checkInTime;
@@ -39,13 +54,18 @@ public class Reservation {
     @Enumerated(EnumType.STRING)
     private ReservationStatus status;
 
-    private String remarks;
+    @Column(name = "special_requests")
+    private String specialRequests;
 
     @CreatedDate
     private LocalDateTime createTime;
 
     @LastModifiedDate
     private LocalDateTime updateTime;
+
+    // 记录入住和退房的实际时间
+    private LocalDateTime checkInActualTime;
+    private LocalDateTime checkOutActualTime;
 
     public enum ReservationStatus {
         PENDING,    // 待确认

@@ -22,7 +22,6 @@
           <template v-if="isLoggedIn">
             <el-menu-item index="/user">个人中心</el-menu-item>
             <el-menu-item index="/user/membership">会员中心</el-menu-item>
-            <el-menu-item index="/user/bookings">预订记录</el-menu-item>
             <el-menu-item index="" @click="handleLogout">退出登录</el-menu-item>
           </template>
           <template v-else>

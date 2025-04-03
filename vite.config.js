@@ -15,12 +15,15 @@ export default defineConfig({
     assetsDir: 'assets'
   },
   server: {
+    host: '0.0.0.0',
     port: 3000,
+    open: true,
     proxy: {
-      '/api/admin': {
+      '/api': {
         target: 'http://localhost:8080',
         changeOrigin: true,
-        rewrite: (path) => path.replace(/^\/api/, '')
+        secure: false,
+        rewrite: (path) => path
       }
     }
   }

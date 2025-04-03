@@ -3,17 +3,23 @@ package com.hotel.service.impl;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
 import com.hotel.repository.RoomRepository;
+import com.hotel.repository.RoomTypeRepository;
 import com.hotel.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Optional;
+import java.util.ArrayList;
 
 @Service
 public class RoomServiceImpl implements RoomService {
 
     @Autowired
     private RoomRepository roomRepository;
+
+    @Autowired
+    private RoomTypeRepository roomTypeRepository;
 
     @Override
     public Room addRoom(Room room) {
@@ -86,7 +92,10 @@ public class RoomServiceImpl implements RoomService {
 
     @Override
     public List<Room> getAvailableRoomsByType(RoomType type) {
-        return roomRepository.findAvailableRoomsByType(type);
+        List<Room.RoomStatus> statuses = new ArrayList<>();
+        statuses.add(Room.RoomStatus.AVAILABLE);
+        statuses.add(Room.RoomStatus.CLEANING);
+        return roomRepository.findByRoomTypeAndStatusIn(type, statuses);
     }
 
     @Override
@@ -102,5 +111,23 @@ public class RoomServiceImpl implements RoomService {
     @Override
     public boolean isRoomNumberExists(String roomNumber) {
         return roomRepository.existsByRoomNumber(roomNumber);
+    }
+
+    @Override
+    public Room getRoomByTypeId(Long typeId) {
+        // 根据房间类型ID查找对应类型
+        Optional<RoomType> roomType = roomTypeRepository.findById(typeId);
+        if (!roomType.isPresent()) {
+            return null;
+        }
+        
+        // 查找该类型的可用房间
+        List<Room> availableRooms = getAvailableRoomsByType(roomType.get());
+        if (availableRooms.isEmpty()) {
+            return null;
+        }
+        
+        // 返回第一个可用的房间
+        return availableRooms.get(0);
     }
 }

@@ -42,6 +42,11 @@ public interface RoomService {
     List<Room> getRoomsByType(RoomType type);
 
     /**
+     * 根据房间类型ID获取可用房间
+     */
+    Room getRoomByTypeId(Long typeId);
+
+    /**
      * 获取所有需要清洁的房间
      */
     List<Room> getRoomsNeedCleaning();
