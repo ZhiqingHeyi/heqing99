@@ -331,8 +331,36 @@ onMounted(() => {
   display: flex;
   flex-wrap: wrap;
   justify-content: center;
+  align-items: stretch;
+  gap: 30px;
 }
 
+.luxury-row > .el-col {
+  flex: 1 1 calc(50% - 15px);
+  min-width: 0;
+  max-width: 700px;
+  display: flex;
+  flex-direction: column;
+}
+
+@media (max-width: 1200px) {
+  .luxury-row > .el-col {
+    flex: 1 1 100%;
+    max-width: 800px;
+    margin: 0 auto;
+  }
+}
+
+@media (max-width: 768px) {
+  .luxury-row {
+    padding: 0 15px;
+    gap: 20px;
+  }
+  
+  .luxury-row > .el-col {
+    max-width: 100%;
+  }
+}
 .luxury-card {
   margin-bottom: 30px;
   border: none;
