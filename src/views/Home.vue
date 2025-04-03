@@ -197,7 +197,7 @@
         <el-col :span="12">
           <div class="location-info">
             <p>鹤清酒店位于：江西省南昌市八一公园旁</p>
-            <el-button type="primary" class="direction-btn">获取导航</el-button>
+            <el-button type="primary" class="direction-btn" @click="handleNavigation">获取导航</el-button>
           </div>
         </el-col>
         <el-col :span="12">
@@ -215,23 +215,45 @@ export default {
   setup() {
     const homeContainer = ref(null);
 
+    // 导航按钮点击事件处理函数
+    const handleNavigation = () => {
+      // 鹤清酒店的位置坐标（南昌八一公园附近）
+      const destination = '115.892151,28.682892';
+      // 使用高德地图导航
+      window.location.href = `https://uri.amap.com/navigation?to=${destination},鹤清酒店&mode=car&policy=1&src=mypage&coordinate=gaode&callnative=0`;
+    };
+
     onMounted(() => {
       const observer = new IntersectionObserver((entries) => {
         entries.forEach(entry => {
           if (entry.isIntersecting) {
-            setTimeout(() => {
-              entry.target.classList.add('show');
-            }, entry.target.dataset.delay || 0);
+            entry.target.style.opacity = '0';
+            entry.target.style.transform = entry.target.dataset.transform || 'translateY(50px)';
+            
+            requestAnimationFrame(() => {
+              entry.target.style.transition = 'all 0.8s cubic-bezier(0.4, 0, 0.2, 1)';
+              entry.target.style.opacity = '1';
+              entry.target.style.transform = 'none';
+            });
           }
         });
       }, {
-        threshold: 0.2,
-        rootMargin: '0px 0px -100px 0px'
+        threshold: 0.1,
+        rootMargin: '-50px 0px -100px 0px'
       });
 
       const sections = document.querySelectorAll('.story-section, .packages-section, .rooms-section, .experience-section, .reviews-section, .location-section');
       sections.forEach((section, index) => {
-        section.dataset.delay = index * 150;
+        const transforms = [
+          'translateX(-50px)',
+          'translateX(50px)',
+          'translateY(50px) scale(0.95)',
+          'translateX(-50px) rotate(-2deg)',
+          'translateX(50px) rotate(2deg)',
+          'translateY(50px) scale(0.98)'
+        ];
+        section.style.opacity = '0';
+        section.dataset.transform = transforms[index % transforms.length];
         observer.observe(section);
       });
     });
@@ -286,18 +308,35 @@ const rooms = [
 // 初始化地图
 onMounted(() => {
   AMapLoader.load({
-    key: 'your-amap-key',
-    version: '2.0'
+    key: 'ad101aa6969036479910b4a3988add24',
+    version: '2.0',
+    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.ControlBar', 'AMap.MapType']
   }).then((AMap) => {
     const map = new AMap.Map('map-container', {
       center: [115.892151, 28.682892], // 南昌八一公园附近坐标
-      zoom: 15
+      zoom: 15,
+      viewMode: '3D',
+      pitch: 35,
+      mapStyle: 'amap://styles/normal',
+      defaultLayer: new AMap.TileLayer(),
+      layers: [
+        new AMap.TileLayer()
+      ]
     })
     const marker = new AMap.Marker({
       position: [115.892151, 28.682892],
-      title: '鹤清酒店'
+      title: '鹤清酒店',
+      label: {
+        content: '鹤清酒店',
+        direction: 'top',
+        offset: [0, -36]
+      },
+      animation: 'AMAP_ANIMATION_BOUNCE'
     })
     map.add(marker)
+    map.addControl(new AMap.Scale())
+    map.addControl(new AMap.ToolBar())
+    map.addControl(new AMap.ControlBar())
   })
 })
 </script>
@@ -497,38 +536,13 @@ onMounted(() => {
   z-index: 1;
 }
 
-.story-section {
-  transform: translateX(-50px);
-}
-
-.packages-section {
-  transform: translateX(50px);
-}
-
-.rooms-section {
-  transform: translateY(50px) scale(0.95);
-}
-
-.experience-section {
-  transform: translateX(-50px) rotate(-2deg);
-}
-
-.reviews-section {
-  transform: translateX(50px) rotate(2deg);
-}
-
+.story-section,
+.packages-section,
+.rooms-section,
+.experience-section,
+.reviews-section,
 .location-section {
-  transform: translateY(50px) scale(0.98);
-}
-
-.story-section.show,
-.packages-section.show,
-.rooms-section.show,
-.experience-section.show,
-.reviews-section.show,
-.location-section.show {
-  opacity: 1;
-  transform: translate(0) scale(1) rotate(0);
+  will-change: transform, opacity;
 }
 
 .story-card {

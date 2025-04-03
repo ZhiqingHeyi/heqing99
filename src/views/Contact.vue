@@ -86,21 +86,58 @@ const submitForm = () => {
 onMounted(() => {
   // 初始化高德地图
   AMapLoader.load({
-    key: 'your-amap-key', // 使用您的高德地图API密钥
+    key: '8325164e247e15eea68b59e89200988b',
+    key: 'ad101aa6969036479910b4a3988add24',
     version: '2.0',
-    plugins: ['AMap.Scale', 'AMap.ToolBar']
+    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.ControlBar', 'AMap.HawkEye', 'AMap.MapType']
   }).then((AMap) => {
     const map = new AMap.Map('map-container', {
       zoom: 15,
-      center: [120.152, 30.287] // 设置酒店的经纬度坐标
+      center: [115.892151, 28.682892], // 南昌市八一公园附近的经纬度坐标
+      viewMode: '3D',
+      pitch: 45,
+      defaultLayer: new AMap.TileLayer(),
+      layers: [
+        new AMap.TileLayer(),
+        new AMap.TileLayer.Satellite()
+      ],
+      features: ['bg', 'building', 'point']
     })
     
     const marker = new AMap.Marker({
-      position: [120.152, 30.287],
-      title: '和庆酒店'
+      position: [115.892151, 28.682892],
+      title: '鹤清酒店',
+      label: {
+        content: '和庆酒店',
+        direction: 'top',
+        offset: [0, -36]
+      },
+      animation: 'AMAP_ANIMATION_BOUNCE'
     })
     
     map.add(marker)
+    map.addControl(new AMap.Scale())
+    map.addControl(new AMap.ToolBar())
+    map.addControl(new AMap.ControlBar())
+    map.addControl(new AMap.HawkEye())
+    map.addControl(new AMap.MapType())
+
+    // 添加信息窗体
+    const infoWindow = new AMap.InfoWindow({
+      content: `
+        <div style="padding:10px;">
+          <h4>鹤清酒店</h4>
+          <p>地址：江西省南昌市八一公园旁</p>
+          <p>电话：0791-12345678</p>
+        </div>
+      `,
+      offset: new AMap.Pixel(0, -30)
+    })
+
+    // 点击标记时打开信息窗体
+    marker.on('click', () => {
+      infoWindow.open(map, marker.getPosition())
+    })
   }).catch(e => {
     console.error('地图加载失败：', e)
   })
@@ -148,9 +185,18 @@ onMounted(() => {
 }
 
 .map-container {
-  height: 400px;
+  height: 600px;
   width: 100%;
-  border-radius: 4px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+  margin: 30px 0;
+}
+
+.map-card {
+  margin-bottom: 40px;
+  background: #fff;
+  border-radius: 8px;
+  overflow: hidden;
 }
 
 .contact-form-card {
