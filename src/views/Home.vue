@@ -8,7 +8,9 @@
             <div class="carousel-content" :style="{ backgroundImage: `url(${image})` }">
               <div class="overlay"></div>
               <div class="carousel-text">
-                <div class="logo-emblem">鹤</div>
+                <div class="logo-emblem">
+                  <img src="/src/assets/icons/crane-logo.svg" alt="鹤清酒店" class="logo-image" />
+                </div>
                 <h1>鹤清酒店 · 雅境天成</h1>
                 <p>东方美学与奢华体验的完美融合，为您打造一方超然脱俗的仙境居所。聆听山水，感悟东方雅韵。</p>
                 <el-button type="primary" class="hero-btn" @click="router.push('/booking')">立即预订</el-button>
@@ -71,21 +73,27 @@
         <el-row :gutter="40">
           <el-col :span="8">
             <div class="story-card">
-              <div class="story-icon"><i class="el-icon-time"></i></div>
+              <div class="story-icon">
+                <img src="/src/assets/icons/history.svg" alt="历史" class="story-logo" />
+              </div>
               <h3>我们的历史</h3>
               <p>创立于2010年，鹤清酒店秉承"仙居雅境"的理念，以典雅高雅的建筑风格和精致考究的中式装潢闻名。我们将传统文化与现代舒适完美融合，创造出独特的东方居家体验。</p>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="story-card">
-              <div class="story-icon"><i class="el-icon-aim"></i></div>
+              <div class="story-icon">
+                <img src="/src/assets/icons/mission.svg" alt="使命" class="story-logo" />
+              </div>
               <h3>我们的使命</h3>
               <p>我们的使命是为每位宾客营造一方净土，让身心在此获得升华。以东方美学为基调，以细致入微的服务为根本，带来超越期待的居停体验。</p>
             </div>
           </el-col>
           <el-col :span="8">
             <div class="story-card">
-              <div class="story-icon"><i class="el-icon-star-on"></i></div>
+              <div class="story-icon">
+                <img src="/src/assets/icons/values.svg" alt="价值观" class="story-logo" />
+              </div>
               <h3>我们的价值观</h3>
               <p>我们秉持"和谐、典雅、至诚"的价值观，将东方待客之道发挥极致。以文化为魂，以服务为本，让每位宾客感受超然脱俗的待遇。</p>
             </div>
@@ -176,56 +184,29 @@
       <div class="section-header">
         <h2 class="section-title">宾客评价</h2>
         <div class="title-underline"></div>
-        <p class="section-desc">聆听我们的宾客对和庆酒店的真实评价</p>
+        <p class="section-desc">聆听我们的宾客对鹤清酒店的真实评价</p>
       </div>
       
-      <el-row :gutter="30">
-        <el-col :span="8">
+      <el-carousel :interval="4000" type="card" height="400px" class="reviews-carousel">
+        <el-carousel-item v-for="(review, index) in reviews" :key="index">
           <div class="review-card">
             <div class="review-quote">"</div>
             <div class="review-content">
-              <p>在和庆的住宿体验非常愉快！工作人员热情周到，环境优美宜人，是放松身心的完美之选。期待下次再来！</p>
+              <p>{{review.content}}</p>
             </div>
             <div class="reviewer">
-              <img src="/src/assets/avatar1.jpg" alt="评价者" class="reviewer-avatar" />
+              <div class="reviewer-avatar">
+                <span v-if="!review.avatar">{{review.initial}}</span>
+                <img v-else :src="review.avatar" alt="评价者" @error="$event.target.style.display='none'" />
+              </div>
               <div class="reviewer-info">
-                <h4>张先生</h4>
-                <p>商务旅客</p>
+                <h4>{{review.name}}</h4>
+                <p>{{review.type}}</p>
               </div>
             </div>
           </div>
-        </el-col>
-        <el-col :span="8">
-          <div class="review-card">
-            <div class="review-quote">"</div>
-            <div class="review-content">
-              <p>在和庆度过了美好的时光。房间布置精美，地理位置便利，非常适合探索城市。强烈推荐给寻找宁静度假的旅客！</p>
-            </div>
-            <div class="reviewer">
-              <img src="/src/assets/avatar2.jpg" alt="评价者" class="reviewer-avatar" />
-              <div class="reviewer-info">
-                <h4>李女士</h4>
-                <p>度假旅客</p>
-              </div>
-            </div>
-          </div>
-        </el-col>
-        <el-col :span="8">
-          <div class="review-card">
-            <div class="review-quote">"</div>
-            <div class="review-content">
-              <p>和庆酒店超出了我的期望！设施一流，服务无可挑剔。整个住宿过程都感受到被精心照顾，真是城市中的一片净土！</p>
-            </div>
-            <div class="reviewer">
-              <img src="/src/assets/avatar3.jpg" alt="评价者" class="reviewer-avatar" />
-              <div class="reviewer-info">
-                <h4>王先生</h4>
-                <p>家庭出游</p>
-              </div>
-            </div>
-          </div>
-        </el-col>
-      </el-row>
+        </el-carousel-item>
+      </el-carousel>
     </section>
 
     <!-- 位置信息 -->
@@ -418,6 +399,52 @@ const rooms = [
   }
 ]
 
+// 客户评价数据
+const reviews = [
+  {
+    content: '在鹤清酒店的住宿体验非常愉快！工作人员热情周到，环境优美宜人，是放松身心的完美之选。期待下次再来！',
+    avatar: '/src/assets/avatar1.jpg',
+    name: '张先生',
+    type: '商务旅客',
+    initial: 'Z'
+  },
+  {
+    content: '在鹤清度过了美好的时光。房间布置精美，地理位置便利，非常适合探索城市。强烈推荐给寻找宁静度假的旅客！',
+    avatar: '/src/assets/avatar2.jpg',
+    name: '李女士',
+    type: '度假旅客',
+    initial: 'L'
+  },
+  {
+    content: '鹤清酒店超出了我的期望！设施一流，服务无可挑剔。整个住宿过程都感受到被精心照顾，真是城市中的一片净土！',
+    avatar: '/src/assets/avatar3.jpg',
+    name: '王先生',
+    type: '家庭出游',
+    initial: 'W'
+  },
+  {
+    content: '茶艺体验让人难忘，东方SPA使身心焕然一新。鹤清酒店不只是住宿，更是一场东方美学的盛宴。',
+    avatar: '/src/assets/avatar4.jpg',
+    name: '陈女士',
+    type: '文化体验者',
+    initial: 'C'
+  },
+  {
+    content: '米其林餐厅的美食体验堪称完美，私人管家的服务细致入微。鹤清酒店是我在南昌最奢华的选择，值得每一分钱。',
+    avatar: '/src/assets/avatar5.jpg',
+    name: '刘先生',
+    type: '美食爱好者',
+    initial: 'L'
+  },
+  {
+    content: '作为常年商旅人士，鹤清酒店是我在南昌的首选。安静典雅的环境让我每次出差都能得到充分休息，宾至如归。',
+    avatar: '/src/assets/avatar6.jpg',
+    name: '赵女士',
+    type: '常客',
+    initial: 'Z'
+  }
+]
+
 // 初始化地图
 onMounted(() => {
   AMapLoader.load({
@@ -456,39 +483,75 @@ onMounted(() => {
 
 <style scoped>
 .home {
-  background-color: #ffffff;
+  background-color: #fcfaf7;
   color: #333333;
   font-family: "Microsoft YaHei", "SimSun", serif;
+  background-image: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M54.627 0l.83.828-1.415 1.415L51.8 0h2.827zM5.373 0l-.83.828L5.96 2.243 8.2 0H5.374zM48.97 0l3.657 3.657-1.414 1.414L46.143 0h2.828zM11.03 0L7.372 3.657 8.787 5.07 13.857 0H11.03zm32.284 0L49.8 6.485 48.384 7.9l-7.9-7.9h2.83zM16.686 0L10.2 6.485 11.616 7.9l7.9-7.9h-2.83zm20.97 0l9.315 9.314-1.414 1.414L34.828 0h2.83zM22.344 0L13.03 9.314l1.414 1.414L25.172 0h-2.83zM32 0l12.142 12.142-1.414 1.414L30 .828 17.272 13.556l-1.414-1.414L28 0h4zM.284 0l28 28-1.414 1.414L0 2.544V0h.284zM0 5.373l25.456 25.455-1.414 1.415L0 8.2V5.374zm0 5.656l22.627 22.627-1.414 1.414L0 13.86v-2.83zm0 5.656l19.8 19.8-1.415 1.413L0 19.514v-2.83zm0 5.657l16.97 16.97-1.414 1.415L0 25.172v-2.83zM0 28l14.142 14.142-1.414 1.414L0 30.828V28zm0 5.657L11.314 44.97 9.9 46.386l-9.9-9.9v-2.828zm0 5.657L8.485 47.8 7.07 49.212 0 42.143v-2.83zm0 5.657l5.657 5.657-1.414 1.415L0 47.8v-2.83zm0 5.657l2.828 2.83-1.414 1.413L0 53.456v-2.83zM54.627 60L30 35.373 5.373 60H8.2L30 38.2 51.8 60h2.827zm-5.656 0L30 41.03 11.03 60h2.828L30 43.858 46.142 60h2.83zm-5.656 0L30 46.686 16.686 60h2.83L30 49.515 40.485 60h2.83zm-5.657 0L30 52.343 22.344 60h2.83L30 55.172 34.828 60h2.83zM32 60l-2-2-2 2h4zM59.716 0l-28 28 1.414 1.414L60 2.544V0h-.284zM60 5.373L34.544 30.828l1.414 1.415L60 8.2V5.374zm0 5.656L37.373 33.656l1.414 1.414L60 13.86v-2.83zm0 5.656l-19.8 19.8 1.415 1.413L60 19.514v-2.83zm0 5.657l-16.97 16.97 1.414 1.415L60 25.172v-2.83zM60 28L45.858 42.142l1.414 1.414L60 30.828V28zm0 5.657L48.686 44.97l1.415 1.415 9.9-9.9v-2.828zm0 5.657L51.515 47.8l1.414 1.413 7.07-7.07v-2.83zm0 5.657l-5.657 5.657 1.414 1.415L60 47.8v-2.83zm0 5.657l-2.828 2.83 1.414 1.413L60 53.456v-2.83zM39.9 16.385l1.414-1.414L30 3.658 18.686 14.97l1.415 1.415 9.9-9.9 9.9 9.9zm-2.83 2.828l1.415-1.414L30 9.313 21.515 17.8l1.414 1.413L30 11.8l7.07 7.414v-.002z' fill='%23c59d5f' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
 }
 
 .section-header {
   text-align: center;
-  margin-bottom: 50px;
+  margin-bottom: 60px;
+  position: relative;
+}
+
+.section-header::after {
+  content: "";
+  position: absolute;
+  width: 150px;
+  height: 150px;
+  background-image: url("data:image/svg+xml,%3Csvg width='100' height='100' viewBox='0 0 100 100' xmlns='http://www.w3.org/2000/svg'%3E%3Cpath d='M11 18c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm48 25c3.866 0 7-3.134 7-7s-3.134-7-7-7-7 3.134-7 7 3.134 7 7 7zm-43-7c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm63 31c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM34 90c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zm56-76c1.657 0 3-1.343 3-3s-1.343-3-3-3-3 1.343-3 3 1.343 3 3 3zM12 86c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm28-65c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm23-11c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-6 60c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm29 22c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zM32 63c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm57-13c2.76 0 5-2.24 5-5s-2.24-5-5-5-5 2.24-5 5 2.24 5 5 5zm-9-21c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM60 91c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM35 41c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2zM12 60c1.105 0 2-.895 2-2s-.895-2-2-2-2 .895-2 2 .895 2 2 2z' fill='%23c59d5f' fill-opacity='0.05' fill-rule='evenodd'/%3E%3C/svg%3E");
+  top: -20px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: -1;
+  opacity: 0.5;
 }
 
 .section-title {
   color: #1a1a1a;
-  font-family: "Times New Roman", "SimSun", serif;
+  font-family: "SimSun", serif;
   font-weight: 600;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
   position: relative;
-  margin-bottom: 20px;
-  font-size: 2.5em;
+  margin-bottom: 25px;
+  font-size: 2.8em;
+  display: inline-block;
+}
+
+.section-title::before,
+.section-title::after {
+  content: "";
+  position: absolute;
+  width: 30px;
+  height: 2px;
+  background: rgba(197, 157, 95, 0.5);
+  top: 50%;
+}
+
+.section-title::before {
+  left: -45px;
+}
+
+.section-title::after {
+  right: -45px;
 }
 
 .title-underline {
-  width: 80px;
+  width: 100px;
   height: 3px;
   background: linear-gradient(90deg, transparent, #c59d5f, transparent);
-  margin: 0 auto 25px;
+  margin: 0 auto 30px;
 }
 
 .section-desc {
   color: #666;
   max-width: 800px;
   margin: 0 auto 30px;
-  font-size: 1.1em;
-  line-height: 1.6;
+  font-size: 1.2em;
+  line-height: 1.8;
+  font-family: "Microsoft YaHei", sans-serif;
+  text-align: center;
 }
 
 .hero-section {
@@ -594,148 +657,75 @@ onMounted(() => {
 }
 
 .logo-emblem {
-  font-size: 72px;
   width: 120px;
   height: 120px;
-  line-height: 120px;
   margin: 0 auto 30px;
   border-radius: 50%;
-  background: #c59d5f;
-  color: white;
-  font-family: "SimSun", serif;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  background: radial-gradient(circle, #faf6ed, #f0e6d2);
   position: relative;
   overflow: hidden;
-  border: 5px double rgba(255, 255, 255, 0.6);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 5px double rgba(197, 157, 95, 0.6);
   box-shadow: 0 0 30px rgba(197, 157, 95, 0.6);
 }
 
-.logo-emblem::before {
-  content: "";
-  position: absolute;
-  top: -10px;
-  left: -10px;
-  right: -10px;
-  bottom: -10px;
-  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
-  animation: emblemShine 3s infinite;
+.logo-image {
+  width: 80%;
+  height: 80%;
+  object-fit: contain;
+  animation: logoFloat 3s ease-in-out infinite;
 }
 
-@keyframes emblemShine {
-  0%, 100% { opacity: 0.5; }
-  50% { opacity: 0.8; }
+@keyframes logoFloat {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
-.carousel-text h1 {
-  font-size: 60px;
-  margin-bottom: 25px;
-  font-weight: 700;
-  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 5px;
-  color: #ffffff;
-  font-family: "Times New Roman", "SimSun", serif;
-  position: relative;
-  display: inline-block;
-}
-
-.carousel-text h1::after {
-  content: "";
-  position: absolute;
-  width: 180px;
-  height: 3px;
-  background: #c59d5f;
-  bottom: -12px;
-  left: 50%;
-  transform: translateX(-50%);
-}
-
-.carousel-text p {
-  font-size: 24px;
-  line-height: 1.8;
-  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
-  color: #f0f0f0;
-  max-width: 750px;
-  margin: 25px auto 40px;
-}
-
-.hero-btn {
-  padding: 15px 40px;
-  font-size: 20px;
-  background: #c59d5f;
-  border-color: #c59d5f;
+.story-icon {
+  width: 90px;
+  height: 90px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 auto 25px;
+  border-radius: 50%;
+  background: radial-gradient(circle, #faf6ed, #f0e6d2);
+  border: 1px solid rgba(197, 157, 95, 0.3);
+  box-shadow: 0 8px 20px rgba(197, 157, 95, 0.15);
   transition: all 0.4s ease;
-  letter-spacing: 2px;
   position: relative;
   overflow: hidden;
-  z-index: 1;
 }
 
-.hero-btn::before {
+.story-icon::after {
   content: "";
   position: absolute;
   top: 0;
-  left: -100%;
-  width: 100%;
-  height: 100%;
-  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
-  transition: left 0.7s;
-  z-index: -1;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at 30% 30%, rgba(255,255,255,0.8), transparent 60%);
+  pointer-events: none;
 }
 
-.hero-btn:hover::before {
-  left: 100%;
+.story-logo {
+  width: 50px;
+  height: 50px;
+  object-fit: contain;
+  transition: all 0.4s ease;
 }
 
-.hero-btn:hover {
-  background: #b58d40;
-  border-color: #b58d40;
+.story-card:hover .story-icon {
   transform: translateY(-5px);
-  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+  background: radial-gradient(circle, #f0e6d2, #e8d7ba);
+  box-shadow: 0 15px 30px rgba(197, 157, 95, 0.25);
+  border-color: rgba(197, 157, 95, 0.6);
 }
 
-.scroll-indicator {
-  position: absolute;
-  bottom: 30px;
-  left: 50%;
-  transform: translateX(-50%);
-  color: white;
-  text-align: center;
-  z-index: 10;
-  animation: bounce 2s infinite;
-}
-
-.scroll-indicator span {
-  display: block;
-  margin-bottom: 10px;
-  font-size: 14px;
-  letter-spacing: 1px;
-  text-transform: uppercase;
-}
-
-.scroll-arrow {
-  font-size: 24px;
-}
-
-@keyframes bounce {
-  0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
-  40% {transform: translateY(-20px) translateX(-50%);}
-  60% {transform: translateY(-10px) translateX(-50%);}
-}
-
-.story-section,
-.packages-section,
-.rooms-section,
-.experience-section,
-.reviews-section,
-.location-section {
-  margin: 100px auto;
-  max-width: 1200px;
-  padding: 0 20px;
-  opacity: 1;
-  transform: none;
-  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
-  position: relative;
-  z-index: 1;
+.story-card:hover .story-logo {
+  transform: scale(1.1);
 }
 
 .story-card {
@@ -752,18 +742,6 @@ onMounted(() => {
 .story-card:hover {
   transform: translateY(-8px);
   box-shadow: 0 15px 30px rgba(0,0,0,0.1);
-}
-
-.story-icon {
-  font-size: 2.5em;
-  color: #c59d5f;
-  margin-bottom: 20px;
-  display: inline-block;
-  width: 80px;
-  height: 80px;
-  line-height: 80px;
-  border-radius: 50%;
-  background: #f9f5eb;
 }
 
 .story-card h3 {
@@ -982,77 +960,141 @@ onMounted(() => {
 
 .review-card {
   background: #ffffff;
-  padding: 40px 30px;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  padding: 50px 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
   height: 100%;
   transition: all 0.4s ease;
   position: relative;
   border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
 }
 
 .review-card:hover {
   transform: translateY(-8px);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border-color: rgba(197, 157, 95, 0.3);
 }
 
 .review-quote {
   position: absolute;
-  top: 20px;
-  left: 20px;
-  font-size: 70px;
+  top: 30px;
+  left: 30px;
+  font-size: 90px;
   line-height: 1;
-  color: #f0f0f0;
+  color: rgba(197, 157, 95, 0.1);
   font-family: "Times New Roman", serif;
 }
 
 .review-content {
-  margin-bottom: 25px;
+  margin-bottom: 30px;
   font-style: italic;
   line-height: 1.8;
   color: #333333;
   font-size: 1.1em;
   position: relative;
   z-index: 1;
+  flex: 1;
 }
 
 .reviewer {
   display: flex;
   align-items: center;
-  padding-top: 20px;
-  border-top: 1px solid #f0f0f0;
+  padding-top: 25px;
+  border-top: 1px solid rgba(197, 157, 95, 0.2);
 }
 
 .reviewer-avatar {
   width: 60px;
   height: 60px;
   border-radius: 50%;
-  margin-right: 15px;
+  margin-right: 20px;
   object-fit: cover;
-  border: 3px solid #f0f0f0;
+  border: 3px solid rgba(197, 157, 95, 0.2);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f0e6d2, #c59d5f);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 22px;
+  font-family: "SimSun", serif;
+}
+
+.reviewer-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.review-card:hover .reviewer-avatar {
+  border-color: rgba(197, 157, 95, 0.5);
+  transform: scale(1.05);
 }
 
 .reviewer-info h4 {
   margin: 0;
   color: #333;
-  font-size: 1.2em;
+  font-size: 1.3em;
+  font-family: "SimSun", serif;
 }
 
 .reviewer-info p {
   margin: 5px 0 0;
-  color: #999;
+  color: rgba(197, 157, 95, 0.8);
   font-size: 0.9em;
+  letter-spacing: 1px;
+}
+
+.location-section {
+  margin: 120px auto;
+  max-width: 1200px;
+  padding: 70px 20px;
+  background: linear-gradient(to right, rgba(250, 246, 237, 0.7), rgba(255, 255, 255, 0.9), rgba(250, 246, 237, 0.7));
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  position: relative;
+}
+
+.location-section::before {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 1px solid rgba(197, 157, 95, 0.2);
+  border-radius: 8px;
+  z-index: 0;
+  pointer-events: none;
+}
+
+.location-section .el-row {
+  margin-top: 40px;
+  height: 400px;
+  align-items: stretch;
 }
 
 .location-info {
   padding: 40px;
   background: #ffffff;
-  border-radius: 8px;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  border-radius: 10px;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.05);
   height: 100%;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
+  position: relative;
+  z-index: 1;
+  border: 1px solid rgba(197, 157, 95, 0.1);
 }
 
 .location-address {
@@ -1103,11 +1145,11 @@ onMounted(() => {
 }
 
 .map-container {
-  height: 100%;
-  min-height: 400px;
-  border-radius: 8px;
+  height: 400px;
+  border-radius: 10px;
   overflow: hidden;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 30px rgba(0,0,0,0.08);
+  border: 1px solid rgba(197, 157, 95, 0.1);
 }
 
 /* 品牌精髓部分 */
@@ -1484,9 +1526,11 @@ onMounted(() => {
 /* 客户评价优化 */
 .reviews-section {
   margin: 120px auto;
-  max-width: 1200px;
-  padding: 50px 20px;
+  max-width: 1400px;
+  padding: 80px 20px;
   position: relative;
+  background: linear-gradient(to right, rgba(250, 246, 237, 0.7), rgba(240, 230, 210, 0.7), rgba(250, 246, 237, 0.7));
+  border-radius: 10px;
 }
 
 .reviews-section::before {
@@ -1497,12 +1541,239 @@ onMounted(() => {
   right: 0;
   bottom: 0;
   background: url('/src/assets/hotel2.jpg') center/cover no-repeat fixed;
-  opacity: 0.1;
+  opacity: 0.05;
   z-index: -1;
   filter: blur(5px);
+  border-radius: 10px;
 }
 
-/* 增强房型卡片 */
+.reviews-section::after {
+  content: "";
+  position: absolute;
+  top: 20px;
+  left: 20px;
+  right: 20px;
+  bottom: 20px;
+  border: 1px solid rgba(197, 157, 95, 0.2);
+  border-radius: 8px;
+  z-index: -1;
+  pointer-events: none;
+}
+
+.reviews-carousel {
+  margin-top: 50px;
+}
+
+.review-card {
+  background: #ffffff;
+  padding: 50px 40px;
+  border-radius: 10px;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.05);
+  height: 100%;
+  transition: all 0.4s ease;
+  position: relative;
+  border: 1px solid #f0f0f0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+
+.review-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border-color: rgba(197, 157, 95, 0.3);
+}
+
+.review-quote {
+  position: absolute;
+  top: 30px;
+  left: 30px;
+  font-size: 90px;
+  line-height: 1;
+  color: rgba(197, 157, 95, 0.1);
+  font-family: "Times New Roman", serif;
+}
+
+.review-content {
+  margin-bottom: 30px;
+  font-style: italic;
+  line-height: 1.8;
+  color: #333333;
+  font-size: 1.1em;
+  position: relative;
+  z-index: 1;
+  flex: 1;
+}
+
+.reviewer {
+  display: flex;
+  align-items: center;
+  padding-top: 25px;
+  border-top: 1px solid rgba(197, 157, 95, 0.2);
+}
+
+.reviewer-avatar {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  margin-right: 20px;
+  object-fit: cover;
+  border: 3px solid rgba(197, 157, 95, 0.2);
+  transition: all 0.3s ease;
+  background: linear-gradient(135deg, #f0e6d2, #c59d5f);
+  position: relative;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: #fff;
+  font-weight: bold;
+  font-size: 22px;
+  font-family: "SimSun", serif;
+}
+
+.reviewer-avatar img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+
+.review-card:hover .reviewer-avatar {
+  border-color: rgba(197, 157, 95, 0.5);
+  transform: scale(1.05);
+}
+
+.reviewer-info h4 {
+  margin: 0;
+  color: #333;
+  font-size: 1.3em;
+  font-family: "SimSun", serif;
+}
+
+.reviewer-info p {
+  margin: 5px 0 0;
+  color: rgba(197, 157, 95, 0.8);
+  font-size: 0.9em;
+  letter-spacing: 1px;
+}
+
+/* 轮播图样式恢复 */
+.carousel-text h1 {
+  font-size: 60px;
+  margin-bottom: 25px;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 5px;
+  color: #ffffff;
+  font-family: "Times New Roman", "SimSun", serif;
+  position: relative;
+  display: inline-block;
+}
+
+.carousel-text h1::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 3px;
+  background: #c59d5f;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
+}
+
+.carousel-text p {
+  font-size: 24px;
+  line-height: 1.8;
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  color: #f0f0f0;
+  max-width: 750px;
+  margin: 25px auto 40px;
+}
+
+.hero-btn {
+  padding: 15px 40px;
+  font-size: 20px;
+  background: #c59d5f;
+  border-color: #c59d5f;
+  transition: all 0.4s ease;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.hero-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.7s;
+  z-index: -1;
+}
+
+.hero-btn:hover::before {
+  left: 100%;
+}
+
+.hero-btn:hover {
+  background: #b58d40;
+  border-color: #b58d40;
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  text-align: center;
+  z-index: 10;
+  animation: bounce 2s infinite;
+}
+
+.scroll-indicator span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.scroll-arrow {
+  font-size: 24px;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
+  40% {transform: translateY(-20px) translateX(-50%);}
+  60% {transform: translateY(-10px) translateX(-50%);}
+}
+
+/* 通用区块样式 */
+.story-section,
+.packages-section,
+.rooms-section,
+.experience-section,
+.location-section {
+  margin: 100px auto;
+  max-width: 1200px;
+  padding: 0 20px;
+  opacity: 1;
+  transform: none;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
+/* 恢复房型卡片样式 */
 .room-card {
   background: #ffffff;
   border-radius: 10px;

@@ -10,7 +10,7 @@
           :default-active="currentRoute"
         >
           <div class="logo-container">
-            <img src="./assets/crane-logo.svg" alt="和庆酒店" class="logo" />
+            <img src="./assets/icons/crane-logo.svg" alt="鹤清酒店" class="logo" />
             <span class="hotel-name">鹤清酒店</span>
           </div>
           <div class="flex-grow" />
@@ -40,7 +40,7 @@
       <footer class="app-footer">
         <div class="footer-content">
           <div class="footer-logo">
-            <img src="./assets/crane-logo.svg" alt="和庆酒店" class="footer-logo-img" />
+            <img src="./assets/icons/crane-logo.svg" alt="鹤清酒店" class="footer-logo-img" />
             <div class="footer-brand">
               <span class="footer-hotel-name">鹤清酒店</span>
               <p class="footer-slogan">仙居雅境 · 尊享至臻</p>
@@ -191,16 +191,27 @@ body {
   left: 0;
   right: 0;
   z-index: 1000;
-  background-color: rgba(255, 255, 255, 0.9);
+  background: linear-gradient(to right, rgba(255, 252, 245, 0.95), rgba(248, 240, 222, 0.95), rgba(255, 252, 245, 0.95));
   backdrop-filter: blur(10px);
   -webkit-backdrop-filter: blur(10px);
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 3px 15px rgba(197, 157, 95, 0.15);
+  border-bottom: 1px solid rgba(197, 157, 95, 0.2);
+}
+
+.header::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 3px;
+  background: linear-gradient(to right, #c59d5f, #ddbf85, #c59d5f);
 }
 
 .nav-menu {
   display: flex;
   align-items: center;
-  height: 70px;
+  height: 76px;
   padding: 0 50px;
   background-color: transparent !important;
   border-bottom: none !important;
@@ -208,12 +219,14 @@ body {
 
 .nav-menu .el-menu-item {
   font-size: 16px;
-  letter-spacing: 1px;
-  padding: 0 20px;
+  letter-spacing: 1.5px;
+  padding: 0 22px;
   font-weight: 500;
-  color: var(--text-color) !important;
-  height: 70px;
-  line-height: 70px;
+  color: #3a3a3a !important;
+  height: 76px;
+  line-height: 76px;
+  position: relative;
+  transition: all 0.3s ease;
 }
 
 .nav-menu .el-menu-item.is-active {
@@ -227,23 +240,70 @@ body {
   background-color: transparent !important;
 }
 
+.nav-menu .el-menu-item::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 50%;
+  width: 0;
+  height: 2px;
+  background: var(--primary-color);
+  transition: all 0.3s ease;
+  transform: translateX(-50%);
+  opacity: 0;
+}
+
+.nav-menu .el-menu-item:hover::after {
+  width: 70%;
+  opacity: 0.7;
+}
+
+.nav-menu .el-menu-item.is-active::after {
+  width: 100%;
+  opacity: 1;
+}
+
 .logo-container {
   display: flex;
   align-items: center;
   padding-right: 40px;
+  position: relative;
+}
+
+.logo-container::after {
+  content: "";
+  position: absolute;
+  right: 15px;
+  top: 50%;
+  height: 30px;
+  width: 1px;
+  background: linear-gradient(to bottom, transparent, rgba(197, 157, 95, 0.3), transparent);
+  transform: translateY(-50%);
 }
 
 .logo {
-  height: 40px;
-  margin-right: 10px;
+  height: 44px;
+  margin-right: 12px;
+  filter: drop-shadow(0 2px 4px rgba(0, 0, 0, 0.1));
+  transition: all 0.3s ease;
+}
+
+.logo:hover {
+  filter: drop-shadow(0 4px 8px rgba(197, 157, 95, 0.3));
+  transform: translateY(-2px);
 }
 
 .hotel-name {
-  font-size: 22px;
+  font-size: 24px;
   font-weight: bold;
-  color: var(--secondary-color);
-  font-family: "Times New Roman", "SimSun", serif;
-  letter-spacing: 1px;
+  color: #1a1a1a;
+  font-family: "SimSun", serif;
+  letter-spacing: 2px;
+  position: relative;
+  background: linear-gradient(to right, #a17d38, #c59d5f, #ddbf85, #c59d5f);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
 }
 
 .flex-grow {
@@ -252,19 +312,22 @@ body {
 
 .book-now-btn {
   margin-left: 20px;
-  padding: 10px 20px;
-  font-size: 14px;
-  letter-spacing: 1px;
-  background-color: var(--primary-color);
-  border-color: var(--primary-color);
-  transition: all 0.3s ease;
+  padding: 12px 25px;
+  font-size: 15px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #c59d5f, #ddbf85);
+  border-color: #c59d5f;
+  transition: all 0.4s ease;
+  box-shadow: 0 3px 8px rgba(197, 157, 95, 0.2);
+  font-weight: 500;
+  border-radius: 4px;
 }
 
 .book-now-btn:hover {
-  background-color: #b58d40;
+  background: linear-gradient(135deg, #b58d40, #c59d5f);
   border-color: #b58d40;
-  transform: translateY(-2px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 8px 15px rgba(197, 157, 95, 0.3);
 }
 
 .main-content {

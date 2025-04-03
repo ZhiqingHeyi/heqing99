@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 120" fill="none">
+  <g stroke="#c59d5f" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+    <!-- 鹤的头部 -->
+    <path d="M70 30C70 30 75 25 85 25C95 25 95 35 95 35C95 35 95 45 85 45C78 45 76 40 70 35" fill="none"/>
+    <!-- 鹤的长颈 -->
+    <path d="M70 35C65 40 60 50 60 60C60 70 60 80 50 85" fill="none"/>
+    <!-- 鹤的身体 -->
+    <path d="M50 85C40 90 35 90 30 85C25 80 30 70 35 65C40 60 45 55 50 45C55 35 55 30 60 25C65 20 75 20 75 25C75 30 70 30 70 35" fill="none"/>
+    <!-- 鹤的腿 -->
+    <path d="M35 65L25 80" fill="none"/>
+    <path d="M45 70L40 85" fill="none"/>
+    <!-- 装饰线条 -->
+    <path d="M15 50C25 45 35 45 45 50" fill="none" stroke-dasharray="2,2"/>
+    <path d="M75 50C85 45 95 45 105 50" fill="none" stroke-dasharray="2,2"/>
+  </g>
+  <!-- 金色装饰圆环 -->
+  <circle cx="60" cy="60" r="45" stroke="#c59d5f" stroke-width="2" fill="none" opacity="0.6"/>
+  <circle cx="60" cy="60" r="52" stroke="#c59d5f" stroke-width="1" fill="none" opacity="0.3"/>
+</svg> 
