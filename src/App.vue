@@ -17,6 +17,24 @@
           <el-menu-item index="/about">关于我们</el-menu-item>
           <el-menu-item index="/rooms">客房预订</el-menu-item>
           <el-menu-item index="/contact">联系我们</el-menu-item>
+          
+          <!-- 用户登录状态 -->
+          <template v-if="isLoggedIn">
+            <el-submenu index="user" class="user-menu">
+              <template #title>
+                <el-avatar :size="30" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" class="user-avatar"/>
+                <span class="user-name">{{ userName }}</span>
+              </template>
+              <el-menu-item index="/user">个人中心</el-menu-item>
+              <el-menu-item index="/user/bookings">我的预订</el-menu-item>
+              <el-menu-item @click="handleLogout">退出登录</el-menu-item>
+            </el-submenu>
+          </template>
+          <template v-else>
+            <el-button type="text" class="login-btn" @click="$router.push('/login')">登录</el-button>
+            <el-button type="text" class="register-btn" @click="$router.push('/register')">注册</el-button>
+          </template>
+          
           <el-button type="primary" class="book-now-btn" @click="$router.push('/booking')">立即预订</el-button>
         </el-menu>
       </header>
@@ -70,11 +88,47 @@
 </template>
 
 <script setup>
-import { computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { computed, ref } from 'vue'
+import { useRoute, useRouter } from 'vue-router'
+import { ElMessageBox, ElMessage } from 'element-plus'
 
 const route = useRoute()
+const router = useRouter()
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+
+// 检查用户是否登录
+const isLoggedIn = computed(() => {
+  return localStorage.getItem('userToken') !== null
+})
+
+// 获取用户名
+const userName = computed(() => {
+  return localStorage.getItem('userName') || '用户'
+})
+
+// 退出登录
+const handleLogout = async () => {
+  try {
+    await ElMessageBox.confirm('确定要退出登录吗?', '提示', {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    })
+    
+    // 清除登录信息
+    localStorage.removeItem('userToken')
+    localStorage.removeItem('userName')
+    
+    ElMessage.success('已退出登录')
+    
+    // 如果当前在需要登录的页面，则跳转到首页
+    if (route.meta.requiresAuth) {
+      router.push('/')
+    }
+  } catch (error) {
+    // 用户取消操作
+  }
+}
 </script>
 
 <style>
@@ -343,5 +397,30 @@ body {
   .footer-links {
     flex-direction: column;
   }
+}
+
+.user-menu {
+  margin-left: 15px;
+}
+
+.user-avatar {
+  margin-right: 5px;
+  vertical-align: middle;
+}
+
+.user-name {
+  font-size: 14px;
+  vertical-align: middle;
+}
+
+.login-btn, .register-btn {
+  font-size: 14px;
+  padding: 0 10px;
+  margin-left: 5px;
+  color: var(--text-color);
+}
+
+.login-btn:hover, .register-btn:hover {
+  color: var(--primary-color);
 }
 </style>

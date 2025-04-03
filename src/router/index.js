@@ -37,6 +37,30 @@ const router = createRouter({
       component: () => import('../views/RoomDetail.vue')
     },
     {
+      path: '/login',
+      name: 'login',
+      component: () => import('../views/user/Login.vue'),
+      meta: { public: true }
+    },
+    {
+      path: '/register',
+      name: 'register',
+      component: () => import('../views/user/Register.vue'),
+      meta: { public: true }
+    },
+    {
+      path: '/user',
+      name: 'user',
+      component: () => import('../views/user/Profile.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
+      path: '/user/bookings',
+      name: 'user-bookings',
+      component: () => import('../views/user/Bookings.vue'),
+      meta: { requiresAuth: true }
+    },
+    {
       path: '/admin/login',
       name: 'admin-login',
       component: AdminLogin,
@@ -98,8 +122,20 @@ router.beforeEach((to, from, next) => {
   // 获取用户角色和登录状态
   const userRole = localStorage.getItem('userRole')
   const isLoggedIn = userRole !== null
+  const userToken = localStorage.getItem('userToken')
+  const isUserLoggedIn = userToken !== null
   
-  console.log('当前用户角色:', userRole, '登录状态:', isLoggedIn)
+  console.log('当前用户角色:', userRole, '管理员登录状态:', isLoggedIn, '用户登录状态:', isUserLoggedIn)
+
+  // 检查是否需要用户登录
+  if (to.meta.requiresAuth && !isUserLoggedIn) {
+    console.log('需要用户登录，重定向到登录页')
+    next({
+      path: '/login',
+      query: { redirect: to.fullPath }
+    })
+    return
+  }
 
   // 如果访问登录页
   if (to.path === '/admin/login') {
