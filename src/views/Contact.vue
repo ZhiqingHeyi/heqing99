@@ -122,26 +122,7 @@
           </template>
           <div id="map-container" class="map-container"></div>
           
-          <div class="map-controls">
-            <label>
-              <input type="radio" name="maptype" checked @change="setMapType('standard')" />
-              <span>标准地图</span>
-            </label>
-            <label>
-              <input type="radio" name="maptype" @change="setMapType('satellite')" />
-              <span>卫星影像</span>
-            </label>
-            <div class="map-checkboxes">
-              <label>
-                <input type="checkbox" v-model="showRoads" @change="toggleMapLayers" />
-                <span>道路</span>
-              </label>
-              <label>
-                <input type="checkbox" v-model="showBuildings" @change="toggleMapLayers" />
-                <span>建筑</span>
-              </label>
-            </div>
-          </div>
+
           
           <div class="transportation-info">
             <h3>交通指南</h3>
@@ -165,6 +146,13 @@
                 <div class="transport-details">
                   <h4>机场专线</h4>
                   <p>金牌及以上会员可预约免费接机服务，请提前24小时联系酒店安排</p>
+                </div>
+              </div>
+              <div class="transport-option">
+                <div class="transport-icon taxi"></div>
+                <div class="transport-details">
+                  <h4>出租车服务</h4>
+                  <p>酒店可代为预约出租车服务，提供24小时专业接送服务</p>
                 </div>
               </div>
             </div>
@@ -204,21 +192,19 @@ const setMapType = (type) => {
   if (!mapInstance) return
   
   if (type === 'standard') {
-    mapInstance.setMapStyle('amap://styles/normal')
+    mapInstance.setLayers([mapInstance.getLayer('TileLayer')])
   } else if (type === 'satellite') {
-    mapInstance.setMapStyle('amap://styles/satellite')
+    mapInstance.setLayers([mapInstance.getLayer('TileLayer.Satellite')])
   }
 }
 
 const toggleMapLayers = () => {
   if (!mapInstance) return
   
-  mapInstance.setFeatures([
-    ...(showRoads.value ? ['road'] : []),
-    ...(showBuildings.value ? ['building'] : []),
-    'point',
-    'bg'
-  ])
+  const features = ['bg', 'point']
+  if (showRoads.value) features.push('road')
+  if (showBuildings.value) features.push('building')
+  mapInstance.setFeatures(features)
 }
 
 onMounted(() => {
@@ -252,11 +238,11 @@ onMounted(() => {
       animation: 'AMAP_ANIMATION_BOUNCE'
     })
     
-    map.add(marker)
-    map.addControl(new AMap.Scale())
-    map.addControl(new AMap.ToolBar())
-    map.addControl(new AMap.ControlBar())
-    map.addControl(new AMap.MapType())
+    mapInstance.add(marker)
+    mapInstance.addControl(new AMap.Scale())
+    mapInstance.addControl(new AMap.ToolBar())
+    mapInstance.addControl(new AMap.ControlBar())
+    mapInstance.addControl(new AMap.MapType())
 
     // 添加信息窗体
     const infoWindow = new AMap.InfoWindow({
@@ -277,7 +263,7 @@ onMounted(() => {
 
     // 点击标记时打开信息窗体
     marker.on('click', () => {
-      infoWindow.open(map, marker.getPosition())
+      infoWindow.open(mapInstance, marker.getPosition())
     })
   }).catch(e => {
     console.error('地图加载失败：', e)
@@ -676,6 +662,7 @@ onMounted(() => {
 
 .transport-options {
   display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 20px;
 }
 
@@ -715,6 +702,10 @@ onMounted(() => {
 
 .transport-icon.airport {
   background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238a6d3b"><path d="M21.5 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l7.5 2.5z"/></svg>');
+}
+
+.transport-icon.taxi {
+  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238a6d3b"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-5h14v5z"/></svg>');
 }
 
 .transport-details {
