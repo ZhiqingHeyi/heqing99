@@ -323,10 +323,14 @@ onMounted(() => {
 }
 
 .luxury-row {
-  max-width: 1200px;
+  max-width: 1400px;
   margin: 0 auto;
   position: relative;
   z-index: 1;
+  padding: 0 20px;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
 }
 
 .luxury-card {
