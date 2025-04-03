@@ -1,6 +1,8 @@
 <template>
-  <div class="booking-container">
-    <el-card class="booking-form">
+  <div class="page-container">
+    <div class="background-image"></div>
+    <div class="booking-container">
+      <el-card class="booking-form glass-effect">
       <template #header>
         <h2>预订房间</h2>
       </template>
@@ -72,7 +74,8 @@
           <el-button @click="resetForm">重置</el-button>
         </el-form-item>
       </el-form>
-    </el-card>
+      </el-card>
+    </div>
   </div>
 </template>
 
@@ -146,14 +149,43 @@ const resetForm = () => {
 </script>
 
 <style scoped>
+.page-container {
+  position: relative;
+  min-height: 100vh;
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  padding: 40px 20px;
+}
+
+.background-image {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: url('../assets/hotel1.jpg');
+  background-size: cover;
+  background-position: center;
+  background-repeat: no-repeat;
+  z-index: -1;
+}
+
 .booking-container {
+  width: 100%;
   max-width: 800px;
-  margin: 20px auto;
-  padding: 20px;
 }
 
 .booking-form {
-  background-color: #fff;
+  background-color: rgba(255, 255, 255, 0.7);
+}
+
+.glass-effect {
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37);
 }
 
 .room-option {

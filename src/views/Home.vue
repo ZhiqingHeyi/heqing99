@@ -1,10 +1,11 @@
 <template>
-  <div class="home">
+  <div class="home" ref="homeContainer">
     <!-- 酒店介绍区域 -->
     <section class="hero-section">
       <el-carousel height="600px">
         <el-carousel-item v-for="(image, index) in hotelImages" :key="index">
           <div class="carousel-content" :style="{ backgroundImage: `url(${image})` }">
+            <div class="overlay"></div>
             <div class="carousel-text">
               <h1>鹤清酒店 - 仙居雅境</h1>
               <p>在这里，我们将典雅与禅意完美融合，为您打造一方静谧的仙居之所。让每一位宾客感受超凡脱俗的居停体验。</p>
@@ -25,7 +26,7 @@
             <div class="story-card">
               <i class="el-icon-time"></i>
               <h3>我们的历史</h3>
-              <p>创立于2010年，鹤清酒店秉承"仙居雅境"的理念，以典雅高雅的建筑风格和精致考究的中式装潢闻名。我们将传统文化与现代舒适完美融合，创造出独特的东方人居体验。</p>
+              <p>创立于2010年，鹤清酒店秉承"仙居雅境"的理念，以典雅高雅的建筑风格和精致考究的中式装潢闻名。我们将传统文化与现代舒适完美融合，创造出独特的东方居家体验。</p>
             </div>
           </el-col>
           <el-col :span="8">
@@ -58,7 +59,7 @@
               <h3>标准房</h3>
               <p class="package-desc">适合单人或双人寻求舒适的旅客</p>
               <div class="package-price">¥500/晚</div>
-              <el-button type="primary" class="book-btn">立即预订</el-button>
+              <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
             </div>
           </el-col>
           <el-col :span="8">
@@ -66,7 +67,7 @@
               <h3>豪华房</h3>
               <p class="package-desc">为追求奢华体验的客人精心打造</p>
               <div class="package-price">¥800/晚</div>
-              <el-button type="primary" class="book-btn">立即预订</el-button>
+              <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
             </div>
           </el-col>
           <el-col :span="8">
@@ -74,7 +75,7 @@
               <h3>家庭套房</h3>
               <p class="package-desc">宽敞舒适，适合家庭入住</p>
               <div class="package-price">¥1200/晚</div>
-              <el-button type="primary" class="book-btn">立即预订</el-button>
+              <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
             </div>
           </el-col>
         </el-row>
@@ -207,9 +208,45 @@
   </div>
 </template>
 
+<script>
+import { ref, onMounted } from 'vue';
+
+export default {
+  setup() {
+    const homeContainer = ref(null);
+
+    onMounted(() => {
+      const observer = new IntersectionObserver((entries) => {
+        entries.forEach(entry => {
+          if (entry.isIntersecting) {
+            setTimeout(() => {
+              entry.target.classList.add('show');
+            }, entry.target.dataset.delay || 0);
+          }
+        });
+      }, {
+        threshold: 0.2,
+        rootMargin: '0px 0px -100px 0px'
+      });
+
+      const sections = document.querySelectorAll('.story-section, .packages-section, .rooms-section, .experience-section, .reviews-section, .location-section');
+      sections.forEach((section, index) => {
+        section.dataset.delay = index * 150;
+        observer.observe(section);
+      });
+    });
+
+    return { homeContainer };
+  }
+};
+</script>
+
 <script setup>
 import { ref, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import AMapLoader from '@amap/amap-jsapi-loader'
+
+const router = useRouter()
 
 // 轮播图数据
 const hotelImages = [
@@ -324,23 +361,42 @@ onMounted(() => {
   box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
 }
 .home {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 20px;
+  width: 100%;
+  overflow-x: hidden;
 }
 
 .hero-section {
-  margin-bottom: 80px;
+  width: 100%;
+  height: 100vh;
+  margin-bottom: 60px;
+  position: relative;
+  overflow: hidden;
 }
 
 .carousel-content {
   height: 100%;
+  width: 100%;
   background-size: cover;
   background-position: center;
   display: flex;
   align-items: center;
   justify-content: center;
+  text-align: center;
+  color: white;
   position: relative;
+  transform: scale(1);
+  transition: transform 6s ease-in-out;
+  overflow: hidden;
+}
+
+.carousel-content img {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
 }
 
 .carousel-content::before {
@@ -350,32 +406,67 @@ onMounted(() => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.5));
+  background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.6));
+  z-index: 1;
+}
+
+.el-carousel__item--active .carousel-content {
+  transform: scale(1.1);
+}
+
+.el-carousel__item--active .carousel-text {
+  transform: translateY(0);
+  opacity: 1;
+}
+
+.el-carousel__item:not(.el-carousel__item--active) .carousel-text {
+  transform: translateY(20px);
+  opacity: 0;
+}
+
+.overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: rgba(0, 0, 0, 0.3);
+  z-index: 1;
 }
 
 .carousel-text {
-  text-align: center;
-  color: white;
-  padding: 40px;
-  border-radius: 4px;
-  max-width: 900px;
+  max-width: 1000px;
+  padding: 50px;
   position: relative;
   z-index: 2;
+  background: rgba(255, 255, 255, 0.15);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+  border-radius: 20px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+  transform: translateY(0);
+  transition: transform 0.6s ease-out, opacity 0.6s ease-out;
+  opacity: 0.9;
 }
 
 .carousel-text h1 {
-  font-size: 3.5em;
-  margin-bottom: 25px;
-  font-weight: 600;
-  letter-spacing: 3px;
-  text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+  font-size: 56px;
+  margin-bottom: 20px;
+  font-weight: 700;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
+  letter-spacing: 2px;
+  color: #ffffff;
 }
 
 .carousel-text p {
-  font-size: 1.4em;
+  font-size: 20px;
   line-height: 1.8;
-  letter-spacing: 1px;
-  text-shadow: 1px 1px 2px rgba(0,0,0,0.3);
+  text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
+  color: #f0f0f0;
+  max-width: 600px;
+  margin: 0 auto;
 }
 
 .section-title {
@@ -390,8 +481,54 @@ onMounted(() => {
   margin-bottom: 40px;
 }
 
+.story-section,
+.packages-section,
+.rooms-section,
+.experience-section,
+.reviews-section,
+.location-section {
+  margin: 80px auto;
+  max-width: 1200px;
+  padding: 0 20px;
+  opacity: 1;
+  transform: none;
+  transition: all 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+  position: relative;
+  z-index: 1;
+}
+
 .story-section {
-  margin-bottom: 80px;
+  transform: translateX(-50px);
+}
+
+.packages-section {
+  transform: translateX(50px);
+}
+
+.rooms-section {
+  transform: translateY(50px) scale(0.95);
+}
+
+.experience-section {
+  transform: translateX(-50px) rotate(-2deg);
+}
+
+.reviews-section {
+  transform: translateX(50px) rotate(2deg);
+}
+
+.location-section {
+  transform: translateY(50px) scale(0.98);
+}
+
+.story-section.show,
+.packages-section.show,
+.rooms-section.show,
+.experience-section.show,
+.reviews-section.show,
+.location-section.show {
+  opacity: 1;
+  transform: translate(0) scale(1) rotate(0);
 }
 
 .story-card {
@@ -414,7 +551,9 @@ onMounted(() => {
 }
 
 .packages-section {
-  margin-bottom: 80px;
+  margin: 0 auto 80px;
+  max-width: 1200px;
+  padding: 0 20px;
 }
 
 .package-card {
@@ -507,7 +646,9 @@ onMounted(() => {
 }
 
 .rooms-section {
-  margin-bottom: 60px;
+  margin: 0 auto 60px;
+  max-width: 1200px;
+  padding: 0 20px;
 }
 
 .room-card {
@@ -547,6 +688,18 @@ onMounted(() => {
   margin-bottom: 80px;
   background: #f8f9fa;
   padding: 60px 0;
+  width: 100vw;
+  position: relative;
+  left: 50%;
+  right: 50%;
+  margin-left: -50vw;
+  margin-right: -50vw;
+}
+
+.experience-section > * {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 0 20px;
 }
 
 .amenity-card {
@@ -576,7 +729,9 @@ onMounted(() => {
 }
 
 .reviews-section {
-  margin-bottom: 80px;
+  margin: 0 auto 80px;
+  max-width: 1200px;
+  padding: 0 20px;
 }
 
 .review-card {
@@ -624,7 +779,9 @@ onMounted(() => {
 }
 
 .location-section {
-  margin-bottom: 80px;
+  margin: 0 auto 80px;
+  max-width: 1200px;
+  padding: 0 20px;
 }
 
 .location-info {
