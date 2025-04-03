@@ -2,18 +2,59 @@
   <div class="home" ref="homeContainer">
     <!-- 酒店介绍区域 -->
     <section class="hero-section">
-      <el-carousel height="600px" arrow="always" indicator-position="none">
+      <el-carousel height="700px" arrow="always" indicator-position="none" :interval="5000" type="card">
         <el-carousel-item v-for="(image, index) in hotelImages" :key="index">
           <div class="carousel-content" :style="{ backgroundImage: `url(${image})` }">
             <div class="overlay"></div>
             <div class="carousel-text">
-              <h1>鹤清酒店 - 仙居雅境</h1>
-              <p>在这里，我们将典雅与禅意完美融合，为您打造一方静谧的仙居之所。让每一位宾客感受超凡脱俗的居停体验。</p>
+              <div class="logo-emblem">鹤</div>
+              <h1>鹤清酒店 · 雅境天成</h1>
+              <p>东方美学与奢华体验的完美融合，为您打造一方超然脱俗的仙境居所。聆听山水，感悟东方雅韵。</p>
               <el-button type="primary" class="hero-btn" @click="router.push('/booking')">立即预订</el-button>
             </div>
           </div>
         </el-carousel-item>
       </el-carousel>
+      <div class="scroll-indicator">
+        <span>向下滚动探索更多</span>
+        <i class="el-icon-arrow-down scroll-arrow"></i>
+      </div>
+    </section>
+
+    <!-- 品牌精髓 -->
+    <section class="essence-section">
+      <div class="essence-background"></div>
+      <div class="essence-content">
+        <div class="essence-left">
+          <h2>匠心传承</h2>
+          <div class="title-decorator">
+            <span class="line"></span>
+            <span class="dot"></span>
+            <span class="line"></span>
+          </div>
+          <p>鹤清酒店融合东方智慧与现代奢华，打造一方静谧的艺术净土。我们秉承"东方美学"理念，每一处设计、每一项服务都蕴含匠心。</p>
+          <div class="essence-stats">
+            <div class="stat-item">
+              <span class="stat-number">13</span>
+              <span class="stat-label">年臻心服务</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">99%</span>
+              <span class="stat-label">宾客满意度</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-number">50+</span>
+              <span class="stat-label">奢华套房</span>
+            </div>
+          </div>
+        </div>
+        <div class="essence-right">
+          <div class="essence-image-container">
+            <img src="/src/assets/hotel1.jpg" alt="酒店精髓" class="essence-image" />
+            <div class="image-decorator"></div>
+          </div>
+        </div>
+      </div>
     </section>
 
     <!-- 酒店故事 -->
@@ -56,59 +97,50 @@
       <div class="section-header">
         <h2 class="section-title">尊享套餐</h2>
         <div class="title-underline"></div>
-        <p class="section-desc">探索我们为您精心设计的难忘住宿套餐</p>
+        <p class="section-desc">探索我们为您精心设计的难忘住宿体验</p>
       </div>
       
-      <div class="package-cards">
-        <el-row :gutter="30">
-          <el-col :span="8">
-            <div class="package-card">
-              <div class="package-header">
-                <h3>标准房</h3>
-                <div class="package-price">¥500<span>/晚</span></div>
+      <div class="package-slider">
+        <el-carousel :interval="5000" type="card" height="500px">
+          <el-carousel-item v-for="(pkg, index) in packages" :key="index">
+            <div class="luxury-package-card" :class="{'featured': pkg.featured}">
+              <div v-if="pkg.featured" class="package-ribbon">推荐</div>
+              <div class="package-image" :style="{backgroundImage: `url(${pkg.image})`}">
+                <div class="package-overlay"></div>
+                <div class="package-title">
+                  <h3>{{pkg.name}}</h3>
+                  <div class="package-price">¥{{pkg.price}}<span>/{{pkg.unit}}</span></div>
+                </div>
               </div>
-              <p class="package-desc">适合单人或双人寻求舒适的旅客</p>
-              <ul class="package-features">
-                <li>高品质床品</li>
-                <li>免费Wi-Fi</li>
-                <li>24小时客房服务</li>
-              </ul>
-              <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
-            </div>
-          </el-col>
-          <el-col :span="8">
-            <div class="package-card featured">
-              <div class="package-ribbon">推荐</div>
-              <div class="package-header">
-                <h3>豪华房</h3>
-                <div class="package-price">¥800<span>/晚</span></div>
+              <div class="package-body">
+                <p class="package-desc">{{pkg.description}}</p>
+                <ul class="package-features">
+                  <li v-for="(feature, idx) in pkg.features" :key="idx">{{feature}}</li>
+                </ul>
+                <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
               </div>
-              <p class="package-desc">为追求奢华体验的客人精心打造</p>
-              <ul class="package-features">
-                <li>豪华特大床</li>
-                <li>免费迷你吧</li>
-                <li>私人管家服务</li>
-                <li>高级SPA体验</li>
-              </ul>
-              <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
             </div>
-          </el-col>
-          <el-col :span="8">
-            <div class="package-card">
-              <div class="package-header">
-                <h3>家庭套房</h3>
-                <div class="package-price">¥1200<span>/晚</span></div>
-              </div>
-              <p class="package-desc">宽敞舒适，适合家庭入住</p>
-              <ul class="package-features">
-                <li>连通客房选项</li>
-                <li>儿童活动区</li>
-                <li>专属家庭餐饮服务</li>
-              </ul>
-              <el-button type="primary" class="book-btn" @click="router.push('/booking')">立即预订</el-button>
-            </div>
-          </el-col>
-        </el-row>
+          </el-carousel-item>
+        </el-carousel>
+      </div>
+    </section>
+
+    <!-- 奢华体验 -->
+    <section class="experience-section">
+      <div class="section-header">
+        <h2 class="section-title">奢华体验</h2>
+        <div class="title-underline"></div>
+        <p class="section-desc">探索鹤清酒店为您带来的非凡体验</p>
+      </div>
+      
+      <div class="experience-grid">
+        <div class="experience-item" v-for="(exp, index) in experiences" :key="index">
+          <div class="experience-icon">
+            <i :class="exp.icon"></i>
+          </div>
+          <h3>{{exp.title}}</h3>
+          <p>{{exp.description}}</p>
+        </div>
       </div>
     </section>
 
@@ -297,6 +329,71 @@ const registerForm = ref({
   email: ''
 })
 
+// 奢华套餐数据
+const packages = [
+  {
+    name: '典雅休闲套餐',
+    price: '888',
+    unit: '晚',
+    description: '沉浸在东方式的典雅氛围中，体验高品质的休闲时光',
+    image: '/src/assets/room1.jpg',
+    features: ['高级客房住宿', '双人早餐', '免费迷你吧', '欢迎水果篮', '延迟退房服务'],
+    featured: false
+  },
+  {
+    name: '豪华度假套餐',
+    price: '1688',
+    unit: '晚',
+    description: '全方位的奢华体验，是休闲度假的不二之选',
+    image: '/src/assets/room2.jpg',
+    features: ['豪华套房住宿', '24小时管家服务', '双人SPA护理', '免费专车接送', '米其林晚餐体验'],
+    featured: true
+  },
+  {
+    name: '家庭尊享套餐',
+    price: '2388',
+    unit: '晚',
+    description: '为家庭旅行提供舒适奢华的度假体验',
+    image: '/src/assets/room3.jpg',
+    features: ['连通家庭套房', '专属儿童活动', '全家SPA体验', '定制家庭餐饮', '私人观光导览'],
+    featured: false
+  }
+]
+
+// 奢华体验数据
+const experiences = [
+  {
+    title: '私人管家',
+    icon: 'el-icon-user',
+    description: '全程私人管家服务，满足您的一切需求，尽享无忧入住体验'
+  },
+  {
+    title: '东方SPA',
+    icon: 'el-icon-umbrella',
+    description: '融合东方草药与现代技术的SPA体验，让身心彻底放松'
+  },
+  {
+    title: '米其林餐厅',
+    icon: 'el-icon-dish',
+    description: '由米其林星级主厨打造的餐饮体验，品味舌尖上的艺术'
+  },
+  {
+    title: '茶艺体验',
+    icon: 'el-icon-coffee-cup',
+    description: '品味东方茶道文化，感受岁月静好的雅致时光'
+  },
+  {
+    title: '专车接送',
+    icon: 'el-icon-truck',
+    description: '豪华专车接送服务，开启您的尊贵旅程'
+  },
+  {
+    title: '定制旅行',
+    icon: 'el-icon-map-location',
+    description: '量身定制专属旅行路线，探索城市秘境'
+  }
+]
+
 // 房型数据
 const rooms = [
   {
@@ -395,7 +492,7 @@ onMounted(() => {
 .hero-section {
   width: 100%;
   height: 100vh;
-  margin-bottom: 80px;
+  margin-bottom: 120px;
   position: relative;
   overflow: hidden;
 }
@@ -453,52 +550,147 @@ onMounted(() => {
 
 .carousel-text {
   max-width: 900px;
-  padding: 60px;
+  padding: 80px;
   position: relative;
   z-index: 2;
   background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(5px);
-  -webkit-backdrop-filter: blur(5px);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border-radius: 10px;
-  border: 1px solid rgba(255, 255, 255, 0.2);
+  border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
   transform: translateY(0);
   transition: transform 0.8s ease-out, opacity 0.8s ease-out;
   opacity: 0.95;
 }
 
+.logo-emblem {
+  font-size: 72px;
+  width: 120px;
+  height: 120px;
+  line-height: 120px;
+  margin: 0 auto 30px;
+  border-radius: 50%;
+  background: #c59d5f;
+  color: white;
+  font-family: "SimSun", serif;
+  text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
+  position: relative;
+  overflow: hidden;
+  border: 5px double rgba(255, 255, 255, 0.6);
+  box-shadow: 0 0 30px rgba(197, 157, 95, 0.6);
+}
+
+.logo-emblem::before {
+  content: "";
+  position: absolute;
+  top: -10px;
+  left: -10px;
+  right: -10px;
+  bottom: -10px;
+  background: radial-gradient(circle at center, rgba(255,255,255,0.2) 0%, transparent 70%);
+  animation: emblemShine 3s infinite;
+}
+
+@keyframes emblemShine {
+  0%, 100% { opacity: 0.5; }
+  50% { opacity: 0.8; }
+}
+
 .carousel-text h1 {
-  font-size: 56px;
-  margin-bottom: 20px;
+  font-size: 60px;
+  margin-bottom: 25px;
   font-weight: 700;
   text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.5);
-  letter-spacing: 3px;
+  letter-spacing: 5px;
   color: #ffffff;
   font-family: "Times New Roman", "SimSun", serif;
+  position: relative;
+  display: inline-block;
+}
+
+.carousel-text h1::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 3px;
+  background: #c59d5f;
+  bottom: -12px;
+  left: 50%;
+  transform: translateX(-50%);
 }
 
 .carousel-text p {
-  font-size: 22px;
+  font-size: 24px;
   line-height: 1.8;
   text-shadow: 1px 1px 2px rgba(0, 0, 0, 0.5);
   color: #f0f0f0;
-  max-width: 700px;
-  margin: 0 auto 30px;
+  max-width: 750px;
+  margin: 25px auto 40px;
 }
 
 .hero-btn {
-  padding: 12px 30px;
-  font-size: 18px;
+  padding: 15px 40px;
+  font-size: 20px;
   background: #c59d5f;
   border-color: #c59d5f;
-  transition: all 0.3s ease;
+  transition: all 0.4s ease;
+  letter-spacing: 2px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.hero-btn::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: -100%;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(90deg, transparent, rgba(255,255,255,0.2), transparent);
+  transition: left 0.7s;
+  z-index: -1;
+}
+
+.hero-btn:hover::before {
+  left: 100%;
 }
 
 .hero-btn:hover {
   background: #b58d40;
   border-color: #b58d40;
-  transform: translateY(-3px);
-  box-shadow: 0 10px 20px rgba(0,0,0,0.2);
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0,0,0,0.3);
+}
+
+.scroll-indicator {
+  position: absolute;
+  bottom: 30px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: white;
+  text-align: center;
+  z-index: 10;
+  animation: bounce 2s infinite;
+}
+
+.scroll-indicator span {
+  display: block;
+  margin-bottom: 10px;
+  font-size: 14px;
+  letter-spacing: 1px;
+  text-transform: uppercase;
+}
+
+.scroll-arrow {
+  font-size: 24px;
+}
+
+@keyframes bounce {
+  0%, 20%, 50%, 80%, 100% {transform: translateY(0) translateX(-50%);}
+  40% {transform: translateY(-20px) translateX(-50%);}
+  60% {transform: translateY(-10px) translateX(-50%);}
 }
 
 .story-section,
@@ -681,17 +873,19 @@ onMounted(() => {
 
 .room-card {
   background: #ffffff;
-  border-radius: 8px;
+  border-radius: 10px;
   margin-bottom: 40px;
   transition: all 0.4s ease;
-  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
   overflow: hidden;
   height: 100%;
+  border: 1px solid #f0f0f0;
 }
 
 .room-card:hover {
-  transform: translateY(-8px);
-  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border-color: #c59d5f;
 }
 
 .room-image-container {
@@ -701,13 +895,13 @@ onMounted(() => {
 
 .room-image {
   width: 100%;
-  height: 280px;
+  height: 300px;
   object-fit: cover;
   transition: transform 0.6s ease;
 }
 
 .room-card:hover .room-image {
-  transform: scale(1.05);
+  transform: scale(1.1);
 }
 
 .room-overlay {
@@ -732,11 +926,14 @@ onMounted(() => {
   background: #c59d5f;
   border-color: #c59d5f;
   padding: 12px 25px;
+  letter-spacing: 1px;
 }
 
 .view-details-btn:hover {
   background: #b58d40;
   border-color: #b58d40;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 .room-info {
@@ -882,5 +1079,336 @@ onMounted(() => {
   border-radius: 8px;
   overflow: hidden;
   box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+}
+
+/* 品牌精髓部分 */
+.essence-section {
+  position: relative;
+  padding: 100px 0;
+  margin: 120px auto;
+  overflow: hidden;
+}
+
+.essence-background {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: #f9f5eb;
+  clip-path: polygon(0 15%, 100% 0, 100% 85%, 0 100%);
+  z-index: -1;
+}
+
+.essence-content {
+  max-width: 1200px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  padding: 0 20px;
+}
+
+.essence-left {
+  flex: 1;
+  padding-right: 60px;
+}
+
+.essence-left h2 {
+  font-size: 48px;
+  color: #333;
+  margin-bottom: 20px;
+  font-family: "Times New Roman", "SimSun", serif;
+}
+
+.title-decorator {
+  display: flex;
+  align-items: center;
+  margin-bottom: 30px;
+}
+
+.title-decorator .line {
+  height: 2px;
+  width: 40px;
+  background: #c59d5f;
+}
+
+.title-decorator .dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #c59d5f;
+  margin: 0 10px;
+}
+
+.essence-left p {
+  font-size: 18px;
+  line-height: 1.8;
+  margin-bottom: 40px;
+  color: #555;
+}
+
+.essence-stats {
+  display: flex;
+  justify-content: space-between;
+}
+
+.stat-item {
+  text-align: center;
+}
+
+.stat-number {
+  display: block;
+  font-size: 48px;
+  font-weight: bold;
+  color: #c59d5f;
+  font-family: "Times New Roman", serif;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  color: #555;
+  font-size: 16px;
+}
+
+.essence-right {
+  flex: 1;
+}
+
+.essence-image-container {
+  position: relative;
+  padding: 20px;
+}
+
+.essence-image {
+  width: 100%;
+  height: 500px;
+  object-fit: cover;
+  border-radius: 10px;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  position: relative;
+  z-index: 1;
+}
+
+.image-decorator {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 40px;
+  bottom: 40px;
+  border: 5px solid #c59d5f;
+  border-radius: 10px;
+  z-index: 0;
+}
+
+/* 套餐卡片新样式 */
+.package-slider {
+  margin: 50px auto;
+}
+
+.luxury-package-card {
+  height: 100%;
+  background: white;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 15px 30px rgba(0,0,0,0.1);
+  position: relative;
+  transition: all 0.4s ease;
+  display: flex;
+  flex-direction: column;
+}
+
+.luxury-package-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.2);
+}
+
+.package-image {
+  height: 250px;
+  background-size: cover;
+  background-position: center;
+  position: relative;
+}
+
+.package-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: linear-gradient(to bottom, rgba(0,0,0,0.2), rgba(0,0,0,0.7));
+}
+
+.package-title {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: 30px;
+  color: white;
+}
+
+.package-title h3 {
+  font-size: 28px;
+  margin-bottom: 10px;
+  font-family: "Times New Roman", "SimSun", serif;
+}
+
+.package-body {
+  padding: 30px;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.package-desc {
+  font-size: 16px;
+  color: #555;
+  margin-bottom: 20px;
+  flex: 0 0 auto;
+}
+
+.package-features {
+  list-style: none;
+  padding: 0;
+  margin: 0 0 30px;
+  flex: 1 0 auto;
+}
+
+.package-features li {
+  padding: 10px 0;
+  position: relative;
+  padding-left: 30px;
+  border-bottom: 1px dashed #eee;
+}
+
+.package-features li:before {
+  content: "✓";
+  position: absolute;
+  left: 0;
+  color: #c59d5f;
+  font-weight: bold;
+}
+
+/* 奢华体验区域 */
+.experience-section {
+  margin: 120px auto;
+  max-width: 1200px;
+  padding: 0 20px;
+}
+
+.experience-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 30px;
+  margin-top: 50px;
+}
+
+.experience-item {
+  background: white;
+  padding: 40px 30px;
+  border-radius: 10px;
+  text-align: center;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  transition: all 0.4s ease;
+  border: 1px solid #f0f0f0;
+}
+
+.experience-item:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 30px rgba(0,0,0,0.1);
+}
+
+.experience-icon {
+  width: 80px;
+  height: 80px;
+  line-height: 80px;
+  font-size: 36px;
+  background: #f9f5eb;
+  color: #c59d5f;
+  border-radius: 50%;
+  margin: 0 auto 25px;
+  transition: all 0.4s ease;
+}
+
+.experience-item:hover .experience-icon {
+  background: #c59d5f;
+  color: white;
+  transform: rotate(360deg);
+}
+
+.experience-item h3 {
+  font-size: 22px;
+  margin-bottom: 15px;
+  color: #333;
+  font-family: "Times New Roman", "SimSun", serif;
+}
+
+.experience-item p {
+  color: #666;
+  line-height: 1.6;
+}
+
+/* 客户评价优化 */
+.reviews-section {
+  margin: 120px auto;
+  max-width: 1200px;
+  padding: 50px 20px;
+  position: relative;
+}
+
+.reviews-section::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: url('/src/assets/hotel2.jpg') center/cover no-repeat fixed;
+  opacity: 0.1;
+  z-index: -1;
+  filter: blur(5px);
+}
+
+/* 增强房型卡片 */
+.room-card {
+  background: #ffffff;
+  border-radius: 10px;
+  margin-bottom: 40px;
+  transition: all 0.4s ease;
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
+  overflow: hidden;
+  height: 100%;
+  border: 1px solid #f0f0f0;
+}
+
+.room-card:hover {
+  transform: translateY(-10px);
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  border-color: #c59d5f;
+}
+
+.room-image {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+  transition: transform 0.6s ease;
+}
+
+.room-card:hover .room-image {
+  transform: scale(1.1);
+}
+
+.view-details-btn {
+  background: #c59d5f;
+  border-color: #c59d5f;
+  padding: 12px 25px;
+  letter-spacing: 1px;
+}
+
+.view-details-btn:hover {
+  background: #b58d40;
+  border-color: #b58d40;
+  transform: translateY(-3px);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 </style>
