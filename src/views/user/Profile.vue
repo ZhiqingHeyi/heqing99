@@ -7,8 +7,20 @@
             <el-avatar :size="100" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" />
           </div>
           <h3 class="user-name">{{ userInfo.userName || '用户名' }}</h3>
-          <p class="user-level">会员等级: {{ userInfo.level || '普通会员' }}</p>
+          
+          <!-- 会员等级徽章 -->
+          <div class="member-badge" :class="getLevelClass(userInfo.level)">
+            {{ userInfo.level }}
+          </div>
+          
           <p class="user-points">积分: {{ userInfo.points || 0 }}</p>
+          <p class="user-total-spent">累计消费: ¥{{ userInfo.totalSpent || 0 }}</p>
+          
+          <!-- 显示升级进度 -->
+          <div class="upgrade-progress" v-if="userInfo.level !== '钻石会员'">
+            <span>距离{{ userInfo.nextLevel }}</span>
+            <el-progress :percentage="getLevelProgress()" :stroke-width="8" :show-text="false"></el-progress>
+          </div>
           
           <el-menu
             class="profile-menu"
@@ -81,6 +93,28 @@
                 <el-button type="primary" @click="saveUserInfo">保存</el-button>
               </el-form-item>
             </el-form>
+          </div>
+
+          <!-- 会员权益信息 -->
+          <div v-if="activeMenu === 'profile'">
+            <div class="section-header">
+              <h2>会员特权</h2>
+            </div>
+            
+            <div class="member-benefits">
+              <el-table :data="getMemberBenefits()" style="width: 100%">
+                <el-table-column prop="level" label="会员等级" width="120">
+                  <template #default="{ row }">
+                    <div class="level-tag" :class="getLevelClass(row.level)">{{ row.level }}</div>
+                  </template>
+                </el-table-column>
+                <el-table-column prop="discount" label="折扣优惠" width="100" />
+                <el-table-column prop="pointRate" label="积分比例" width="100" />
+                <el-table-column prop="prepay" label="预付政策" width="150" />
+                <el-table-column prop="cancel" label="取消政策" />
+                <el-table-column prop="threshold" label="升级条件" width="180" />
+              </el-table>
+            </div>
           </div>
 
           <!-- 预订列表 -->
@@ -204,7 +238,7 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
@@ -220,9 +254,24 @@ const total = ref(0)
 // 用户信息
 const userInfo = reactive({
   userName: localStorage.getItem('userName') || '用户名',
-  level: '白银会员',
-  points: 320
+  level: localStorage.getItem('userLevel') || '普通用户',
+  points: parseInt(localStorage.getItem('userPoints') || '0'),
+  totalSpent: parseInt(localStorage.getItem('userTotalSpent') || '0'),
+  nextLevel: ''
 })
+
+// 计算下一个等级需要的消费金额
+if (userInfo.level === '普通用户') {
+  userInfo.nextLevel = '铜牌会员（再消费¥' + (1500 - userInfo.totalSpent) + '）'
+} else if (userInfo.level === '铜牌会员') {
+  userInfo.nextLevel = '银牌会员（再消费¥' + (5000 - userInfo.totalSpent) + '）'
+} else if (userInfo.level === '银牌会员') {
+  userInfo.nextLevel = '金牌会员（再消费¥' + (10000 - userInfo.totalSpent) + '）'
+} else if (userInfo.level === '金牌会员') {
+  userInfo.nextLevel = '钻石会员（再消费¥' + (30000 - userInfo.totalSpent) + '）'
+} else {
+  userInfo.nextLevel = '已是最高等级'
+}
 
 // 用户表单
 const userForm = reactive({
@@ -504,6 +553,78 @@ watch(bookingTab, () => {
   fetchBookingList()
 })
 
+// 获取会员等级对应的样式类
+const getLevelClass = (level) => {
+  const classMap = {
+    '普通用户': 'level-normal',
+    '铜牌会员': 'level-bronze',
+    '银牌会员': 'level-silver',
+    '金牌会员': 'level-gold',
+    '钻石会员': 'level-diamond'
+  }
+  return classMap[level] || 'level-normal'
+}
+
+// 计算会员升级进度百分比
+const getLevelProgress = () => {
+  if (userInfo.level === '普通用户') {
+    return Math.min(100, (userInfo.totalSpent / 1500) * 100)
+  } else if (userInfo.level === '铜牌会员') {
+    return Math.min(100, ((userInfo.totalSpent - 1500) / (5000 - 1500)) * 100)
+  } else if (userInfo.level === '银牌会员') {
+    return Math.min(100, ((userInfo.totalSpent - 5000) / (10000 - 5000)) * 100)
+  } else if (userInfo.level === '金牌会员') {
+    return Math.min(100, ((userInfo.totalSpent - 10000) / (30000 - 10000)) * 100)
+  }
+  return 100
+}
+
+// 获取所有会员级别的权益信息
+const getMemberBenefits = () => {
+  return [
+    {
+      level: '普通用户',
+      discount: '无折扣',
+      pointRate: '无积分',
+      prepay: '需全额或30%预付',
+      cancel: '提前24小时可免费取消',
+      threshold: '注册即可'
+    },
+    {
+      level: '铜牌会员',
+      discount: '98折',
+      pointRate: '1元=1积分',
+      prepay: '可到店支付',
+      cancel: '提前12小时可免费取消',
+      threshold: '累计消费满1500元'
+    },
+    {
+      level: '银牌会员',
+      discount: '95折',
+      pointRate: '1元=1.2积分',
+      prepay: '可免预付金',
+      cancel: '提前6小时可免费取消',
+      threshold: '累计消费满5000元'
+    },
+    {
+      level: '金牌会员',
+      discount: '9折',
+      pointRate: '1元=1.5积分',
+      prepay: '免预付金',
+      cancel: '可随时免费取消',
+      threshold: '累计消费满10000元'
+    },
+    {
+      level: '钻石会员',
+      discount: '8.5折',
+      pointRate: '1元=2积分',
+      prepay: '免预付金',
+      cancel: '可免费取消+延迟退房',
+      threshold: '累计消费满30000元'
+    }
+  ]
+}
+
 onMounted(() => {
   // 加载用户数据
 })
@@ -581,5 +702,63 @@ onMounted(() => {
 
 .points-down {
   color: #F56C6C;
+}
+
+.member-badge {
+  display: inline-block;
+  padding: 4px 12px;
+  font-size: 14px;
+  font-weight: 500;
+  border-radius: 20px;
+  margin: 10px 0;
+}
+
+.level-normal {
+  background-color: #909399;
+  color: #fff;
+}
+
+.level-bronze {
+  background-color: #cd7f32;
+  color: #fff;
+}
+
+.level-silver {
+  background-color: #c0c0c0;
+  color: #333;
+}
+
+.level-gold {
+  background-color: #d4af37;
+  color: #333;
+}
+
+.level-diamond {
+  background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+  color: #333;
+  font-weight: 600;
+}
+
+.upgrade-progress {
+  margin: 10px 0 20px;
+  font-size: 12px;
+  padding: 0 10px;
+}
+
+.user-total-spent {
+  color: #666;
+  margin: 5px 0;
+}
+
+.member-benefits {
+  margin-bottom: 30px;
+}
+
+.level-tag {
+  padding: 2px 8px;
+  border-radius: 4px;
+  display: inline-block;
+  font-size: 12px;
+  font-weight: 500;
 }
 </style> 

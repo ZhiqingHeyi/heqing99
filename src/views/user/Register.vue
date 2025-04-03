@@ -150,7 +150,17 @@ const handleRegister = async () => {
         // 模拟API调用
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        ElMessage.success('注册成功，请登录')
+        // 设置默认会员信息（在实际应用中应该通过后端存储）
+        localStorage.setItem('tempUserLevel', '普通用户')
+        localStorage.setItem('tempUserPoints', '0')
+        localStorage.setItem('tempUserTotalSpent', '0')
+        localStorage.setItem('tempUserName', registerForm.username)
+        
+        ElMessage.success({
+          message: '注册成功，您将成为普通用户。累计消费满1500元可升级为铜牌会员！',
+          duration: 3000
+        })
+        
         router.push('/login')
       } catch (error) {
         console.error('注册失败:', error)

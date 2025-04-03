@@ -70,6 +70,14 @@ const loginForm = reactive({
   remember: false
 })
 
+// 自动填充临时注册用户的用户名
+const tempUserName = localStorage.getItem('tempUserName')
+if (tempUserName) {
+  loginForm.username = tempUserName
+  // 读取后清除临时数据
+  localStorage.removeItem('tempUserName')
+}
+
 const rules = {
   username: [
     { required: true, message: '请输入用户名或手机号', trigger: 'blur' }
@@ -94,6 +102,24 @@ const handleLogin = async () => {
         // 保存登录信息
         localStorage.setItem('userToken', 'sample-token')
         localStorage.setItem('userName', loginForm.username)
+        
+        // 设置用户会员等级和其他信息 (在实际应用中，这些信息应当从后端获取)
+        // 检查是否有临时数据（从注册页面来）
+        if (localStorage.getItem('tempUserLevel')) {
+          localStorage.setItem('userLevel', localStorage.getItem('tempUserLevel'))
+          localStorage.setItem('userPoints', localStorage.getItem('tempUserPoints'))
+          localStorage.setItem('userTotalSpent', localStorage.getItem('tempUserTotalSpent'))
+          
+          // 清除临时数据
+          localStorage.removeItem('tempUserLevel')
+          localStorage.removeItem('tempUserPoints')
+          localStorage.removeItem('tempUserTotalSpent')
+        } else if (!localStorage.getItem('userLevel')) {
+          // 如果没有会员等级信息，设置为普通用户
+          localStorage.setItem('userLevel', '普通用户')
+          localStorage.setItem('userPoints', '0')
+          localStorage.setItem('userTotalSpent', '0')
+        }
         
         ElMessage.success('登录成功')
         

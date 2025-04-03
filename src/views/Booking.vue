@@ -110,12 +110,27 @@
             />
           </el-form-item>
           
+          <!-- 会员等级信息和折扣提示 -->
+          <div v-if="isLoggedIn" class="member-info">
+            <div class="member-level">
+              <span class="level-label">会员等级:</span>
+              <span class="level-value" :class="'level-' + userLevel.toLowerCase().replace('会员', '')">
+                {{ userLevel }}
+              </span>
+              <span class="discount-info" v-if="getDiscountRate() < 1">
+                （享{{ getDiscountRate() * 10 }}折优惠）
+              </span>
+            </div>
+          </div>
+          
           <!-- 付款方式部分 -->
           <h3 class="form-section-title">付款方式</h3>
           <el-form-item label="支付方式" prop="paymentMethod">
             <el-radio-group v-model="bookingForm.paymentMethod">
               <el-radio :label="1">在线支付</el-radio>
-              <el-radio :label="2" :disabled="!isLoggedIn">到店支付 (仅限会员)</el-radio>
+              <el-radio :label="2" :disabled="!canPayAtHotel">
+                到店支付 <span class="member-only" v-if="!canPayAtHotel">（铜牌及以上会员专享）</span>
+              </el-radio>
             </el-radio-group>
           </el-form-item>
           
@@ -123,7 +138,9 @@
             <el-radio-group v-model="bookingForm.depositType" @change="calculateDeposit">
               <el-radio :label="1">全额支付</el-radio>
               <el-radio :label="2">预付30%</el-radio>
-              <el-radio :label="3" :disabled="!isLoggedIn">免预付金 (仅限会员)</el-radio>
+              <el-radio :label="3" :disabled="!canSkipPrepay">
+                免预付金 <span class="member-only" v-if="!canSkipPrepay">（银牌及以上会员专享）</span>
+              </el-radio>
             </el-radio-group>
           </el-form-item>
           
@@ -152,6 +169,10 @@
             <div class="booking-summary-item" v-if="bookingForm.paymentMethod === 1">
               <span>预付金额:</span>
               <span class="deposit">¥{{ depositAmount.toFixed(2) }}</span>
+            </div>
+            <div class="booking-summary-item" v-if="isLoggedIn && estimatedPoints > 0">
+              <span>预计积分:</span>
+              <span class="points">+{{ estimatedPoints }}</span>
             </div>
           </div>
 
@@ -204,9 +225,13 @@ const isLoggedIn = computed(() => {
   return localStorage.getItem('userToken') !== null
 })
 
-// 如果用户已登录，获取用户信息
+// 获取用户名和会员等级
 const userName = computed(() => {
   return localStorage.getItem('userName') || ''
+})
+
+const userLevel = computed(() => {
+  return localStorage.getItem('userLevel') || '普通用户'
 })
 
 const bookingForm = reactive({
@@ -263,11 +288,62 @@ const stayDays = computed(() => {
   return Math.ceil((checkOut - checkIn) / (24 * 60 * 60 * 1000))
 })
 
+// 根据会员等级获取折扣率
+const getDiscountRate = () => {
+  const discountMap = {
+    '普通用户': 1,     // 无折扣
+    '铜牌会员': 0.98,  // 98折
+    '银牌会员': 0.95,  // 95折
+    '金牌会员': 0.9,   // 9折
+    '钻石会员': 0.85   // 8.5折
+  }
+  return discountMap[userLevel.value] || 1
+}
+
+// 获取积分比率
+const getPointRate = () => {
+  const rateMap = {
+    '普通用户': 0,     // 无积分
+    '铜牌会员': 1,     // 1元=1积分
+    '银牌会员': 1.2,   // 1元=1.2积分
+    '金牌会员': 1.5,   // 1元=1.5积分
+    '钻石会员': 2      // 1元=2积分
+  }
+  return rateMap[userLevel.value] || 0
+}
+
+// 检查是否可以免预付
+const canSkipPrepay = computed(() => {
+  return ['银牌会员', '金牌会员', '钻石会员'].includes(userLevel.value)
+})
+
+// 检查是否可以到店支付
+const canPayAtHotel = computed(() => {
+  return ['铜牌会员', '银牌会员', '金牌会员', '钻石会员'].includes(userLevel.value)
+})
+
 // 计算会员折扣
 const memberDiscount = computed(() => {
   if (!isLoggedIn.value) return 0
-  // 会员9折优惠
-  return roomPrice.value * stayDays.value * bookingForm.roomCount * 0.1
+  
+  const discountRate = getDiscountRate()
+  // 如果没有折扣则返回0
+  if (discountRate >= 1) return 0
+  
+  // 计算折扣金额
+  return roomPrice.value * stayDays.value * bookingForm.roomCount * (1 - discountRate)
+})
+
+// 计算预计获得的积分
+const estimatedPoints = computed(() => {
+  if (!isLoggedIn.value) return 0
+  
+  const pointRate = getPointRate()
+  // 如果无积分则返回0
+  if (pointRate <= 0) return 0
+  
+  // 计算可获得的积分
+  return Math.floor(totalAmount.value * pointRate)
 })
 
 // 计算订单总额
@@ -331,8 +407,15 @@ const submitBooking = async () => {
         loading.value = true
         
         // 对于非会员选择"到店支付"的情况进行限制
-        if (bookingForm.paymentMethod === 2 && !isLoggedIn.value) {
-          ElMessage.warning('非会员用户必须选择在线支付')
+        if (bookingForm.paymentMethod === 2 && !canPayAtHotel.value) {
+          ElMessage.warning('非铜牌会员及以上用户必须选择在线支付')
+          loading.value = false
+          return
+        }
+        
+        // 检查免预付金权限
+        if (bookingForm.paymentMethod === 1 && bookingForm.depositType === 3 && !canSkipPrepay.value) {
+          ElMessage.warning('非银牌会员及以上用户不可选择免预付金')
           loading.value = false
           return
         }
@@ -357,6 +440,57 @@ const submitBooking = async () => {
           // 免押金预订或到店支付
           await new Promise(resolve => setTimeout(resolve, 1000))
           ElMessage.success('预订提交成功！')
+        }
+        
+        // 如果用户已登录，更新会员信息
+        if (isLoggedIn.value) {
+          // 更新累计消费金额
+          const currentTotalSpent = parseInt(localStorage.getItem('userTotalSpent') || '0')
+          const newTotalSpent = currentTotalSpent + totalAmount.value
+          localStorage.setItem('userTotalSpent', newTotalSpent.toString())
+          
+          // 更新积分
+          const currentPoints = parseInt(localStorage.getItem('userPoints') || '0')
+          const earnedPoints = estimatedPoints.value
+          const newPoints = currentPoints + earnedPoints
+          localStorage.setItem('userPoints', newPoints.toString())
+          
+          // 检查是否可以升级会员等级
+          const currentLevel = localStorage.getItem('userLevel')
+          let newLevel = currentLevel
+          
+          if (newTotalSpent >= 30000 && currentLevel !== '钻石会员') {
+            newLevel = '钻石会员'
+            ElMessage({
+              type: 'success',
+              message: '恭喜您！累计消费已满30000元，会员等级已升级为钻石会员！',
+              duration: 5000
+            })
+          } else if (newTotalSpent >= 10000 && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
+            newLevel = '金牌会员'
+            ElMessage({
+              type: 'success',
+              message: '恭喜您！累计消费已满10000元，会员等级已升级为金牌会员！',
+              duration: 5000
+            })
+          } else if (newTotalSpent >= 5000 && currentLevel !== '银牌会员' && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
+            newLevel = '银牌会员'
+            ElMessage({
+              type: 'success',
+              message: '恭喜您！累计消费已满5000元，会员等级已升级为银牌会员！',
+              duration: 5000
+            })
+          } else if (newTotalSpent >= 1500 && currentLevel === '普通用户') {
+            newLevel = '铜牌会员'
+            ElMessage({
+              type: 'success',
+              message: '恭喜您！累计消费已满1500元，会员等级已升级为铜牌会员！',
+              duration: 5000
+            })
+          }
+          
+          // 更新会员等级
+          localStorage.setItem('userLevel', newLevel)
         }
         
         // 预订成功后跳转到我的预订页面(会员)或首页(非会员)
@@ -657,6 +791,73 @@ const resetForm = () => {
 
 .deposit {
   color: #f56c6c;
+  font-weight: 600;
+}
+
+.member-info {
+  background-color: #f8f8f8;
+  padding: 10px 15px;
+  border-radius: 4px;
+  margin-bottom: 20px;
+  display: flex;
+  justify-content: space-between;
+}
+
+.member-level {
+  display: flex;
+  align-items: center;
+}
+
+.level-label {
+  margin-right: 8px;
+}
+
+.level-value {
+  font-weight: 600;
+  padding: 2px 8px;
+  border-radius: 4px;
+  font-size: 14px;
+}
+
+.level-normal {
+  background-color: #909399;
+  color: #fff;
+}
+
+.level-bronze {
+  background-color: #cd7f32;
+  color: #fff;
+}
+
+.level-silver {
+  background-color: #c0c0c0;
+  color: #333;
+}
+
+.level-gold {
+  background-color: #d4af37;
+  color: #333;
+}
+
+.level-diamond {
+  background: linear-gradient(135deg, #a1c4fd 0%, #c2e9fb 100%);
+  color: #333;
+}
+
+.discount-info {
+  margin-left: 10px;
+  color: #f56c6c;
+  font-weight: 600;
+}
+
+.member-only {
+  font-size: 12px;
+  color: #909399;
+  margin-left: 5px;
+}
+
+.points {
+  color: #67c23a;
   font-weight: 600;
 }
 </style>

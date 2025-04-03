@@ -20,15 +20,29 @@
           
           <!-- 用户登录状态 -->
           <template v-if="isLoggedIn">
-            <el-submenu index="user" class="user-menu">
-              <template #title>
-                <el-avatar :size="30" src="https://cube.elemecdn.com/3/7c/3ea6beec64369c2642b92c6726f1epng.png" class="user-avatar"/>
+            <el-dropdown trigger="click" class="user-dropdown">
+              <span class="user-info">
+                <el-avatar size="small" class="user-avatar">
+                  {{ userName.charAt(0).toUpperCase() }}
+                </el-avatar>
                 <span class="user-name">{{ userName }}</span>
+                <i class="el-icon-arrow-down"></i>
+              </span>
+              <template #dropdown>
+                <el-dropdown-menu>
+                  <el-dropdown-item>
+                    <router-link to="/user" class="dropdown-link">个人中心</router-link>
+                  </el-dropdown-item>
+                  <el-dropdown-item>
+                    <router-link to="/user/membership" class="dropdown-link">会员中心</router-link>
+                  </el-dropdown-item>
+                  <el-dropdown-item>
+                    <router-link to="/user/bookings" class="dropdown-link">预订记录</router-link>
+                  </el-dropdown-item>
+                  <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
+                </el-dropdown-menu>
               </template>
-              <el-menu-item index="/user">个人中心</el-menu-item>
-              <el-menu-item index="/user/bookings">我的预订</el-menu-item>
-              <el-menu-item @click="handleLogout">退出登录</el-menu-item>
-            </el-submenu>
+            </el-dropdown>
           </template>
           <template v-else>
             <el-button type="text" class="login-btn" @click="$router.push('/login')">登录</el-button>
@@ -399,18 +413,35 @@ body {
   }
 }
 
-.user-menu {
+.user-dropdown {
   margin-left: 15px;
+  cursor: pointer;
+}
+
+.user-info {
+  display: flex;
+  align-items: center;
 }
 
 .user-avatar {
-  margin-right: 5px;
-  vertical-align: middle;
+  margin-right: 8px;
+  background-color: #409EFF;
 }
 
 .user-name {
   font-size: 14px;
-  vertical-align: middle;
+  color: #303133;
+  margin-right: 4px;
+}
+
+.dropdown-link {
+  text-decoration: none;
+  color: #606266;
+  display: block;
+}
+
+.dropdown-link:hover {
+  color: #409EFF;
 }
 
 .login-btn, .register-btn {
