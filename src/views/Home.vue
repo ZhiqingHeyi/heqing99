@@ -1827,6 +1827,16 @@ const handleImageError = (event, review) => {
   z-index: 1;
 }
 
+/* 地图容器样式 */
+.map-container {
+  width: 100%;
+  height: 400px;
+  border-radius: 10px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+  position: relative;
+}
+
 /* 恢复房型卡片样式 */
 .room-card {
   background: #ffffff;
