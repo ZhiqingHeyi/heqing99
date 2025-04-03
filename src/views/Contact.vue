@@ -89,7 +89,7 @@ onMounted(() => {
     key: '8325164e247e15eea68b59e89200988b',
     key: 'ad101aa6969036479910b4a3988add24',
     version: '2.0',
-    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.ControlBar', 'AMap.HawkEye', 'AMap.MapType']
+    plugins: ['AMap.Scale', 'AMap.ToolBar', 'AMap.ControlBar', 'AMap.MapType']
   }).then((AMap) => {
     const map = new AMap.Map('map-container', {
       zoom: 15,
@@ -119,7 +119,6 @@ onMounted(() => {
     map.addControl(new AMap.Scale())
     map.addControl(new AMap.ToolBar())
     map.addControl(new AMap.ControlBar())
-    map.addControl(new AMap.HawkEye())
     map.addControl(new AMap.MapType())
 
     // 添加信息窗体
@@ -147,63 +146,145 @@ onMounted(() => {
 <style scoped>
 .contact-page {
   max-width: 1200px;
-  margin: 20px auto;
-  padding: 20px;
+  margin: 40px auto;
+  padding: 30px;
+  background: linear-gradient(to bottom, #f8f9fa, #ffffff);
 }
 
 .contact-info-card,
 .contact-form-card,
 .map-card {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+}
+
+.contact-info-card:hover,
+.contact-form-card:hover,
+.map-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.12);
 }
 
 .card-header {
   display: flex;
   align-items: center;
   justify-content: space-between;
+  padding: 20px;
+  background: linear-gradient(to right, #f0f2f5, #ffffff);
+  border-bottom: 1px solid #ebeef5;
 }
 
 .card-header h2 {
   margin: 0;
-  font-size: 1.5em;
-  color: #303133;
+  font-size: 1.8em;
+  color: #2c3e50;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.contact-details {
+  padding: 20px;
 }
 
 .contact-details p {
-  margin: 10px 0;
+  margin: 15px 0;
   font-size: 16px;
-  color: #606266;
+  color: #5a6d7e;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.contact-details p i {
+  margin-right: 12px;
+  font-size: 20px;
+  color: #409EFF;
+}
+
+.contact-details p:hover {
+  color: #409EFF;
+  transform: translateX(5px);
 }
 
 .business-hours {
-  margin-top: 20px;
+  margin-top: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
 }
 
 .business-hours h3 {
-  color: #303133;
-  margin-bottom: 10px;
+  color: #2c3e50;
+  margin-bottom: 15px;
+  font-weight: 600;
+}
+
+.business-hours p {
+  margin: 8px 0;
+  color: #5a6d7e;
 }
 
 .map-container {
   height: 600px;
   width: 100%;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  margin: 30px 0;
+  border-radius: 12px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.3s ease;
 }
 
 .map-card {
   margin-bottom: 40px;
   background: #fff;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
 }
 
 .contact-form-card {
-  margin-top: 20px;
+  margin-top: 30px;
+}
+
+.el-form {
+  padding: 20px;
+}
+
+.el-form-item {
+  margin-bottom: 25px;
+}
+
+.el-input__inner,
+.el-textarea__inner {
+  transition: all 0.3s ease;
+  border-radius: 8px;
+}
+
+.el-input__inner:focus,
+.el-textarea__inner:focus {
+  border-color: #409EFF;
+  box-shadow: 0 0 8px rgba(64, 158, 255, 0.2);
+}
+
+.el-button {
+  padding: 12px 24px;
+  font-size: 16px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.el-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(64, 158, 255, 0.3);
 }
 
 @media (max-width: 768px) {
+  .contact-page {
+    padding: 15px;
+    margin: 20px auto;
+  }
+
   .el-row {
     flex-direction: column;
   }
@@ -212,6 +293,10 @@ onMounted(() => {
     width: 100% !important;
     max-width: 100% !important;
     flex: 0 0 100% !important;
+  }
+
+  .map-container {
+    height: 400px;
   }
 }
 </style>
