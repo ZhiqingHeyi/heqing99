@@ -650,54 +650,125 @@ onMounted(() => {
 
 <style scoped>
 .profile-container {
-  padding: 20px;
+  padding: 30px;
+  background-color: #f8f5f0;
 }
 
 .user-card {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
   text-align: center;
+  border: none;
+  box-shadow: 0 4px 20px rgba(197, 157, 95, 0.1);
+  background: linear-gradient(to bottom, #ffffff, #fdfbf6);
+  border-radius: 12px;
 }
 
 .user-avatar {
-  margin: 20px 0;
+  margin: 25px 0;
+  position: relative;
+}
+
+.user-avatar::after {
+  content: '';
+  position: absolute;
+  top: -5px;
+  left: -5px;
+  right: -5px;
+  bottom: -5px;
+  border: 2px solid #c59d5f;
+  border-radius: 50%;
+  opacity: 0.3;
 }
 
 .user-name {
-  font-size: 18px;
-  margin: 10px 0;
+  font-size: 22px;
+  margin: 15px 0;
+  color: #1a1a1a;
+  font-weight: 600;
+  letter-spacing: 1px;
 }
 
 .user-level, .user-points {
   color: #666;
-  margin: 5px 0;
+  margin: 8px 0;
+  font-size: 15px;
 }
 
 .profile-menu {
-  margin: 20px 0;
+  margin: 25px 0;
   border-right: none;
+  background: transparent;
+}
+
+.profile-menu .el-menu-item {
+  height: 50px;
+  line-height: 50px;
+  font-size: 15px;
+  color: #666;
+  border-radius: 8px;
+  margin: 5px 0;
+  transition: all 0.3s ease;
+}
+
+.profile-menu .el-menu-item:hover {
+  background-color: #faf6f0;
+  color: #c59d5f;
+}
+
+.profile-menu .el-menu-item.is-active {
+  background: linear-gradient(135deg, #faf6f0, #f5eadb);
+  color: #c59d5f;
+  font-weight: 500;
 }
 
 .logout-btn {
-  margin: 20px 0;
+  margin: 25px 0;
   width: 100%;
+  height: 40px;
+  font-size: 15px;
+  border-radius: 20px;
+  background: linear-gradient(135deg, #ff6b6b, #ff4757);
+  border: none;
+  box-shadow: 0 2px 8px rgba(255, 107, 107, 0.2);
 }
 
 .content-card {
   min-height: 500px;
+  border: none;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  background: #ffffff;
+  padding: 25px;
 }
 
 .section-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #eee;
+  margin-bottom: 25px;
+  padding-bottom: 15px;
+  border-bottom: 2px solid #f0e6d6;
 }
 
 .section-header h2 {
   margin: 0;
-  font-size: 20px;
+  font-size: 24px;
+  color: #1a1a1a;
+  font-weight: 600;
+  position: relative;
+  padding-left: 15px;
+}
+
+.section-header h2::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 24px;
+  background: linear-gradient(to bottom, #c59d5f, #deb887);
+  border-radius: 2px;
 }
 
 .user-form {
@@ -724,11 +795,15 @@ onMounted(() => {
 
 .member-badge {
   display: inline-block;
-  padding: 4px 12px;
-  font-size: 14px;
+  padding: 8px 20px;
+  font-size: 15px;
   font-weight: 500;
-  border-radius: 20px;
-  margin: 10px 0;
+  border-radius: 25px;
+  margin: 15px 0;
+  letter-spacing: 1px;
+  box-shadow: 0 2px 8px rgba(197, 157, 95, 0.2);
+  background: linear-gradient(135deg, #c59d5f, #deb887);
+  color: #ffffff;
 }
 
 .level-normal {
@@ -779,4 +854,4 @@ onMounted(() => {
   font-size: 12px;
   font-weight: 500;
 }
-</style> 
+</style>
