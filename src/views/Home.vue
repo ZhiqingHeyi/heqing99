@@ -123,6 +123,12 @@
                 </div>
               </div>
               <div class="package-body">
+                <div class="package-room-type">
+                  <span class="room-type-label">房型:</span>
+                  <span class="room-type-value">{{pkg.roomType}}</span>
+                  <span class="room-size-label">面积:</span>
+                  <span class="room-size-value">{{pkg.roomSize}}</span>
+                </div>
                 <p class="package-desc">{{pkg.description}}</p>
                 <ul class="package-features">
                   <li v-for="(feature, idx) in pkg.features" :key="idx">{{feature}}</li>
@@ -197,7 +203,7 @@
             <div class="reviewer">
               <div class="reviewer-avatar">
                 <span v-if="!review.avatar">{{review.initial}}</span>
-                <img v-else :src="review.avatar" alt="评价者" @error="$event.target.style.display='none'" />
+                <img v-else :src="review.avatar" alt="评价者" @error="handleImageError($event, review)" />
               </div>
               <div class="reviewer-info">
                 <h4>{{review.name}}</h4>
@@ -215,24 +221,26 @@
         <h2 class="section-title">位置信息</h2>
         <div class="title-underline"></div>
       </div>
-      <el-row :gutter="40">
-        <el-col :span="12">
-          <div class="location-info">
-            <div class="location-address">
-              <i class="el-icon-location"></i>
-              <p>鹤清酒店位于：江西省南昌市八一公园旁</p>
+      <div class="location-container">
+        <el-row :gutter="40">
+          <el-col :span="12">
+            <div class="location-info">
+              <div class="location-address">
+                <i class="el-icon-location"></i>
+                <p>鹤清酒店位于：江西省南昌市八一公园旁</p>
+              </div>
+              <div class="location-contact">
+                <p><i class="el-icon-phone"></i> 电话：0791-88888888</p>
+                <p><i class="el-icon-message"></i> 邮箱：info@heqinghotel.com</p>
+              </div>
+              <el-button type="primary" class="direction-btn" @click="handleNavigation">获取导航</el-button>
             </div>
-            <div class="location-contact">
-              <p><i class="el-icon-phone"></i> 电话：0791-88888888</p>
-              <p><i class="el-icon-message"></i> 邮箱：info@heqinghotel.com</p>
-            </div>
-            <el-button type="primary" class="direction-btn" @click="handleNavigation">获取导航</el-button>
-          </div>
-        </el-col>
-        <el-col :span="12">
-          <div id="map-container" class="map-container"></div>
-        </el-col>
-      </el-row>
+          </el-col>
+          <el-col :span="12">
+            <div id="map-container" class="map-container"></div>
+          </el-col>
+        </el-row>
+      </div>
     </section>
   </div>
 </template>
@@ -321,7 +329,9 @@ const packages = [
     description: '沉浸在东方式的典雅氛围中，体验高品质的休闲时光',
     image: '/src/assets/room1.jpg',
     features: ['高级客房住宿', '双人早餐', '免费迷你吧', '欢迎水果篮', '延迟退房服务'],
-    featured: false
+    featured: false,
+    roomType: '豪华大床房',
+    roomSize: '38平方米'
   },
   {
     name: '豪华度假套餐',
@@ -330,7 +340,9 @@ const packages = [
     description: '全方位的奢华体验，是休闲度假的不二之选',
     image: '/src/assets/room2.jpg',
     features: ['豪华套房住宿', '24小时管家服务', '双人SPA护理', '免费专车接送', '米其林晚餐体验'],
-    featured: true
+    featured: true,
+    roomType: '行政套房',
+    roomSize: '58平方米'
   },
   {
     name: '家庭尊享套餐',
@@ -339,7 +351,9 @@ const packages = [
     description: '为家庭旅行提供舒适奢华的度假体验',
     image: '/src/assets/room3.jpg',
     features: ['连通家庭套房', '专属儿童活动', '全家SPA体验', '定制家庭餐饮', '私人观光导览'],
-    featured: false
+    featured: false,
+    roomType: '家庭套房',
+    roomSize: '75平方米'
   }
 ]
 
@@ -479,6 +493,18 @@ onMounted(() => {
     map.addControl(new AMap.ControlBar())
   })
 })
+
+// 处理头像加载失败的情况
+const handleImageError = (event, review) => {
+  event.target.style.display = 'none';
+  const parent = event.target.parentNode;
+  // 创建一个文本节点显示首字母
+  if (!parent.querySelector('span')) {
+    const span = document.createElement('span');
+    span.textContent = review.initial || review.name.charAt(0);
+    parent.appendChild(span);
+  }
+}
 </script>
 
 <style scoped>
@@ -1058,19 +1084,24 @@ onMounted(() => {
   margin: 120px auto;
   max-width: 1200px;
   padding: 70px 20px;
-  background: linear-gradient(to right, rgba(250, 246, 237, 0.7), rgba(255, 255, 255, 0.9), rgba(250, 246, 237, 0.7));
-  border-radius: 10px;
-  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
   position: relative;
 }
 
-.location-section::before {
+.location-container {
+  background: linear-gradient(to right, rgba(250, 246, 237, 0.7), rgba(255, 255, 255, 0.9), rgba(250, 246, 237, 0.7));
+  border-radius: 10px;
+  box-shadow: 0 20px 50px rgba(0, 0, 0, 0.05);
+  padding: 40px;
+  position: relative;
+}
+
+.location-container::before {
   content: "";
   position: absolute;
-  top: 20px;
-  left: 20px;
-  right: 20px;
-  bottom: 20px;
+  top: 15px;
+  left: 15px;
+  right: 15px;
+  bottom: 15px;
   border: 1px solid rgba(197, 157, 95, 0.2);
   border-radius: 8px;
   z-index: 0;
@@ -1078,13 +1109,12 @@ onMounted(() => {
 }
 
 .location-section .el-row {
-  margin-top: 40px;
-  height: 400px;
   align-items: stretch;
+  height: 400px;
 }
 
 .location-info {
-  padding: 40px;
+  padding: 30px;
   background: #ffffff;
   border-radius: 10px;
   box-shadow: 0 15px 35px rgba(0,0,0,0.05);
@@ -1132,20 +1162,21 @@ onMounted(() => {
 .direction-btn {
   padding: 12px 25px;
   width: 100%;
-  background: #c59d5f;
+  background: linear-gradient(135deg, #c59d5f, #ddbf85);
   border-color: #c59d5f;
   transition: all 0.3s ease;
+  font-weight: 500;
 }
 
 .direction-btn:hover {
-  background: #b58d40;
+  background: linear-gradient(135deg, #b58d40, #c59d5f);
   border-color: #b58d40;
   transform: translateY(-3px);
   box-shadow: 0 10px 20px rgba(0,0,0,0.1);
 }
 
 .map-container {
-  height: 400px;
+  height: 100%;
   border-radius: 10px;
   overflow: hidden;
   box-shadow: 0 10px 30px rgba(0,0,0,0.08);
@@ -1329,6 +1360,28 @@ onMounted(() => {
   flex: 1;
   display: flex;
   flex-direction: column;
+}
+
+.package-room-type {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  border-bottom: 1px dashed #f0f0f0;
+  padding-bottom: 15px;
+}
+
+.room-type-label, .room-size-label {
+  color: #999;
+  margin-right: 5px;
+  font-size: 14px;
+}
+
+.room-type-value, .room-size-value {
+  color: #c59d5f;
+  font-weight: bold;
+  margin-right: 20px;
+  font-size: 16px;
 }
 
 .package-desc {
