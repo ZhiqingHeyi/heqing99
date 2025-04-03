@@ -389,42 +389,46 @@ onMounted(() => {
   display: flex;
   margin-bottom: 30px;
   transition: all 0.3s ease;
+  padding: 15px;
+  border-radius: 12px;
+  background-color: rgba(255, 255, 255, 0.6);
+  border: 1px solid rgba(138, 109, 59, 0.1);
 }
 
 .contact-item:hover {
-  transform: translateX(5px);
+  transform: translateX(8px);
+  background-color: rgba(255, 255, 255, 0.9);
+  border-color: rgba(138, 109, 59, 0.2);
+  box-shadow: 0 15px 30px rgba(138, 109, 59, 0.1);
 }
 
 .icon-container {
-  width: 50px;
-  height: 50px;
+  width: 56px;
+  height: 56px;
   border-radius: 50%;
-  background: linear-gradient(135deg, #f9f7f3, #f3efe7);
+  background: linear-gradient(135deg, #f3efe7, #e5d9c3);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 20px rgba(138, 109, 59, 0.15);
   color: #8a6d3b;
-  font-size: 22px;
+  font-size: 24px;
   flex-shrink: 0;
 }
 
-.contact-text {
-  flex: 1;
-}
-
 .contact-text h4 {
-  margin: 0 0 5px;
-  color: #665744;
-  font-size: 16px;
+  margin: 0 0 8px;
+  color: #8a6d3b;
+  font-size: 18px;
   font-weight: 600;
 }
 
 .contact-text p {
   margin: 0;
-  color: #888;
-  font-size: 15px;
+  color: #665744;
+  font-size: 16px;
+  line-height: 1.5;
 }
 
 .business-hours {
@@ -601,95 +605,56 @@ onMounted(() => {
 }
 
 .map-container {
-  height: 400px;
+  height: 450px;
   width: 100%;
-  border-radius: 8px;
+  border-radius: 12px;
   overflow: hidden;
   position: relative;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-
-.map-controls {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 15px;
-  background-color: #f9f7f3;
-  margin-top: 15px;
-  border-radius: 8px;
-}
-
-.map-controls label {
-  display: inline-flex;
-  align-items: center;
-  margin-right: 15px;
-  cursor: pointer;
-}
-
-.map-controls label span {
-  margin-left: 5px;
-  color: #665744;
-}
-
-.map-checkboxes {
-  display: flex;
+  box-shadow: 0 10px 25px rgba(138, 109, 59, 0.12);
+  margin-bottom: 30px;
 }
 
 .transportation-info {
-  margin-top: 30px;
-  padding: 25px;
-}
-
-.transportation-info h3 {
-  color: #8a6d3b;
-  margin-top: 0;
-  margin-bottom: 20px;
-  font-weight: 600;
-  font-size: 1.2em;
-  position: relative;
-  padding-bottom: 10px;
-}
-
-.transportation-info h3::after {
-  content: "";
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  width: 30px;
-  height: 2px;
-  background-color: #c1aa89;
+  margin-top: 20px;
+  padding: 30px;
+  background: linear-gradient(to right, #f9f7f3, #f3efe7);
+  border-radius: 12px;
 }
 
 .transport-options {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 20px;
+  gap: 25px;
+  margin-top: 25px;
 }
 
 .transport-option {
   display: flex;
   align-items: flex-start;
-  padding: 15px;
-  background-color: #f9f7f3;
-  border-radius: 8px;
+  padding: 20px;
+  background-color: rgba(255, 255, 255, 0.9);
+  border-radius: 12px;
   transition: all 0.3s ease;
+  border: 1px solid rgba(138, 109, 59, 0.1);
 }
 
 .transport-option:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.05);
+  transform: translateY(-5px);
+  box-shadow: 0 15px 30px rgba(138, 109, 59, 0.1);
+  border-color: rgba(138, 109, 59, 0.2);
 }
 
 .transport-icon {
-  width: 40px;
-  height: 40px;
-  border-radius: 8px;
-  margin-right: 15px;
-  background-size: 24px;
+  width: 48px;
+  height: 48px;
+  border-radius: 12px;
+  margin-right: 20px;
+  background-size: 28px;
   background-position: center;
   background-repeat: no-repeat;
   background-color: #f3efe7;
   flex-shrink: 0;
+  box-shadow: 0 5px 15px rgba(138, 109, 59, 0.08);
 }
 
 .transport-icon.car {
