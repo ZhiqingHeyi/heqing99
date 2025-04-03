@@ -7,6 +7,7 @@
           :ellipsis="false"
           class="nav-menu"
           router
+          :default-active="currentRoute"
         >
           <div class="logo-container">
             <img src="./assets/crane-logo.svg" alt="和庆酒店" class="logo" />
@@ -22,7 +23,7 @@
           <template v-if="isLoggedIn">
             <el-menu-item index="/user">个人中心</el-menu-item>
             <el-menu-item index="/user/membership">会员中心</el-menu-item>
-            <el-menu-item index="" @click="handleLogout">退出登录</el-menu-item>
+            <el-menu-item index="/logout" @click="handleLogout">退出登录</el-menu-item>
           </template>
           <template v-else>
             <el-menu-item index="" @click="goToLogin">登录</el-menu-item>
@@ -64,9 +65,15 @@
             <div class="footer-section">
               <h4>关注我们</h4>
               <div class="social-icons">
-                <a href="#" class="social-icon"><i class="el-icon-s-custom"></i></a>
-                <a href="#" class="social-icon"><i class="el-icon-s-promotion"></i></a>
-                <a href="#" class="social-icon"><i class="el-icon-s-opportunity"></i></a>
+                <a href="#" class="social-icon wechat">
+                  <img src="./assets/wechat.svg" alt="微信" />
+                </a>
+                <a href="#" class="social-icon weibo">
+                  <img src="./assets/weibo.svg" alt="微博" />
+                </a>
+                <a href="#" class="social-icon douyin">
+                  <img src="./assets/douyin.svg" alt="抖音" />
+                </a>
               </div>
             </div>
           </div>
@@ -90,6 +97,9 @@ import { ElMessageBox, ElMessage } from 'element-plus'
 const route = useRoute()
 const router = useRouter()
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
+
+// 获取当前路由路径作为激活菜单项
+const currentRoute = computed(() => route.path)
 
 // 检查用户是否登录
 const isLoggedIn = computed(() => {
@@ -386,14 +396,37 @@ body {
   height: 40px;
   background-color: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
-  color: #e0e0e0;
+  transition: all 0.3s ease;
+  padding: 8px;
+}
+
+.social-icon img {
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
   transition: all 0.3s ease;
 }
 
 .social-icon:hover {
-  background-color: var(--primary-color);
-  color: #ffffff;
+  background-color: #ffffff;
   transform: translateY(-3px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+}
+
+.social-icon.wechat:hover {
+  background-color: #07C160;
+}
+
+.social-icon.weibo:hover {
+  background-color: #E6162D;
+}
+
+.social-icon.douyin:hover {
+  background: linear-gradient(135deg, #000000 0%, #FF0050 100%);
+}
+
+.social-icon:hover img {
+  filter: brightness(0) invert(1);
 }
 
 .copyright {
@@ -422,18 +455,47 @@ body {
 .user-dropdown {
   margin-left: 15px;
   cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 5px 0;
 }
 
 .user-info {
   display: flex;
+  flex-direction: column;
   align-items: center;
 }
 
 .user-avatar {
-  margin-right: 8px;
-  background-color: #409EFF;
+  margin: 0 auto 8px;
+  width: 36px;
+  height: 36px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #c59d5f 0%, #e2c9a6 100%);
+  border: 2px solid rgba(255, 255, 255, 0.8);
+  box-shadow: 0 2px 10px rgba(197, 157, 95, 0.2);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: all 0.3s ease;
+  position: relative;
+  overflow: hidden;
 }
 
+.user-avatar::before {
+  content: '鹤';
+  color: rgba(255, 255, 255, 0.9);
+  font-size: 18px;
+  font-family: "SimSun", serif;
+  font-weight: 300;
+}
+
+.user-avatar:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(197, 157, 95, 0.3);
+  border-color: rgba(255, 255, 255, 0.9);
+}
 .user-name {
   font-size: 14px;
   color: #303133;

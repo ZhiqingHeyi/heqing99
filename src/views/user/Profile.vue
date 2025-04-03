@@ -664,17 +664,21 @@ onMounted(() => {
 }
 
 .user-avatar {
-  margin: 25px 0;
+  margin: 25px auto;
   position: relative;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .user-avatar::after {
   content: '';
   position: absolute;
-  top: -5px;
-  left: -5px;
-  right: -5px;
-  bottom: -5px;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  width: 110px;
+  height: 110px;
   border: 2px solid #c59d5f;
   border-radius: 50%;
   opacity: 0.3;
