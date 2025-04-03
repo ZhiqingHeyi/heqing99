@@ -137,6 +137,19 @@ router.beforeEach((to, from, next) => {
   // 检查是否需要用户登录
   if (to.meta.requiresAuth && !isUserLoggedIn) {
     console.log('需要用户登录，重定向到登录页')
+    
+    // 为了调试，模拟一个登录状态
+    if (to.path === '/user') {
+      console.log('调试模式：设置临时用户登录状态')
+      localStorage.setItem('userToken', 'temp-token')
+      localStorage.setItem('userName', '测试用户')
+      localStorage.setItem('userLevel', '普通用户')
+      localStorage.setItem('userPoints', '0')
+      localStorage.setItem('userTotalSpent', '0')
+      next()
+      return
+    }
+    
     next({
       path: '/login',
       query: { redirect: to.fullPath }

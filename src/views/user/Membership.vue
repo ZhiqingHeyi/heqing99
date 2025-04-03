@@ -5,7 +5,9 @@
     <div class="current-membership" :class="userLevelClass">
       <div class="membership-header">
         <div class="level-icon">
-          <i :class="levelIcon"></i>
+          <el-icon>
+            <component :is="levelIcon" />
+          </el-icon>
         </div>
         <div class="level-info">
           <h2>{{ userLevel }}</h2>
@@ -107,6 +109,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { User, Medal, Trophy, Star, StarFilled } from '@element-plus/icons-vue'
 
 // 用户信息
 const userLevel = ref('普通用户')
@@ -207,15 +210,15 @@ const progressFormat = (percentage) => {
 const levelIcon = computed(() => {
   switch (userLevel.value) {
     case '铜牌会员':
-      return 'el-icon-medal'
+      return Medal
     case '银牌会员':
-      return 'el-icon-trophy'
+      return Trophy
     case '金牌会员':
-      return 'el-icon-first-aid-kit'
+      return Star
     case '钻石会员':
-      return 'el-icon-star-on'
+      return StarFilled
     default:
-      return 'el-icon-user'
+      return User
   }
 })
 

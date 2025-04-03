@@ -20,21 +20,22 @@
           
           <!-- 用户登录状态 -->
           <template v-if="isLoggedIn">
-            <el-menu-item index="/user">个人中心</el-menu-item>
-            <el-menu-item index="/user/membership">会员中心</el-menu-item>
-            <el-menu-item index="/user/bookings">预订记录</el-menu-item>
-            <el-menu-item @click="handleLogout">退出登录</el-menu-item>
+            <el-menu-item index="" @click="goToUserProfile">个人中心</el-menu-item>
+            <el-menu-item index="" @click="goToMembership">会员中心</el-menu-item>
+            <el-menu-item index="" @click="goToBookings">预订记录</el-menu-item>
+            <el-menu-item index="" @click="handleLogout">退出登录</el-menu-item>
           </template>
           <template v-else>
-            <el-menu-item index="/login">登录</el-menu-item>
-            <el-menu-item index="/register">注册</el-menu-item>
+            <el-menu-item index="" @click="goToLogin">登录</el-menu-item>
+            <el-menu-item index="" @click="goToRegister">注册</el-menu-item>
           </template>
           
           <el-button type="primary" class="book-now-btn" @click="$router.push('/booking')">立即预订</el-button>
         </el-menu>
       </header>
       <main class="main-content">
-        <router-view></router-view>
+        <router-view v-if="!$route.meta.requiresAuth || isLoggedIn"></router-view>
+        <el-empty v-else description="请先登录后查看此页面" />
       </main>
       <footer class="app-footer">
         <div class="footer-content">
@@ -100,6 +101,31 @@ const isLoggedIn = computed(() => {
 const userName = computed(() => {
   return localStorage.getItem('userName') || '用户'
 })
+
+// 跳转到用户中心
+const goToUserProfile = () => {
+  router.push('/user')
+}
+
+// 跳转到会员中心
+const goToMembership = () => {
+  router.push('/user/membership')
+}
+
+// 跳转到预订记录
+const goToBookings = () => {
+  router.push('/user/bookings')
+}
+
+// 跳转到登录页面
+const goToLogin = () => {
+  router.push('/login')
+}
+
+// 跳转到注册页面
+const goToRegister = () => {
+  router.push('/register')
+}
 
 // 退出登录
 const handleLogout = async () => {

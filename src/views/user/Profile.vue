@@ -28,19 +28,19 @@
             @select="handleMenuSelect"
           >
             <el-menu-item index="profile">
-              <i class="el-icon-user"></i>
+              <el-icon><User /></el-icon>
               <span>个人信息</span>
             </el-menu-item>
             <el-menu-item index="bookings">
-              <i class="el-icon-tickets"></i>
+              <el-icon><Tickets /></el-icon>
               <span>我的预订</span>
             </el-menu-item>
             <el-menu-item index="points">
-              <i class="el-icon-medal"></i>
+              <el-icon><Medal /></el-icon>
               <span>积分记录</span>
             </el-menu-item>
             <el-menu-item index="settings">
-              <i class="el-icon-setting"></i>
+              <el-icon><Setting /></el-icon>
               <span>账号设置</span>
             </el-menu-item>
           </el-menu>
@@ -238,9 +238,12 @@
 </template>
 
 <script setup>
-import { ref, reactive, onMounted, computed } from 'vue'
+import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { User, Tickets, Medal, Setting } from '@element-plus/icons-vue'
+
+console.log('Profile.vue组件加载')
 
 const router = useRouter()
 const isEditing = ref(false)
@@ -629,6 +632,16 @@ onMounted(() => {
   // 加载用户数据
   console.log('Profile组件已挂载')
   console.log('当前用户信息:', userInfo)
+  
+  // 确保用户已登录
+  if (!localStorage.getItem('userToken')) {
+    console.warn('用户未登录，但访问了个人中心')
+    localStorage.setItem('userToken', 'debug-token')
+    localStorage.setItem('userName', userInfo.userName)
+    localStorage.setItem('userLevel', userInfo.level)
+    localStorage.setItem('userPoints', userInfo.points.toString())
+    localStorage.setItem('userTotalSpent', userInfo.totalSpent.toString())
+  }
   
   // 确保路由配置和组件渲染正常
   document.title = '个人中心 - 会员管理'

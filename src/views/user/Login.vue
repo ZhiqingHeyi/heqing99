@@ -93,42 +93,51 @@ const handleLogin = async () => {
   
   await loginFormRef.value.validate(async (valid) => {
     if (valid) {
-      loading.value = true
-      
       try {
+        loading.value = true
+        
         // 模拟API调用
         await new Promise(resolve => setTimeout(resolve, 1000))
         
-        // 保存登录信息
-        localStorage.setItem('userToken', 'sample-token')
+        // 保存登录状态到localStorage
+        localStorage.setItem('userToken', 'user-token-' + Date.now())
+        
+        // 保存用户信息
         localStorage.setItem('userName', loginForm.username)
         
-        // 设置用户会员等级和其他信息 (在实际应用中，这些信息应当从后端获取)
-        // 检查是否有临时数据（从注册页面来）
+        // 如果有临时用户数据，就使用它
         if (localStorage.getItem('tempUserLevel')) {
           localStorage.setItem('userLevel', localStorage.getItem('tempUserLevel'))
-          localStorage.setItem('userPoints', localStorage.getItem('tempUserPoints'))
-          localStorage.setItem('userTotalSpent', localStorage.getItem('tempUserTotalSpent'))
-          
-          // 清除临时数据
           localStorage.removeItem('tempUserLevel')
-          localStorage.removeItem('tempUserPoints')
-          localStorage.removeItem('tempUserTotalSpent')
         } else if (!localStorage.getItem('userLevel')) {
-          // 如果没有会员等级信息，设置为普通用户
           localStorage.setItem('userLevel', '普通用户')
+        }
+        
+        if (localStorage.getItem('tempUserPoints')) {
+          localStorage.setItem('userPoints', localStorage.getItem('tempUserPoints'))
+          localStorage.removeItem('tempUserPoints')
+        } else if (!localStorage.getItem('userPoints')) {
           localStorage.setItem('userPoints', '0')
+        }
+        
+        if (localStorage.getItem('tempUserTotalSpent')) {
+          localStorage.setItem('userTotalSpent', localStorage.getItem('tempUserTotalSpent'))
+          localStorage.removeItem('tempUserTotalSpent')
+        } else if (!localStorage.getItem('userTotalSpent')) {
           localStorage.setItem('userTotalSpent', '0')
         }
         
         ElMessage.success('登录成功')
         
-        // 如果有重定向，则跳转到重定向地址
-        const redirectPath = route.query.redirect || '/user'
-        router.push(redirectPath)
+        // 如果有重定向参数，跳转到指定页面
+        if (route.query.redirect) {
+          router.push(route.query.redirect)
+        } else {
+          router.push('/')
+        }
       } catch (error) {
         console.error('登录失败:', error)
-        ElMessage.error('用户名或密码错误')
+        ElMessage.error('登录失败，请检查用户名和密码')
       } finally {
         loading.value = false
       }
