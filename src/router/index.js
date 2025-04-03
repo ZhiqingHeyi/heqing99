@@ -124,6 +124,7 @@ const router = createRouter({
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
   console.log('路由守卫检查:', to.path)
+  console.log('路由守卫完整信息:', to)
   
   // 获取用户角色和登录状态
   const userRole = localStorage.getItem('userRole')

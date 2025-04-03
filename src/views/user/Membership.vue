@@ -272,12 +272,16 @@ const tableRowClassName = ({ row }) => {
 
 // 初始化
 onMounted(() => {
+  console.log('Membership组件已挂载')
   // 从localStorage获取用户信息
   if (localStorage.getItem('userLevel')) {
     userLevel.value = localStorage.getItem('userLevel')
     userTotalSpent.value = parseInt(localStorage.getItem('userTotalSpent') || '0')
     userPoints.value = parseInt(localStorage.getItem('userPoints') || '0')
   }
+  
+  // 确保路由配置和组件渲染正常
+  document.title = '会员中心 - 会员权益'
 })
 </script>
 

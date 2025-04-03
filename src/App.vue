@@ -20,33 +20,14 @@
           
           <!-- 用户登录状态 -->
           <template v-if="isLoggedIn">
-            <el-dropdown trigger="click" class="user-dropdown">
-              <span class="user-info">
-                <el-avatar size="small" class="user-avatar">
-                  {{ userName.charAt(0).toUpperCase() }}
-                </el-avatar>
-                <span class="user-name">{{ userName }}</span>
-                <i class="el-icon-arrow-down"></i>
-              </span>
-              <template #dropdown>
-                <el-dropdown-menu>
-                  <el-dropdown-item>
-                    <router-link to="/user" class="dropdown-link">个人中心</router-link>
-                  </el-dropdown-item>
-                  <el-dropdown-item>
-                    <router-link to="/user/membership" class="dropdown-link">会员中心</router-link>
-                  </el-dropdown-item>
-                  <el-dropdown-item>
-                    <router-link to="/user/bookings" class="dropdown-link">预订记录</router-link>
-                  </el-dropdown-item>
-                  <el-dropdown-item @click="handleLogout">退出登录</el-dropdown-item>
-                </el-dropdown-menu>
-              </template>
-            </el-dropdown>
+            <el-menu-item index="/user">个人中心</el-menu-item>
+            <el-menu-item index="/user/membership">会员中心</el-menu-item>
+            <el-menu-item index="/user/bookings">预订记录</el-menu-item>
+            <el-menu-item @click="handleLogout">退出登录</el-menu-item>
           </template>
           <template v-else>
-            <el-button type="text" class="login-btn" @click="$router.push('/login')">登录</el-button>
-            <el-button type="text" class="register-btn" @click="$router.push('/register')">注册</el-button>
+            <el-menu-item index="/login">登录</el-menu-item>
+            <el-menu-item index="/register">注册</el-menu-item>
           </template>
           
           <el-button type="primary" class="book-now-btn" @click="$router.push('/booking')">立即预订</el-button>

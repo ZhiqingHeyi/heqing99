@@ -627,6 +627,11 @@ const getMemberBenefits = () => {
 
 onMounted(() => {
   // 加载用户数据
+  console.log('Profile组件已挂载')
+  console.log('当前用户信息:', userInfo)
+  
+  // 确保路由配置和组件渲染正常
+  document.title = '个人中心 - 会员管理'
 })
 </script>
 
