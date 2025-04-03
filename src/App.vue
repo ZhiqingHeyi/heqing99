@@ -449,47 +449,36 @@ body {
 .social-icons {
   display: flex;
   gap: 15px;
+  margin-top: 15px;
 }
 
 .social-icon {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
+  display: block;
   width: 40px;
   height: 40px;
-  background-color: rgba(255, 255, 255, 0.1);
   border-radius: 50%;
+  background: rgba(255, 255, 255, 0.1);
+  display: flex;
+  align-items: center;
+  justify-content: center;
   transition: all 0.3s ease;
-  padding: 8px;
+  overflow: hidden;
 }
 
 .social-icon img {
-  width: 100%;
-  height: 100%;
-  object-fit: contain;
+  width: 24px;
+  height: 24px;
   transition: all 0.3s ease;
 }
 
 .social-icon:hover {
-  background-color: #ffffff;
-  transform: translateY(-3px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-}
-
-.social-icon.wechat:hover {
-  background-color: #07C160;
-}
-
-.social-icon.weibo:hover {
-  background-color: #E6162D;
-}
-
-.social-icon.douyin:hover {
-  background: linear-gradient(135deg, #000000 0%, #FF0050 100%);
+  transform: translateY(-5px);
+  background: rgba(255, 255, 255, 0.2);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
 }
 
 .social-icon:hover img {
-  filter: brightness(0) invert(1);
+  transform: scale(1.2);
 }
 
 .copyright {

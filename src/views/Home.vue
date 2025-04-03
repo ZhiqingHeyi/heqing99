@@ -111,7 +111,7 @@
       </div>
       
       <div class="package-slider">
-        <el-carousel :interval="5000" type="card" height="500px">
+        <el-carousel :interval="5000" type="card" height="550px">
           <el-carousel-item v-for="(pkg, index) in packages" :key="index">
             <div class="luxury-package-card" :class="{'featured': pkg.featured}">
               <div v-if="pkg.featured" class="package-ribbon">推荐</div>
@@ -193,7 +193,7 @@
         <p class="section-desc">聆听我们的宾客对鹤清酒店的真实评价</p>
       </div>
       
-      <el-carousel :interval="4000" type="card" height="400px" class="reviews-carousel">
+      <el-carousel :interval="4000" type="card" height="450px" class="reviews-carousel">
         <el-carousel-item v-for="(review, index) in reviews" :key="index">
           <div class="review-card">
             <div class="review-quote">"</div>
@@ -223,7 +223,7 @@
       </div>
       <div class="location-container">
         <el-row :gutter="40">
-          <el-col :span="12">
+          <el-col :xs="24" :sm="24" :md="12" :lg="10">
             <div class="location-info">
               <div class="location-address">
                 <i class="el-icon-location"></i>
@@ -236,7 +236,7 @@
               <el-button type="primary" class="direction-btn" @click="handleNavigation">获取导航</el-button>
             </div>
           </el-col>
-          <el-col :span="12">
+          <el-col :xs="24" :sm="24" :md="12" :lg="14">
             <div id="map-container" class="map-container"></div>
           </el-col>
         </el-row>
@@ -986,7 +986,7 @@ const handleImageError = (event, review) => {
 
 .review-card {
   background: #ffffff;
-  padding: 50px 40px;
+  padding: 40px 35px;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.05);
   height: 100%;
@@ -1083,7 +1083,7 @@ const handleImageError = (event, review) => {
 .location-section {
   margin: 120px auto;
   max-width: 1200px;
-  padding: 70px 20px;
+  padding: 50px 20px;
   position: relative;
 }
 
@@ -1110,7 +1110,7 @@ const handleImageError = (event, review) => {
 
 .location-section .el-row {
   align-items: stretch;
-  height: 400px;
+  min-height: 400px;
 }
 
 .location-info {
@@ -1125,6 +1125,7 @@ const handleImageError = (event, review) => {
   position: relative;
   z-index: 1;
   border: 1px solid rgba(197, 157, 95, 0.1);
+  margin-bottom: 20px;
 }
 
 .location-address {
@@ -1619,7 +1620,7 @@ const handleImageError = (event, review) => {
 
 .review-card {
   background: #ffffff;
-  padding: 50px 40px;
+  padding: 40px 35px;
   border-radius: 10px;
   box-shadow: 0 10px 30px rgba(0,0,0,0.05);
   height: 100%;
