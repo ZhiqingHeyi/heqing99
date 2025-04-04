@@ -7,159 +7,187 @@
       <p>鹤清酒店竭诚为您提供贴心服务，随时倾听您的需求与建议</p>
     </div>
     
-    <el-row :gutter="30" class="luxury-row">
-      <el-col :lg="12" :md="24">
-        <el-card class="contact-info-card luxury-card">
-          <template #header>
-            <div class="card-header">
-              <h2>联系方式</h2>
-            </div>
-          </template>
-          <div class="contact-details">
-            <div class="contact-item">
-              <div class="icon-container">
-                <i class="el-icon-location"></i>
-              </div>
-              <div class="contact-text">
-                <h4>酒店地址</h4>
-                <p>浙江省杭州市西湖区文三路XXX号</p>
-              </div>
-            </div>
-            
-            <div class="contact-item">
-              <div class="icon-container">
-                <i class="el-icon-phone"></i>
-              </div>
-              <div class="contact-text">
-                <h4>预订电话</h4>
-                <p>0571-XXXXXXXX</p>
-              </div>
-            </div>
-            
-            <div class="contact-item">
-              <div class="icon-container">
-                <i class="el-icon-message"></i>
-              </div>
-              <div class="contact-text">
-                <h4>电子邮箱</h4>
-                <p>contact@heqinghotel.com</p>
-              </div>
-            </div>
-            
-            <div class="business-hours">
-              <h3>营业时间</h3>
-              <div class="hours-grid">
-                <div class="hours-item">
-                  <span class="hours-label">前台服务</span>
-                  <span class="hours-value">24小时</span>
+    <div class="contact-container">
+      <el-row :gutter="40">
+        <!-- 左侧联系信息与表单 -->
+        <el-col :lg="12" :md="24">
+          <div class="info-form-container">
+            <el-card class="contact-info-card luxury-card">
+              <template #header>
+                <div class="card-header">
+                  <h2>联系方式</h2>
                 </div>
-                <div class="hours-item">
-                  <span class="hours-label">入住办理</span>
-                  <span class="hours-value">14:00-22:00</span>
+              </template>
+              <div class="contact-details">
+                <div class="contact-item">
+                  <div class="icon-container">
+                    <i class="el-icon-location"></i>
+                  </div>
+                  <div class="contact-text">
+                    <h4>酒店地址</h4>
+                    <p>浙江省杭州市西湖区文三路XXX号</p>
+                  </div>
                 </div>
-                <div class="hours-item">
-                  <span class="hours-label">退房时间</span>
-                  <span class="hours-value">12:00前</span>
+                
+                <div class="contact-item">
+                  <div class="icon-container">
+                    <i class="el-icon-phone"></i>
+                  </div>
+                  <div class="contact-text">
+                    <h4>预订电话</h4>
+                    <p>0571-XXXXXXXX</p>
+                  </div>
+                </div>
+                
+                <div class="contact-item">
+                  <div class="icon-container">
+                    <i class="el-icon-message"></i>
+                  </div>
+                  <div class="contact-text">
+                    <h4>电子邮箱</h4>
+                    <p>contact@heqinghotel.com</p>
+                  </div>
+                </div>
+                
+                <div class="business-hours">
+                  <h3>营业时间</h3>
+                  <div class="hours-grid">
+                    <div class="hours-item">
+                      <span class="hours-label">前台服务</span>
+                      <span class="hours-value">24小时</span>
+                    </div>
+                    <div class="hours-item">
+                      <span class="hours-label">入住办理</span>
+                      <span class="hours-value">14:00-22:00</span>
+                    </div>
+                    <div class="hours-item">
+                      <span class="hours-label">退房时间</span>
+                      <span class="hours-value">12:00前</span>
+                    </div>
+                  </div>
+                </div>
+                
+                <div class="social-media">
+                  <h3>关注我们</h3>
+                  <div class="social-icons">
+                    <a href="#" class="social-icon wechat">
+                      <img src="@/assets/wechat.svg" alt="微信" />
+                    </a>
+                    <a href="#" class="social-icon weibo">
+                      <img src="@/assets/weibo.svg" alt="微博" />
+                    </a>
+                    <a href="#" class="social-icon douyin">
+                      <img src="@/assets/douyin.svg" alt="抖音" />
+                    </a>
+                  </div>
                 </div>
               </div>
-            </div>
-            
-            <div class="social-media">
-              <h3>关注我们</h3>
-              <div class="social-icons">
-                <a href="#" class="social-icon wechat">
-                  <img src="@/assets/wechat.svg" alt="微信" />
-                </a>
-                <a href="#" class="social-icon weibo">
-                  <img src="@/assets/weibo.svg" alt="微博" />
-                </a>
-                <a href="#" class="social-icon douyin">
-                  <img src="@/assets/douyin.svg" alt="抖音" />
-                </a>
-              </div>
-            </div>
+            </el-card>
+
+            <el-card class="contact-form-card luxury-card">
+              <template #header>
+                <div class="card-header">
+                  <h2>在线咨询</h2>
+                </div>
+              </template>
+              <el-form :model="form" label-width="80px" class="luxury-form">
+                <el-form-item label="姓名">
+                  <el-input v-model="form.name" placeholder="请输入您的姓名" class="luxury-input"></el-input>
+                </el-form-item>
+                <el-form-item label="电话">
+                  <el-input v-model="form.phone" placeholder="请输入您的联系电话" class="luxury-input"></el-input>
+                </el-form-item>
+                <el-form-item label="邮箱">
+                  <el-input v-model="form.email" placeholder="请输入您的邮箱地址" class="luxury-input"></el-input>
+                </el-form-item>
+                <el-form-item label="留言">
+                  <el-input
+                    v-model="form.message"
+                    type="textarea"
+                    rows="4"
+                    placeholder="请输入您的留言内容"
+                    class="luxury-textarea"
+                  ></el-input>
+                </el-form-item>
+                <el-form-item class="form-actions">
+                  <el-button type="primary" @click="submitForm" class="luxury-button">提交留言</el-button>
+                </el-form-item>
+              </el-form>
+            </el-card>
           </div>
-        </el-card>
+        </el-col>
 
-        <el-card class="contact-form-card luxury-card">
-          <template #header>
-            <div class="card-header">
-              <h2>在线咨询</h2>
-            </div>
-          </template>
-          <el-form :model="form" label-width="80px" class="luxury-form">
-            <el-form-item label="姓名">
-              <el-input v-model="form.name" placeholder="请输入您的姓名" class="luxury-input"></el-input>
-            </el-form-item>
-            <el-form-item label="电话">
-              <el-input v-model="form.phone" placeholder="请输入您的联系电话" class="luxury-input"></el-input>
-            </el-form-item>
-            <el-form-item label="邮箱">
-              <el-input v-model="form.email" placeholder="请输入您的邮箱地址" class="luxury-input"></el-input>
-            </el-form-item>
-            <el-form-item label="留言">
-              <el-input
-                v-model="form.message"
-                type="textarea"
-                rows="4"
-                placeholder="请输入您的留言内容"
-                class="luxury-textarea"
-              ></el-input>
-            </el-form-item>
-            <el-form-item>
-              <el-button type="primary" @click="submitForm" class="luxury-button">提交留言</el-button>
-            </el-form-item>
-          </el-form>
-        </el-card>
-      </el-col>
-
-      <el-col :lg="12" :md="24">
-        <el-card class="map-card luxury-card">
-          <template #header>
-            <div class="card-header">
-              <h2>地理位置</h2>
-            </div>
-          </template>
-          <div id="map-container" class="map-container"></div>
-          
-
-          
-          <div class="transportation-info">
-            <h3>交通指南</h3>
-            <div class="transport-options">
-              <div class="transport-option">
-                <div class="transport-icon car"></div>
-                <div class="transport-details">
-                  <h4>自驾路线</h4>
-                  <p>导航至"鹤清酒店"，地下停车场24小时开放，住店客人可享受免费停车</p>
+        <!-- 右侧地图和交通信息 -->
+        <el-col :lg="12" :md="24">
+          <div class="map-info-container">
+            <el-card class="map-card luxury-card">
+              <template #header>
+                <div class="card-header">
+                  <h2>地理位置</h2>
+                </div>
+              </template>
+              <div id="map-container" class="map-container"></div>
+              
+              <div class="map-controls">
+                <div class="map-control-item">
+                  <span>地图类型:</span>
+                  <el-radio-group v-model="mapType" size="small" @change="setMapType">
+                    <el-radio-button label="standard">标准</el-radio-button>
+                    <el-radio-button label="satellite">卫星</el-radio-button>
+                  </el-radio-group>
+                </div>
+                <div class="map-control-item">
+                  <el-checkbox v-model="showRoads" @change="toggleMapLayers">显示道路</el-checkbox>
+                  <el-checkbox v-model="showBuildings" @change="toggleMapLayers">显示建筑</el-checkbox>
                 </div>
               </div>
-              <div class="transport-option">
-                <div class="transport-icon subway"></div>
-                <div class="transport-details">
-                  <h4>地铁路线</h4>
-                  <p>地铁2号线到达"西湖文化广场站"，从A出口出站步行约800米可达</p>
+              
+              <div class="transportation-info">
+                <h3>交通指南</h3>
+                <div class="transport-options">
+                  <div class="transport-option">
+                    <div class="transport-icon car">
+                      <i class="el-icon-car"></i>
+                    </div>
+                    <div class="transport-details">
+                      <h4>自驾路线</h4>
+                      <p>导航至"鹤清酒店"，地下停车场24小时开放，住店客人可享受免费停车</p>
+                    </div>
+                  </div>
+                  <div class="transport-option">
+                    <div class="transport-icon subway">
+                      <i class="el-icon-truck"></i>
+                    </div>
+                    <div class="transport-details">
+                      <h4>地铁路线</h4>
+                      <p>地铁2号线到达"西湖文化广场站"，从A出口出站步行约800米可达</p>
+                    </div>
+                  </div>
+                  <div class="transport-option">
+                    <div class="transport-icon airport">
+                      <i class="el-icon-airplane"></i>
+                    </div>
+                    <div class="transport-details">
+                      <h4>机场专线</h4>
+                      <p>金牌及以上会员可预约免费接机服务，请提前24小时联系酒店安排</p>
+                    </div>
+                  </div>
+                  <div class="transport-option">
+                    <div class="transport-icon taxi">
+                      <i class="el-icon-cherry"></i>
+                    </div>
+                    <div class="transport-details">
+                      <h4>出租车服务</h4>
+                      <p>酒店可代为预约出租车服务，提供24小时专业接送服务</p>
+                    </div>
+                  </div>
                 </div>
               </div>
-              <div class="transport-option">
-                <div class="transport-icon airport"></div>
-                <div class="transport-details">
-                  <h4>机场专线</h4>
-                  <p>金牌及以上会员可预约免费接机服务，请提前24小时联系酒店安排</p>
-                </div>
-              </div>
-              <div class="transport-option">
-                <div class="transport-icon taxi"></div>
-                <div class="transport-details">
-                  <h4>出租车服务</h4>
-                  <p>酒店可代为预约出租车服务，提供24小时专业接送服务</p>
-                </div>
-              </div>
-            </div>
+            </el-card>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
+        </el-col>
+      </el-row>
+    </div>
   </div>
 </template>
 
@@ -175,6 +203,7 @@ const form = ref({
   message: ''
 })
 
+const mapType = ref('standard')
 const showRoads = ref(true)
 const showBuildings = ref(true)
 let mapInstance = null
@@ -186,15 +215,23 @@ const submitForm = () => {
     type: 'success',
     customClass: 'luxury-message'
   })
+  
+  // 清空表单
+  form.value = {
+    name: '',
+    phone: '',
+    email: '',
+    message: ''
+  }
 }
 
 const setMapType = (type) => {
   if (!mapInstance) return
   
   if (type === 'standard') {
-    mapInstance.setLayers([mapInstance.getLayer('TileLayer')])
+    mapInstance.setLayers([new AMap.TileLayer()])
   } else if (type === 'satellite') {
-    mapInstance.setLayers([mapInstance.getLayer('TileLayer.Satellite')])
+    mapInstance.setLayers([new AMap.TileLayer.Satellite()])
   }
 }
 
@@ -220,10 +257,7 @@ onMounted(() => {
       viewMode: '3D',
       pitch: 45,
       defaultLayer: new AMap.TileLayer(),
-      layers: [
-        new AMap.TileLayer(),
-        new AMap.TileLayer.Satellite()
-      ],
+      layers: [new AMap.TileLayer()],
       features: ['bg', 'building', 'point', 'road']
     })
     
@@ -242,7 +276,6 @@ onMounted(() => {
     mapInstance.addControl(new AMap.Scale())
     mapInstance.addControl(new AMap.ToolBar())
     mapInstance.addControl(new AMap.ControlBar())
-    mapInstance.addControl(new AMap.MapType())
 
     // 添加信息窗体
     const infoWindow = new AMap.InfoWindow({
@@ -252,9 +285,9 @@ onMounted(() => {
           <p style="margin:5px 0;color:#666;">地址：江西省南昌市八一公园旁</p>
           <p style="margin:5px 0;color:#666;">电话：0791-12345678</p>
           <div style="margin-top:10px;border-top:1px solid #eee;padding-top:10px;">
-            <button style="background:#8a6d3b;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;">
+            <a href="https://uri.amap.com/navigation?to=115.892151,28.682892,鹤清酒店&mode=car" target="_blank" style="background:#c59d5f;color:white;border:none;padding:5px 10px;border-radius:3px;cursor:pointer;text-decoration:none;display:inline-block;">
               导航前往
-            </button>
+            </a>
           </div>
         </div>
       `,
@@ -274,8 +307,9 @@ onMounted(() => {
 <style scoped>
 .contact-page {
   position: relative;
-  padding: 60px 0;
+  padding: 80px 0;
   background-color: #f9f7f3;
+  min-height: calc(100vh - 70px);
 }
 
 .page-background {
@@ -299,105 +333,75 @@ onMounted(() => {
 }
 
 .contact-header h1 {
-  font-family: "Playfair Display", "Times New Roman", serif;
+  font-family: "SimSun", serif;
   font-size: 2.8em;
   color: #333;
   margin-bottom: 20px;
   font-weight: 600;
-  letter-spacing: 2px;
+  letter-spacing: 3px;
 }
 
 .header-divider {
   width: 100px;
   height: 3px;
-  background: linear-gradient(90deg, transparent, #ab8a62, transparent);
+  background: linear-gradient(90deg, transparent, #c59d5f, transparent);
   margin: 0 auto 20px;
 }
 
 .contact-header p {
   font-size: 1.2em;
   color: #666;
-  max-width: 600px;
+  max-width: 800px;
   margin: 0 auto;
   line-height: 1.6;
 }
 
-.luxury-row {
-  max-width: 1400px;
+.contact-container {
+  max-width: 1200px;
   margin: 0 auto;
+  padding: 0 20px;
   position: relative;
   z-index: 1;
-  padding: 0 20px;
-  display: flex;
-  flex-wrap: wrap;
-  justify-content: center;
-  align-items: stretch;
-  gap: 30px;
 }
 
-.luxury-row > .el-col {
-  flex: 1 1 calc(50% - 15px);
-  min-width: 0;
-  max-width: 700px;
+.info-form-container {
+  height: 100%;
   display: flex;
   flex-direction: column;
 }
 
-@media (max-width: 1200px) {
-  .luxury-row > .el-col {
-    flex: 1 1 100%;
-    max-width: 800px;
-    margin: 0 auto;
-  }
+.map-info-container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
-@media (max-width: 768px) {
-  .luxury-row {
-    padding: 0 15px;
-    gap: 20px;
-  }
-  
-  .luxury-row > .el-col {
-    max-width: 100%;
-  }
-}
 .luxury-card {
   margin-bottom: 30px;
-  border: none;
-  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.08);
-  border-radius: 12px;
+  border-radius: 10px;
   overflow: hidden;
+  box-shadow: 0 15px 35px rgba(0,0,0,0.05);
+  border: 1px solid rgba(197, 157, 95, 0.1);
+  background: #fff;
   transition: all 0.3s ease;
-  background-color: rgba(255, 255, 255, 0.95);
-  backdrop-filter: blur(10px);
 }
 
 .luxury-card:hover {
+  box-shadow: 0 20px 40px rgba(0,0,0,0.08);
   transform: translateY(-5px);
-  box-shadow: 0 20px 40px rgba(0, 0, 0, 0.12);
-}
-
-.luxury-card::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 4px;
-  background: linear-gradient(90deg, #d4af37, #e5c17f, #d4af37);
 }
 
 .card-header {
-  padding: 20px 25px;
-  background: linear-gradient(to right, #f3efe7, #f9f7f3);
-  border-bottom: 1px solid #f0e6d9;
+  background: linear-gradient(to right, rgba(250, 246, 237, 0.8), rgba(255, 255, 255, 0.9), rgba(250, 246, 237, 0.8));
+  border-bottom: 1px solid rgba(197, 157, 95, 0.2);
+  padding: 15px 20px;
 }
 
 .card-header h2 {
-  margin: 0;
-  font-family: "Playfair Display", "Times New Roman", serif;
+  font-family: "SimSun", serif;
   font-size: 1.8em;
-  color: #8a6d3b;
+  color: #333;
+  margin: 0;
   font-weight: 600;
   position: relative;
   display: inline-block;
@@ -406,11 +410,12 @@ onMounted(() => {
 .card-header h2::after {
   content: "";
   position: absolute;
-  bottom: -10px;
+  bottom: -5px;
   left: 0;
-  width: 40px;
+  right: 0;
   height: 2px;
-  background-color: #c1aa89;
+  background: linear-gradient(90deg, #c59d5f, transparent);
+  width: 60%;
 }
 
 .contact-details {
@@ -419,325 +424,345 @@ onMounted(() => {
 
 .contact-item {
   display: flex;
+  align-items: flex-start;
   margin-bottom: 30px;
-  transition: all 0.3s ease;
-  padding: 15px;
-  border-radius: 12px;
-  background-color: rgba(255, 255, 255, 0.6);
-  border: 1px solid rgba(138, 109, 59, 0.1);
-}
-
-.contact-item:hover {
-  transform: translateX(8px);
-  background-color: rgba(255, 255, 255, 0.9);
-  border-color: rgba(138, 109, 59, 0.2);
-  box-shadow: 0 15px 30px rgba(138, 109, 59, 0.1);
 }
 
 .icon-container {
-  width: 56px;
-  height: 56px;
+  width: 50px;
+  height: 50px;
+  background: linear-gradient(135deg, #f0e6d2, #fffcf5);
   border-radius: 50%;
-  background: linear-gradient(135deg, #f3efe7, #e5d9c3);
   display: flex;
   align-items: center;
   justify-content: center;
   margin-right: 20px;
-  box-shadow: 0 8px 20px rgba(138, 109, 59, 0.15);
-  color: #8a6d3b;
-  font-size: 24px;
+  box-shadow: 0 5px 15px rgba(197, 157, 95, 0.15);
+  border: 1px solid rgba(197, 157, 95, 0.1);
   flex-shrink: 0;
 }
 
+.icon-container i {
+  font-size: 24px;
+  color: #c59d5f;
+}
+
 .contact-text h4 {
-  margin: 0 0 8px;
-  color: #8a6d3b;
-  font-size: 18px;
+  margin: 0 0 10px;
+  font-size: 1.2em;
+  color: #333;
   font-weight: 600;
 }
 
 .contact-text p {
   margin: 0;
-  color: #665744;
-  font-size: 16px;
+  font-size: 1.1em;
+  color: #666;
   line-height: 1.5;
 }
 
 .business-hours {
-  margin-top: 40px;
-  padding: 25px;
-  background: linear-gradient(to right, #f9f7f3, #f3efe7);
-  border-radius: 10px;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.03);
+  margin: 40px 0;
+  border-top: 1px dashed rgba(197, 157, 95, 0.2);
+  padding-top: 30px;
 }
 
 .business-hours h3 {
-  color: #8a6d3b;
-  margin-top: 0;
-  margin-bottom: 15px;
+  font-size: 1.3em;
+  margin: 0 0 20px;
+  color: #333;
   font-weight: 600;
-  font-size: 1.2em;
   position: relative;
-  padding-bottom: 10px;
+  display: inline-block;
 }
 
 .business-hours h3::after {
   content: "";
   position: absolute;
-  bottom: 0;
+  bottom: -5px;
   left: 0;
-  width: 30px;
   height: 2px;
-  background-color: #c1aa89;
+  background: #c59d5f;
+  width: 40px;
 }
 
 .hours-grid {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 20px;
 }
 
 .hours-item {
-  display: flex;
-  flex-direction: column;
+  background: rgba(250, 246, 237, 0.5);
+  border: 1px solid rgba(197, 157, 95, 0.1);
+  border-radius: 8px;
+  padding: 15px;
+  text-align: center;
+  transition: all 0.3s ease;
+}
+
+.hours-item:hover {
+  background: rgba(250, 246, 237, 0.8);
+  box-shadow: 0 5px 15px rgba(0,0,0,0.05);
+  transform: translateY(-3px);
 }
 
 .hours-label {
-  color: #665744;
-  font-size: 14px;
-  margin-bottom: 5px;
+  display: block;
+  font-size: 0.9em;
+  color: #666;
+  margin-bottom: 8px;
 }
 
 .hours-value {
-  color: #8a6d3b;
+  display: block;
+  font-size: 1.2em;
+  color: #c59d5f;
   font-weight: 600;
-  font-size: 16px;
 }
 
 .social-media {
   margin-top: 40px;
+  border-top: 1px dashed rgba(197, 157, 95, 0.2);
+  padding-top: 30px;
 }
 
 .social-media h3 {
-  color: #8a6d3b;
-  margin-top: 0;
-  margin-bottom: 15px;
+  font-size: 1.3em;
+  margin: 0 0 20px;
+  color: #333;
   font-weight: 600;
-  font-size: 1.2em;
   position: relative;
-  padding-bottom: 10px;
+  display: inline-block;
 }
 
 .social-media h3::after {
   content: "";
   position: absolute;
-  bottom: 0;
+  bottom: -5px;
   left: 0;
-  width: 30px;
   height: 2px;
-  background-color: #c1aa89;
+  background: #c59d5f;
+  width: 40px;
 }
 
 .social-icons {
   display: flex;
-  gap: 15px;
+  gap: 20px;
 }
 
 .social-icon {
-  width: 44px;
-  height: 44px;
+  width: 50px;
+  height: 50px;
   border-radius: 50%;
-  background-color: #f3efe7;
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: all 0.3s ease;
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
-}
-
-.social-icon img {
-  width: 24px;
-  height: 24px;
-  filter: opacity(0.6);
+  background: linear-gradient(135deg, #f0e6d2, #fffcf5);
+  box-shadow: 0 5px 15px rgba(197, 157, 95, 0.15);
+  border: 1px solid rgba(197, 157, 95, 0.1);
   transition: all 0.3s ease;
 }
 
 .social-icon:hover {
-  transform: translateY(-3px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transform: translateY(-5px) rotate(360deg);
+  box-shadow: 0 10px 20px rgba(197, 157, 95, 0.2);
 }
 
-.social-icon:hover img {
-  filter: opacity(1);
+.social-icon img {
+  width: 26px;
+  height: 26px;
+  object-fit: contain;
 }
 
 .luxury-form {
-  padding: 20px;
+  padding: 30px;
 }
 
-.luxury-input :deep(.el-input__inner),
-.luxury-textarea :deep(.el-textarea__inner) {
-  border-color: #dccfb8;
-  background-color: rgba(255, 255, 255, 0.8);
-  transition: all 0.3s ease;
+.luxury-input,
+.luxury-textarea {
+  border-radius: 8px;
+  border: 1px solid rgba(197, 157, 95, 0.2);
   padding: 12px 15px;
+  transition: all 0.3s ease;
 }
 
-.luxury-input :deep(.el-input__inner:focus),
-.luxury-textarea :deep(.el-textarea__inner:focus) {
-  border-color: #8a6d3b;
-  box-shadow: 0 0 0 2px rgba(138, 109, 59, 0.2);
+.luxury-input:focus,
+.luxury-textarea:focus {
+  border-color: #c59d5f;
+  box-shadow: 0 0 10px rgba(197, 157, 95, 0.2);
+}
+
+.form-actions {
+  margin-top: 20px;
+  text-align: right;
+  margin-bottom: 0;
 }
 
 .luxury-button {
-  background: linear-gradient(135deg, #ab8a62, #8a6d3b) !important;
-  border-color: #8a6d3b !important;
-  padding: 12px 30px !important;
-  font-size: 16px !important;
+  background: linear-gradient(135deg, #c59d5f, #ddbf85);
+  border-color: transparent;
+  padding: 12px 30px;
+  font-size: 16px;
+  letter-spacing: 1px;
+  box-shadow: 0 5px 15px rgba(197, 157, 95, 0.2);
   transition: all 0.3s ease;
-  position: relative;
-  overflow: hidden;
-}
-
-.luxury-button::before {
-  content: '';
-  position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: rgba(255, 255, 255, 0.1);
-  transform: rotate(45deg);
-  opacity: 0;
-  transition: opacity 0.4s;
 }
 
 .luxury-button:hover {
+  background: linear-gradient(135deg, #b58d40, #c59d5f);
   transform: translateY(-3px);
-  box-shadow: 0 7px 14px rgba(138, 109, 59, 0.4);
+  box-shadow: 0 10px 20px rgba(197, 157, 95, 0.3);
 }
 
-.luxury-button:hover::before {
-  opacity: 1;
-  animation: shine 1.5s forwards;
-}
-
-@keyframes shine {
-  0% {
-    left: -50%;
-    opacity: 0;
-  }
-  30% {
-    opacity: 0.5;
-  }
-  100% {
-    left: 150%;
-    opacity: 0;
-  }
+.map-card {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
 }
 
 .map-container {
-  height: 450px;
   width: 100%;
-  border-radius: 12px;
+  height: 400px;
+  border-radius: 8px;
   overflow: hidden;
-  position: relative;
-  box-shadow: 0 10px 25px rgba(138, 109, 59, 0.12);
-  margin-bottom: 30px;
+  margin-bottom: 20px;
+  box-shadow: 0 5px 15px rgba(0,0,0,0.08);
+}
+
+.map-controls {
+  margin-bottom: 20px;
+  padding: 0 30px;
+  display: flex;
+  justify-content: space-between;
+  flex-wrap: wrap;
+}
+
+.map-control-item {
+  margin-bottom: 15px;
+  display: flex;
+  align-items: center;
+}
+
+.map-control-item span {
+  margin-right: 10px;
+  color: #666;
 }
 
 .transportation-info {
-  margin-top: 20px;
-  padding: 30px;
-  background: linear-gradient(to right, #f9f7f3, #f3efe7);
-  border-radius: 12px;
+  padding: 0 30px 30px;
+}
+
+.transportation-info h3 {
+  font-size: 1.3em;
+  margin: 0 0 20px;
+  color: #333;
+  font-weight: 600;
+  position: relative;
+  display: inline-block;
+}
+
+.transportation-info h3::after {
+  content: "";
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  height: 2px;
+  background: #c59d5f;
+  width: 40px;
 }
 
 .transport-options {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 25px;
-  margin-top: 25px;
+  grid-template-columns: repeat(auto-fill, minmax(220px, 1fr));
+  gap: 20px;
 }
 
 .transport-option {
+  background: rgba(250, 246, 237, 0.5);
+  border: 1px solid rgba(197, 157, 95, 0.1);
+  border-radius: 8px;
+  padding: 20px;
   display: flex;
   align-items: flex-start;
-  padding: 20px;
-  background-color: rgba(255, 255, 255, 0.9);
-  border-radius: 12px;
   transition: all 0.3s ease;
-  border: 1px solid rgba(138, 109, 59, 0.1);
 }
 
 .transport-option:hover {
+  background: rgba(250, 246, 237, 0.8);
+  box-shadow: 0 10px 20px rgba(0,0,0,0.05);
   transform: translateY(-5px);
-  box-shadow: 0 15px 30px rgba(138, 109, 59, 0.1);
-  border-color: rgba(138, 109, 59, 0.2);
 }
 
 .transport-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 12px;
-  margin-right: 20px;
-  background-size: 28px;
-  background-position: center;
-  background-repeat: no-repeat;
-  background-color: #f3efe7;
+  width: 40px;
+  height: 40px;
+  background: linear-gradient(135deg, #f0e6d2, #fffcf5);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 15px;
+  box-shadow: 0 5px 15px rgba(197, 157, 95, 0.15);
+  border: 1px solid rgba(197, 157, 95, 0.1);
   flex-shrink: 0;
-  box-shadow: 0 5px 15px rgba(138, 109, 59, 0.08);
 }
 
-.transport-icon.car {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238a6d3b"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.5 16c-.83 0-1.5-.67-1.5-1.5S5.67 13 6.5 13s1.5.67 1.5 1.5S7.33 16 6.5 16zm11 0c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zM5 11l1.5-4.5h11L19 11H5z"/></svg>');
-}
-
-.transport-icon.subway {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238a6d3b"><path d="M12 2c-4.42 0-8 .5-8 4v9.5C4 17.43 5.57 19 7.5 19L6 20.5v.5h12v-.5L16.5 19c1.93 0 3.5-1.57 3.5-3.5V6c0-3.5-3.58-4-8-4zM7.5 17c-.83 0-1.5-.67-1.5-1.5S6.67 14 7.5 14s1.5.67 1.5 1.5S8.33 17 7.5 17zm3.5-6H6V6h5v5zm5.5 6c-.83 0-1.5-.67-1.5-1.5s.67-1.5 1.5-1.5 1.5.67 1.5 1.5-.67 1.5-1.5 1.5zm1.5-6h-5V6h5v5z"/></svg>');
-}
-
-.transport-icon.airport {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238a6d3b"><path d="M21.5 16v-2l-8-5V3.5c0-.83-.67-1.5-1.5-1.5s-1.5.67-1.5 1.5V9l-8 5v2l8-2.5V19l-2 1.5V22l3.5-1 3.5 1v-1.5L14 19v-5.5l7.5 2.5z"/></svg>');
-}
-
-.transport-icon.taxi {
-  background-image: url('data:image/svg+xml;utf8,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="%238a6d3b"><path d="M18.92 6.01C18.72 5.42 18.16 5 17.5 5h-11c-.66 0-1.21.42-1.42 1.01L3 12v8c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-1h12v1c0 .55.45 1 1 1h1c.55 0 1-.45 1-1v-8l-2.08-5.99zM6.85 7h10.29l1.04 3H5.81l1.04-3zM19 17H5v-5h14v5z"/></svg>');
-}
-
-.transport-details {
-  flex: 1;
+.transport-icon i {
+  font-size: 20px;
+  color: #c59d5f;
 }
 
 .transport-details h4 {
-  margin: 0 0 8px;
-  color: #665744;
-  font-size: 16px;
+  margin: 0 0 10px;
+  font-size: 1.1em;
+  color: #333;
   font-weight: 600;
 }
 
 .transport-details p {
   margin: 0;
-  color: #888;
-  font-size: 14px;
+  font-size: 0.9em;
+  color: #666;
   line-height: 1.5;
 }
 
-@media (max-width: 768px) {
+.luxury-message {
+  background: linear-gradient(135deg, #f0e6d2, #fffcf5);
+  border: 1px solid rgba(197, 157, 95, 0.2);
+  padding: 15px 20px;
+  border-radius: 8px;
+  box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+}
+
+@media (max-width: 992px) {
   .contact-page {
-    padding: 40px 15px;
+    padding: 60px 0;
+  }
+  
+  .contact-header {
+    margin-bottom: 40px;
   }
   
   .contact-header h1 {
-    font-size: 2em;
+    font-size: 2.2em;
   }
   
-  .hours-grid {
+  .luxury-card {
+    margin-bottom: 20px;
+  }
+  
+  .transport-options {
     grid-template-columns: 1fr;
   }
   
-  .map-container {
-    height: 300px;
+  .map-controls {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+  
+  .map-control-item {
+    margin-bottom: 10px;
   }
 }
 </style>
