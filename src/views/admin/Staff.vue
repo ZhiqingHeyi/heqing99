@@ -2,7 +2,10 @@
   <div class="staff-container">
     <div class="page-header">
       <h2>员工管理</h2>
-      <el-button type="primary" @click="handleAdd">添加员工</el-button>
+      <div class="header-actions">
+        <el-button type="success" @click="showInviteCodeDialog">邀请码管理</el-button>
+        <el-button type="primary" @click="handleAdd">添加员工</el-button>
+      </div>
     </div>
 
     <!-- 搜索栏 -->
@@ -167,11 +170,119 @@
         </span>
       </template>
     </el-dialog>
+
+    <!-- 邀请码管理对话框 -->
+    <el-dialog
+      title="邀请码管理"
+      v-model="inviteCodeVisible"
+      width="700px"
+    >
+      <div class="invite-code-container">
+        <div class="invite-code-header">
+          <el-button type="primary" @click="generateInviteCode">生成新邀请码</el-button>
+          <el-select v-model="inviteCodeFilter" placeholder="筛选邀请码状态" style="width: 150px;">
+            <el-option label="全部" value="all" />
+            <el-option label="有效" value="active" />
+            <el-option label="已使用" value="used" />
+            <el-option label="已过期" value="expired" />
+          </el-select>
+        </div>
+        
+        <el-table :data="filteredInviteCodes" style="width: 100%" border v-loading="inviteCodeLoading">
+          <el-table-column prop="code" label="邀请码" width="150" />
+          <el-table-column prop="role" label="角色权限">
+            <template #default="{ row }">
+              <el-tag :type="row.role === 'receptionist' ? 'primary' : 'success'">
+                {{ row.role === 'receptionist' ? '前台' : '保洁' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column prop="createdAt" label="创建时间" />
+          <el-table-column prop="expireAt" label="过期时间" />
+          <el-table-column prop="usedBy" label="使用人" />
+          <el-table-column prop="status" label="状态">
+            <template #default="{ row }">
+              <el-tag :type="row.status === 'active' ? 'success' : row.status === 'used' ? 'info' : 'danger'">
+                {{ row.status === 'active' ? '有效' : row.status === 'used' ? '已使用' : '已过期' }}
+              </el-tag>
+            </template>
+          </el-table-column>
+          <el-table-column label="操作" width="150">
+            <template #default="{ row }">
+              <el-button 
+                type="primary" 
+                link 
+                :disabled="row.status !== 'active'"
+                @click="copyInviteCode(row.code)"
+              >
+                复制
+              </el-button>
+              <el-button 
+                type="danger" 
+                link 
+                :disabled="row.status !== 'active'"
+                @click="invalidateInviteCode(row)"
+              >
+                作废
+              </el-button>
+            </template>
+          </el-table-column>
+        </el-table>
+      </div>
+      
+      <!-- 生成邀请码对话框 -->
+      <el-dialog
+        v-model="generateCodeVisible"
+        title="生成邀请码"
+        width="400px"
+        append-to-body
+      >
+        <el-form :model="inviteCodeForm" label-width="100px">
+          <el-form-item label="角色权限" required>
+            <el-select v-model="inviteCodeForm.role" placeholder="请选择角色权限" style="width: 100%">
+              <el-option label="前台" value="receptionist" />
+              <el-option label="保洁" value="cleaner" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="有效期" required>
+            <el-select v-model="inviteCodeForm.expireDays" placeholder="请选择有效期" style="width: 100%">
+              <el-option label="1天" :value="1" />
+              <el-option label="3天" :value="3" />
+              <el-option label="7天" :value="7" />
+              <el-option label="30天" :value="30" />
+            </el-select>
+          </el-form-item>
+          <el-form-item label="生成数量" required>
+            <el-input-number v-model="inviteCodeForm.count" :min="1" :max="10" />
+          </el-form-item>
+        </el-form>
+        <template #footer>
+          <span class="dialog-footer">
+            <el-button @click="generateCodeVisible = false">取消</el-button>
+            <el-button type="primary" @click="confirmGenerateCode">确定</el-button>
+          </span>
+        </template>
+      </el-dialog>
+      
+      <!-- 邀请注册说明 -->
+      <div class="invite-instruction">
+        <h3>邀请员工注册流程</h3>
+        <ol>
+          <li>生成邀请码并设置相应的角色权限和有效期</li>
+          <li>将邀请码发送给待注册员工</li>
+          <li>员工在注册页面输入邀请码完成注册</li>
+          <li>注册成功后，系统自动分配相应的角色权限</li>
+        </ol>
+        <div class="register-link">
+          <p>员工注册链接：<el-link type="primary" href="/register" target="_blank">{{ window.location.origin }}/register</el-link></p>
+        </div>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 
 // 搜索表单
@@ -244,6 +355,59 @@ const scheduleVisible = ref(false)
 const currentDate = ref(new Date())
 const scheduleData = reactive({})
 const currentStaffId = ref(null)
+
+// 邀请码管理
+const inviteCodeVisible = ref(false)
+const generateCodeVisible = ref(false)
+const inviteCodeLoading = ref(false)
+const inviteCodeFilter = ref('all')
+
+// 邀请码表单
+const inviteCodeForm = reactive({
+  role: 'receptionist',
+  expireDays: 7,
+  count: 1
+})
+
+// 邀请码列表数据
+const inviteCodeList = ref([
+  {
+    id: 1,
+    code: 'HQ2404A1BCD3',
+    role: 'receptionist',
+    createdAt: '2024-04-01 10:00:00',
+    expireAt: '2024-04-08 10:00:00',
+    usedBy: '',
+    status: 'active'
+  },
+  {
+    id: 2,
+    code: 'HQ2403E4FGH5',
+    role: 'cleaner',
+    createdAt: '2024-03-25 14:30:00',
+    expireAt: '2024-04-01 14:30:00',
+    usedBy: '',
+    status: 'expired'
+  },
+  {
+    id: 3,
+    code: 'HQ2403I6JKL7',
+    role: 'receptionist',
+    createdAt: '2024-03-28 09:15:00',
+    expireAt: '2024-04-04 09:15:00',
+    usedBy: '王小明',
+    status: 'used'
+  }
+])
+
+// 根据筛选条件过滤邀请码列表
+const filteredInviteCodes = computed(() => {
+  if (inviteCodeFilter.value === 'all') {
+    return inviteCodeList.value
+  } else {
+    return inviteCodeList.value.filter(code => code.status === inviteCodeFilter.value)
+  }
+})
 
 // 搜索
 const handleSearch = () => {
@@ -365,6 +529,80 @@ const handleToggleStatus = async (row) => {
   }
 }
 
+// 显示邀请码管理对话框
+const showInviteCodeDialog = () => {
+  inviteCodeVisible.value = true
+}
+
+// 显示生成邀请码对话框
+const generateInviteCode = () => {
+  generateCodeVisible.value = true
+}
+
+// 确认生成邀请码
+const confirmGenerateCode = () => {
+  inviteCodeLoading.value = true
+  
+  // 模拟生成邀请码
+  setTimeout(() => {
+    const now = new Date()
+    const expireDate = new Date(now.getTime() + inviteCodeForm.expireDays * 24 * 60 * 60 * 1000)
+    
+    for (let i = 0; i < inviteCodeForm.count; i++) {
+      // 随机生成邀请码
+      const randomCode = 'HQ' + 
+        now.getFullYear().toString().slice(2) + 
+        (now.getMonth() + 1).toString().padStart(2, '0') + 
+        [...Array(6)].map(() => String.fromCharCode(65 + Math.floor(Math.random() * 26))).join('') + 
+        Math.floor(Math.random() * 10);
+      
+      inviteCodeList.value.unshift({
+        id: inviteCodeList.value.length + 1,
+        code: randomCode,
+        role: inviteCodeForm.role,
+        createdAt: now.toLocaleString(),
+        expireAt: expireDate.toLocaleString(),
+        usedBy: '',
+        status: 'active'
+      })
+    }
+    
+    inviteCodeLoading.value = false
+    generateCodeVisible.value = false
+    ElMessage.success(`成功生成${inviteCodeForm.count}个邀请码`)
+  }, 1000)
+}
+
+// 复制邀请码
+const copyInviteCode = (code) => {
+  navigator.clipboard.writeText(code).then(() => {
+    ElMessage.success('邀请码已复制到剪贴板')
+  }).catch(() => {
+    ElMessage.error('复制失败，请手动复制')
+  })
+}
+
+// 作废邀请码
+const invalidateInviteCode = (row) => {
+  ElMessageBox.confirm(
+    '确定要作废该邀请码吗？作废后无法恢复。',
+    '警告',
+    {
+      confirmButtonText: '确定',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    const index = inviteCodeList.value.findIndex(item => item.id === row.id)
+    if (index !== -1) {
+      inviteCodeList.value[index].status = 'expired'
+      ElMessage.success('邀请码已作废')
+    }
+  }).catch(() => {
+    // 取消操作
+  })
+}
+
 // 初始化
 fetchStaffList()
 </script>
@@ -381,6 +619,11 @@ fetchStaffList()
   margin-bottom: 20px;
 }
 
+.header-actions {
+  display: flex;
+  gap: 10px;
+}
+
 .search-card {
   margin-bottom: 20px;
 }
@@ -391,6 +634,10 @@ fetchStaffList()
   gap: 10px;
 }
 
+.list-card {
+  margin-bottom: 20px;
+}
+
 .pagination-container {
   margin-top: 20px;
   display: flex;
@@ -398,10 +645,48 @@ fetchStaffList()
 }
 
 .calendar-cell {
-  height: 100%;
+  height: 80px;
+  padding: 5px;
   display: flex;
   flex-direction: column;
   justify-content: space-between;
-  padding: 4px;
+}
+
+.invite-code-container {
+  margin-bottom: 20px;
+}
+
+.invite-code-header {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 15px;
+}
+
+.invite-instruction {
+  background-color: #f2f6fc;
+  padding: 15px;
+  border-radius: 4px;
+  margin-top: 20px;
+}
+
+.invite-instruction h3 {
+  margin-top: 0;
+  margin-bottom: 10px;
+  font-weight: 500;
+}
+
+.invite-instruction ol {
+  padding-left: 20px;
+  margin: 10px 0;
+}
+
+.invite-instruction li {
+  margin-bottom: 5px;
+}
+
+.register-link {
+  margin-top: 10px;
+  padding-top: 10px;
+  border-top: 1px dashed #dcdfe6;
 }
 </style>
