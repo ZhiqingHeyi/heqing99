@@ -114,8 +114,12 @@ const currentPage = computed(() => {
 })
 
 const handleLogout = () => {
-  // TODO: 实现登出逻辑
-  router.push('/admin/login')
+  // 清除登录状态
+  localStorage.removeItem('userRole')
+  localStorage.removeItem('username')
+  localStorage.removeItem('token') // 如果使用token认证
+  // 重定向到登录页面，并带上logout=true查询参数
+  router.push('/admin/login?logout=true')
 }
 </script>
 

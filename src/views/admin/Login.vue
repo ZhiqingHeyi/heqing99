@@ -57,14 +57,45 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { useRouter } from 'vue-router'
+import { ref, reactive, onMounted } from 'vue'
+import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 
 const router = useRouter()
+const route = useRoute()
 const loginFormRef = ref(null)
 const loading = ref(false)
+
+// 当组件挂载时检查登录状态
+onMounted(() => {
+  // 检查URL参数，如果有logout参数，则清除所有登录状态
+  if (route.query.logout === 'true') {
+    clearLoginState()
+    ElMessage.success('您已成功退出登录')
+  }
+  
+  // 如果从其他页面被重定向到登录页，可能是因为登录状态过期
+  if (route.query.redirect) {
+    const token = localStorage.getItem('token')
+    const userRole = localStorage.getItem('userRole')
+    
+    // 如果本地存储仍有登录信息，但被重定向到登录页，说明会话可能已过期
+    if (token || userRole) {
+      clearLoginState()
+      ElMessage.warning('您的登录状态已过期，请重新登录')
+    }
+  }
+})
+
+// 清除登录状态的函数
+const clearLoginState = () => {
+  localStorage.removeItem('token')
+  localStorage.removeItem('userRole')
+  localStorage.removeItem('username')
+  localStorage.removeItem('userId')
+  localStorage.removeItem('name')
+}
 
 const loginForm = reactive({
   username: '',

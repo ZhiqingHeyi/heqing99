@@ -130,15 +130,15 @@ const router = createRouter({
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
   console.log('路由守卫检查:', to.path)
-  console.log('路由守卫完整信息:', to)
   
   // 获取用户角色和登录状态
   const userRole = localStorage.getItem('userRole')
-  const isLoggedIn = userRole !== null
+  const token = localStorage.getItem('token')
+  const isLoggedIn = userRole !== null && token !== null
   const userToken = localStorage.getItem('userToken')
   const isUserLoggedIn = userToken !== null
   
-  console.log('当前用户角色:', userRole, '管理员登录状态:', isLoggedIn, '用户登录状态:', isUserLoggedIn)
+  console.log('当前用户角色:', userRole, '管理员登录状态:', isLoggedIn, '后台Token:', token, '用户登录状态:', isUserLoggedIn)
 
   // 检查是否需要用户登录
   if (to.meta.requiresAuth && !isUserLoggedIn) {
@@ -188,7 +188,7 @@ router.beforeEach((to, from, next) => {
   }
 
   // 如果访问后台页面
-  if (to.path.startsWith('/admin')) {
+  if (to.path.startsWith('/admin') && to.path !== '/admin/login') {
     if (!isLoggedIn) {
       // 未登录用户重定向到登录页
       console.log('未登录，重定向到登录页')
