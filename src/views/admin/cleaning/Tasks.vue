@@ -6,136 +6,122 @@
       <div class="current-time">{{ currentTime }}</div>
     </div>
 
-    <!-- 任务统计卡片 - 水平滚动 -->
-    <div class="stat-cards-wrapper">
-      <div class="stat-cards">
-        <div 
-          v-for="stat in taskStats" 
-          :key="stat.type" 
-          @click="handleFilterByType(stat.type)" 
-          class="stat-card" 
-          :class="{ active: isActiveFilter(stat.type), [stat.type]: true }"
-        >
-          <div class="stat-icon">
-            <el-icon><component :is="stat.icon" /></el-icon>
-          </div>
-          <div class="stat-info">
-            <div class="stat-count">{{ stat.count }}</div>
-            <div class="stat-title">{{ stat.title }}</div>
-          </div>
+    <!-- 任务统计卡片 - 大图标风格 -->
+    <div class="stat-cards-grid">
+      <div 
+        v-for="stat in taskStats" 
+        :key="stat.type" 
+        @click="handleFilterByType(stat.type)" 
+        class="stat-card" 
+        :class="{ active: isActiveFilter(stat.type), [stat.type]: true }"
+      >
+        <div class="stat-icon">
+          <el-icon><component :is="stat.icon" /></el-icon>
+        </div>
+        <div class="stat-info">
+          <div class="stat-count">{{ stat.count }}</div>
+          <div class="stat-title">{{ stat.title }}</div>
         </div>
       </div>
     </div>
 
-    <!-- 任务列表 -->
-    <div class="task-list-section">
-      <div class="section-header">
-        <h3>{{ taskFilterTitle }}</h3>
-        <div class="filter-toggle">
-          <el-radio-group v-model="taskFilter" size="large" @change="updateTaskFilterTitle">
-            <el-radio-button label="pending">待处理</el-radio-button>
-            <el-radio-button label="processing">进行中</el-radio-button>
-            <el-radio-button label="completed">已完成</el-radio-button>
-          </el-radio-group>
-        </div>
-      </div>
+    <!-- 简化过滤选项 - 更大的按钮 -->
+    <div class="filter-buttons">
+      <el-button 
+        size="large" 
+        :type="taskFilter === 'pending' ? 'primary' : 'default'"
+        @click="taskFilter = 'pending'; updateTaskFilterTitle()"
+        class="filter-button"
+      >
+        待处理
+      </el-button>
+      <el-button 
+        size="large" 
+        :type="taskFilter === 'processing' ? 'primary' : 'default'"
+        @click="taskFilter = 'processing'; updateTaskFilterTitle()"
+        class="filter-button"
+      >
+        进行中
+      </el-button>
+      <el-button 
+        size="large" 
+        :type="taskFilter === 'completed' ? 'primary' : 'default'"
+        @click="taskFilter = 'completed'; updateTaskFilterTitle()"
+        class="filter-button"
+      >
+        已完成
+      </el-button>
+    </div>
 
-      <!-- 移动版任务卡片列表 -->
-      <div class="task-cards" v-loading="loading">
-        <div 
-          v-for="task in filteredTasks" 
-          :key="task.roomNumber" 
-          class="task-card"
-          :class="{ 
-            'high-priority': task.priority === 'high',
-            'medium-priority': task.priority === 'medium',
-            'low-priority': task.priority === 'low',
-            'status-pending': task.status === 'pending',
-            'status-processing': task.status === 'processing',
-            'status-completed': task.status === 'completed'
-          }"
-        >
-          <div class="task-header">
-            <div class="room-info">
-              <span class="room-number">{{ task.roomNumber }}</span>
-              <span class="room-type">{{ task.roomType }}</span>
-            </div>
-            <div class="task-status-tag" :class="task.status">
-              {{ getStatusLabel(task.status) }}
-            </div>
-          </div>
-          
-          <div class="task-body">
-            <div class="task-detail">
-              <div class="detail-item">
-                <div class="item-label">优先级：</div>
-                <div class="item-value priority" :class="`priority-${task.priority}`">
-                  {{ getPriorityLabel(task.priority) }}
-                </div>
-              </div>
-              
-              <div class="detail-item">
-                <div class="item-label">预计完成：</div>
-                <div class="item-value">{{ task.expectedTime }}</div>
-              </div>
-              
-              <div class="detail-item">
-                <div class="item-label">保洁员：</div>
-                <div class="item-value">{{ task.cleaner }}</div>
-              </div>
-              
-              <div class="detail-item notes">
-                <div class="item-label">备注：</div>
-                <div class="item-value">{{ task.notes }}</div>
-              </div>
-            </div>
-            
-            <div class="task-actions">
-              <!-- 待处理任务 -->
-              <el-button 
-                v-if="task.status === 'pending'"
-                type="primary" 
-                size="large" 
-                round
-                @click="handleStart(task)"
-                class="action-button start-button"
-              >
-                开始清洁
-              </el-button>
-              
-              <!-- 进行中任务 -->
-              <el-button 
-                v-if="task.status === 'processing'"
-                type="success" 
-                size="large" 
-                round
-                @click="handleComplete(task)"
-                class="action-button complete-button"
-              >
-                完成清洁
-              </el-button>
-              
-              <!-- 已完成任务 -->
-              <el-button 
-                v-if="task.status === 'completed'"
-                type="info" 
-                size="large" 
-                round
-                @click="handleInspect(task)"
-                class="action-button inspect-button"
-              >
-                查看详情
-              </el-button>
-            </div>
-          </div>
+    <!-- 任务卡片网格布局 -->
+    <div class="task-grid" v-loading="loading">
+      <div 
+        v-for="task in filteredTasks" 
+        :key="task.roomNumber" 
+        class="task-card"
+        :class="{ 
+          'high-priority': task.priority === 'high',
+          'medium-priority': task.priority === 'medium',
+          'low-priority': task.priority === 'low',
+          'status-pending': task.status === 'pending',
+          'status-processing': task.status === 'processing',
+          'status-completed': task.status === 'completed'
+        }"
+      >
+        <div class="card-room-number">{{ task.roomNumber }}</div>
+        <div class="card-room-type">{{ task.roomType }}</div>
+        
+        <div class="card-status" :class="task.status">
+          {{ getStatusLabel(task.status) }}
         </div>
         
-        <!-- 空状态 -->
-        <div v-if="filteredTasks.length === 0" class="empty-tasks">
-          <el-empty description="暂无任务" :image-size="120">
-            <span class="empty-tip">当前没有{{ taskFilterTitle }}，请查看其他分类</span>
-          </el-empty>
+        <div class="card-priority" :class="`priority-${task.priority}`">
+          {{ getPriorityLabel(task.priority) }}
         </div>
+        
+        <div class="card-time">
+          <el-icon><Clock /></el-icon>
+          {{ task.expectedTime }}
+        </div>
+        
+        <div class="card-action">
+          <el-button 
+            v-if="task.status === 'pending'"
+            type="primary" 
+            size="large" 
+            round
+            @click="handleStart(task)"
+          >
+            开始
+          </el-button>
+          
+          <el-button 
+            v-if="task.status === 'processing'"
+            type="success" 
+            size="large" 
+            round
+            @click="handleComplete(task)"
+          >
+            完成
+          </el-button>
+          
+          <el-button 
+            v-if="task.status === 'completed'"
+            type="info" 
+            size="large" 
+            round
+            @click="handleInspect(task)"
+          >
+            查看
+          </el-button>
+        </div>
+      </div>
+      
+      <!-- 空状态 -->
+      <div v-if="filteredTasks.length === 0" class="empty-tasks">
+        <el-empty description="暂无任务" :image-size="120">
+          <span class="empty-tip">当前没有{{ taskFilterTitle }}，请查看其他分类</span>
+        </el-empty>
       </div>
     </div>
 
@@ -211,7 +197,7 @@
       </template>
     </el-dialog>
 
-    <!-- 完成清洁对话框 -->
+    <!-- 完成清洁对话框 - 增大尺寸更易于操作 -->
     <el-dialog
       title="完成清洁"
       v-model="completeDialogVisible"
@@ -237,6 +223,7 @@
               90: '90',
               120: '120'
             }"
+            height="40px"
           />
           <div class="duration-display">{{ completeForm.actualDuration }} 分钟</div>
         </el-form-item>
@@ -730,269 +717,213 @@ fetchTaskList()
 </script>
 
 <style scoped>
-/* 移动端优化样式 */
+/* 移动端样式优化 */
 .mobile-cleaning-tasks {
-  padding: 10px;
-  max-width: 100%;
-  background-color: #f5f5f5;
+  padding: 0;
   min-height: 100vh;
-  font-family: "Microsoft YaHei", Arial, sans-serif;
 }
 
-/* 页面头部 */
 .mobile-header {
+  background-color: #f0f6ff;
+  color: #333;
+  padding: 15px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 15px 5px;
-  margin-bottom: 20px;
-  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  margin-bottom: 15px;
 }
 
 .mobile-header h2 {
   margin: 0;
   font-size: 22px;
-  color: #333;
   font-weight: 600;
 }
 
 .current-time {
-  font-size: 18px;
+  font-size: 16px;
   font-weight: 500;
   color: #666;
 }
 
-/* 统计卡片 */
-.stat-cards-wrapper {
+/* 统计卡片网格布局 */
+.stat-cards-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+  padding: 0 15px;
   margin-bottom: 20px;
-  overflow-x: auto;
-  -webkit-overflow-scrolling: touch;
-  padding: 5px 0;
-}
-
-.stat-cards {
-  display: flex;
-  gap: 10px;
-  padding: 5px;
-  min-width: max-content;
 }
 
 .stat-card {
-  flex: 0 0 150px;
-  border-radius: 12px;
+  background: #fff;
+  border-radius: 10px;
   padding: 15px;
-  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
-  background: white;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   display: flex;
   flex-direction: column;
   align-items: center;
-  transition: all 0.3s ease;
+  justify-content: center;
+  text-align: center;
   cursor: pointer;
-  border-top: 5px solid transparent;
+  transition: all 0.3s;
+  height: 110px;
 }
 
 .stat-card.active {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  transform: scale(0.98);
+  border: 2px solid;
 }
 
 .stat-card.pending {
-  border-top-color: #e6a23c;
+  border-color: #e6a23c;
 }
 
 .stat-card.processing {
-  border-top-color: #409eff;
+  border-color: #409eff;
 }
 
 .stat-card.completed {
-  border-top-color: #67c23a;
+  border-color: #67c23a;
 }
 
 .stat-card.high-priority {
-  border-top-color: #f56c6c;
+  border-color: #f56c6c;
 }
 
 .stat-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 50%;
-  display: flex;
-  align-items: center;
-  justify-content: center;
+  font-size: 30px;
   margin-bottom: 10px;
-}
-
-.stat-card.pending .stat-icon {
-  background-color: #e6a23c;
-}
-
-.stat-card.processing .stat-icon {
-  background-color: #409eff;
-}
-
-.stat-card.completed .stat-icon {
-  background-color: #67c23a;
-}
-
-.stat-card.high-priority .stat-icon {
-  background-color: #f56c6c;
+  color: #409eff;
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
 
 .stat-icon .el-icon {
-  font-size: 24px;
-  color: #fff;
+  font-size: 30px;
 }
 
-.stat-info {
-  text-align: center;
+.stat-card.pending .stat-icon {
+  color: #e6a23c;
+}
+
+.stat-card.processing .stat-icon {
+  color: #409eff;
+}
+
+.stat-card.completed .stat-icon {
+  color: #67c23a;
+}
+
+.stat-card.high-priority .stat-icon {
+  color: #f56c6c;
 }
 
 .stat-count {
-  font-size: 28px;
+  font-size: 24px;
   font-weight: 700;
   color: #333;
-  margin-bottom: 5px;
-  line-height: 1;
 }
 
 .stat-title {
   font-size: 14px;
   color: #666;
+  margin-top: 5px;
 }
 
-/* 任务列表区域 */
-.task-list-section {
-  background: white;
-  border-radius: 12px;
-  padding: 15px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
-}
-
-.section-header {
-  margin-bottom: 15px;
-}
-
-.section-header h3 {
-  margin: 0 0 15px 0;
-  font-size: 18px;
-  color: #333;
-}
-
-.filter-toggle {
-  margin-bottom: 15px;
-  overflow-x: auto;
-  white-space: nowrap;
-  -webkit-overflow-scrolling: touch;
-}
-
-.filter-toggle .el-radio-button {
-  margin-right: 5px;
-}
-
-/* 任务卡片 */
-.task-cards {
+/* 过滤按钮 */
+.filter-buttons {
   display: flex;
-  flex-direction: column;
+  justify-content: space-between;
+  padding: 0 15px;
+  margin-bottom: 20px;
+}
+
+.filter-button {
+  flex: 1;
+  margin: 0 5px;
+  height: 46px;
+  font-size: 16px;
+}
+
+/* 任务卡片网格 */
+.task-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
   gap: 15px;
+  padding: 0 15px 80px;
 }
 
 .task-card {
   background: #fff;
   border-radius: 10px;
-  padding: 15px;
+  padding: 12px;
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
   position: relative;
-  border-left: 5px solid #ddd;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  min-height: 180px;
 }
 
 .task-card.high-priority {
-  border-left-color: #f56c6c;
+  border-top: 4px solid #f56c6c;
 }
 
 .task-card.medium-priority {
-  border-left-color: #e6a23c;
+  border-top: 4px solid #e6a23c;
 }
 
 .task-card.low-priority {
-  border-left-color: #909399;
+  border-top: 4px solid #909399;
 }
 
-.task-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 12px;
-  padding-bottom: 10px;
-  border-bottom: 1px solid #f0f0f0;
-}
-
-.room-info {
-  display: flex;
-  align-items: baseline;
-}
-
-.room-number {
+.card-room-number {
   font-size: 22px;
   font-weight: 700;
   color: #333;
-  margin-right: 10px;
+  text-align: center;
+  margin-bottom: 5px;
 }
 
-.room-type {
+.card-room-type {
   font-size: 14px;
   color: #666;
+  text-align: center;
+  margin-bottom: 15px;
 }
 
-.task-status-tag {
-  padding: 4px 10px;
+.card-status {
+  padding: 5px;
+  text-align: center;
   border-radius: 15px;
-  font-size: 13px;
+  font-size: 14px;
   font-weight: 500;
+  margin-bottom: 10px;
 }
 
-.task-status-tag.pending {
+.card-status.pending {
   background-color: #fef6e9;
   color: #e6a23c;
 }
 
-.task-status-tag.processing {
+.card-status.processing {
   background-color: #ebf5ff;
   color: #409eff;
 }
 
-.task-status-tag.completed {
+.card-status.completed {
   background-color: #f0f9eb;
   color: #67c23a;
 }
 
-.task-body {
-  display: flex;
-  flex-direction: column;
-}
-
-.task-detail {
-  margin-bottom: 15px;
-}
-
-.detail-item {
-  display: flex;
-  margin-bottom: 10px;
-  font-size: 16px;
-}
-
-.item-label {
-  width: 90px;
-  color: #666;
-  flex-shrink: 0;
-}
-
-.item-value {
-  flex: 1;
-  color: #333;
-}
-
-.item-value.priority {
+.card-priority {
+  display: inline-block;
+  text-align: center;
+  width: 100%;
   font-weight: 600;
+  margin-bottom: 8px;
 }
 
 .priority-high {
@@ -1007,40 +938,29 @@ fetchTaskList()
   color: #909399;
 }
 
-.detail-item.notes {
-  align-items: flex-start;
+.card-time {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 5px;
+  color: #606266;
+  margin-bottom: 15px;
 }
 
-.task-actions {
+.card-action {
+  margin-top: auto;
   display: flex;
   justify-content: center;
-  margin-top: 10px;
 }
 
-.action-button {
+.card-action .el-button {
+  min-width: 0;
   width: 100%;
-  max-width: 200px;
-  height: 50px;
-  font-size: 18px;
-}
-
-.start-button {
-  background-color: #409eff;
-  border-color: #409eff;
-}
-
-.complete-button {
-  background-color: #67c23a;
-  border-color: #67c23a;
-}
-
-.inspect-button {
-  background-color: #909399;
-  border-color: #909399;
 }
 
 /* 空状态 */
 .empty-tasks {
+  grid-column: span 2;
   padding: 30px 0;
   text-align: center;
 }
@@ -1052,7 +972,7 @@ fetchTaskList()
   display: block;
 }
 
-/* 浮动操作按钮 */
+/* 浮动按钮 */
 .floating-action {
   position: fixed;
   right: 20px;
@@ -1063,58 +983,14 @@ fetchTaskList()
 .add-button {
   width: 60px;
   height: 60px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
 .add-button .el-icon {
   font-size: 24px;
 }
 
-/* 完成清洁对话框自定义样式 */
-.complete-dialog :deep(.el-dialog__body) {
-  padding: 20px 15px;
-}
-
-.checkbox-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
-  gap: 10px;
-}
-
-.checkbox-content {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.checkbox-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.duration-display {
-  text-align: center;
-  font-size: 18px;
-  color: #333;
-  font-weight: 500;
-  margin-top: 10px;
-}
-
-.checkbox-item :deep(.el-checkbox) {
-  margin-right: 0;
-  margin-bottom: 0;
-  height: 46px;
-}
-
-.checkbox-item :deep(.el-checkbox__label) {
-  font-size: 16px;
-}
-
-/* 对话框样式 */
+/* 对话框优化 */
 .mobile-dialog :deep(.el-dialog__title) {
   font-size: 20px;
 }
@@ -1126,6 +1002,71 @@ fetchTaskList()
 .mobile-dialog :deep(.el-input__inner),
 .mobile-dialog :deep(.el-textarea__inner) {
   font-size: 16px;
+  height: 46px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 10px;
+}
+
+.checkbox-content {
+  display: flex;
+  align-items: center;
+  font-size: 16px;
+}
+
+.checkbox-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.checkbox-item :deep(.el-checkbox__input) {
+  transform: scale(1.2);
+}
+
+.checkbox-item :deep(.el-checkbox__label) {
+  font-size: 16px;
+}
+
+.checkbox-item :deep(.el-checkbox) {
+  height: 50px;
+  margin-right: 0;
+  margin-bottom: 0;
+  display: flex;
+  align-items: center;
+}
+
+.duration-display {
+  text-align: center;
+  font-size: 20px;
+  color: #333;
+  font-weight: 600;
+  margin-top: 15px;
+}
+
+/* 完成清洁对话框优化 */
+.complete-dialog :deep(.el-slider__runway) {
+  height: 10px;
+  margin: 20px 0;
+}
+
+.complete-dialog :deep(.el-slider__bar) {
+  height: 10px;
+}
+
+.complete-dialog :deep(.el-slider__button) {
+  width: 24px;
+  height: 24px;
+}
+
+.complete-dialog :deep(.el-slider__marks-text) {
+  font-size: 14px;
 }
 
 .dialog-footer {
@@ -1138,24 +1079,29 @@ fetchTaskList()
   flex: 1;
   margin: 0 5px;
   font-size: 16px;
+  height: 46px;
 }
 
 @media screen and (max-width: 480px) {
-  .room-number {
-    font-size: 20px;
+  .task-grid {
+    grid-template-columns: 1fr;
   }
   
-  .detail-item {
-    font-size: 15px;
+  .empty-tasks {
+    grid-column: span 1;
   }
   
-  .item-label {
-    width: 80px;
+  .stat-cards-grid {
+    grid-template-columns: repeat(2, 1fr);
   }
   
-  .action-button {
-    height: 46px;
-    font-size: 16px;
+  .filter-button {
+    font-size: 14px;
+    padding: 0 5px;
+  }
+  
+  .checkbox-grid {
+    grid-template-columns: 1fr;
   }
 }
 </style>

@@ -1,118 +1,173 @@
 <template>
   <div class="admin-layout">
     <el-container>
-      <el-aside width="240px" class="tech-sidebar">
-        <div class="logo-container">
-          <img src="../../assets/logo.svg" alt="和庆酒店" class="logo" />
-          <span class="title">后台管理系统</span>
-        </div>
-        <el-menu
-          :default-active="activeMenu"
-          class="el-menu-vertical tech-menu"
-          background-color="#0c1a2b"
-          text-color="#8a9ab1"
-          active-text-color="#f8f9fc"
-        >
-          <template v-if="userRole === 'admin'">
-            <el-menu-item index="/admin/dashboard" @click="switchComponent('dashboard')" class="tech-menu-item">
-              <el-icon><DataLine /></el-icon>
-              <span>数据看板</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/users" @click="switchComponent('users')" class="tech-menu-item">
-              <el-icon><User /></el-icon>
-              <span>用户管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/staff" @click="switchComponent('staff')" class="tech-menu-item">
-              <el-icon><UserFilled /></el-icon>
-              <span>员工管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/invite-codes" @click="switchComponent('inviteCodes')" class="tech-menu-item">
-              <el-icon><Key /></el-icon>
-              <span>邀请码管理</span>
-            </el-menu-item>
-          </template>
-
-          <template v-if="userRole === 'receptionist'">
-            <el-menu-item index="/admin/reception/bookings" @click="switchComponent('bookings')" class="tech-menu-item">
-              <el-icon><Calendar /></el-icon>
-              <span>预订管理</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/reception/checkin" @click="switchComponent('checkin')" class="tech-menu-item">
-              <el-icon><House /></el-icon>
-              <span>入住登记</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/reception/visitors" @click="switchComponent('visitors')" class="tech-menu-item">
-              <el-icon><List /></el-icon>
-              <span>访客登记</span>
-            </el-menu-item>
-          </template>
-
-          <template v-if="userRole === 'cleaner'">
-            <el-menu-item index="/admin/cleaning/tasks" @click="switchComponent('tasks')" class="tech-menu-item">
-              <el-icon><List /></el-icon>
-              <span>清洁任务</span>
-            </el-menu-item>
-            <el-menu-item index="/admin/cleaning/records" @click="switchComponent('records')" class="tech-menu-item">
-              <el-icon><Document /></el-icon>
-              <span>清洁记录</span>
-            </el-menu-item>
-          </template>
-        </el-menu>
-        
-        <div class="sidebar-footer">
-          <div class="version">V 1.0.0</div>
-          <div class="copyright">© 2023 和庆酒店</div>
-        </div>
-      </el-aside>
-      
-      <el-container>
-        <el-header height="70px" class="tech-header">
-          <div class="header-content">
-            <div class="breadcrumb">
-              <el-breadcrumb separator="/">
-                <el-breadcrumb-item>后台管理</el-breadcrumb-item>
-                <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
-              </el-breadcrumb>
+      <!-- 针对保洁人员角色进行特殊处理的移动端垂直布局 -->
+      <template v-if="userRole === 'cleaner'">
+        <el-container class="cleaner-mobile-layout">
+          <!-- 顶部导航栏 -->
+          <el-header height="auto" class="cleaner-header">
+            <div class="logo-container">
+              <img src="../../assets/logo.svg" alt="和庆酒店" class="logo" />
+              <span class="title">保洁管理</span>
             </div>
             
-            <div class="header-controls">
+            <div class="user-display">
+              <el-avatar :size="36" class="user-avatar">{{ username.charAt(0) }}</el-avatar>
+              <span class="username">{{ username }}</span>
+            </div>
+          </el-header>
+          
+          <!-- 保洁人员菜单 - 直观的大图标按钮 -->
+          <div class="cleaner-menu">
+            <div class="menu-grid">
+              <div 
+                class="menu-item" 
+                :class="{ active: activeMenu === '/admin/cleaning/tasks' }"
+                @click="switchComponent('tasks')"
+              >
+                <div class="menu-icon">
+                  <el-icon><List /></el-icon>
+                </div>
+                <div class="menu-label">清洁任务</div>
+              </div>
+              <div 
+                class="menu-item"
+                :class="{ active: activeMenu === '/admin/cleaning/records' }"
+                @click="switchComponent('records')"
+              >
+                <div class="menu-icon">
+                  <el-icon><Document /></el-icon>
+                </div>
+                <div class="menu-label">清洁记录</div>
+              </div>
+            </div>
+          </div>
+                    
+          <el-main class="cleaner-main">
+            <div class="content-wrapper">
+              <component :is="currentComponent" />
+            </div>
+          </el-main>
+          
+          <!-- 底部工具栏 -->
+          <el-footer height="60px" class="cleaner-footer">
+            <div class="footer-content">
               <div class="time-display">
                 {{ currentTime }}
               </div>
-              <el-button class="notification-btn" icon="el-icon-bell" circle></el-button>
-              <div class="user-info">
-                <el-dropdown trigger="click">
-                  <span class="user-dropdown">
-                    <el-avatar :size="32" class="user-avatar">{{ username.charAt(0) }}</el-avatar>
-                    <span class="username">{{ username }}</span>
-                    <el-icon class="el-icon--right"><arrow-down /></el-icon>
-                  </span>
-                  <template #dropdown>
-                    <el-dropdown-menu class="user-dropdown-menu">
-                      <el-dropdown-item>
-                        <el-icon><User /></el-icon>个人信息
-                      </el-dropdown-item>
-                      <el-dropdown-item>
-                        <el-icon><Setting /></el-icon>系统设置
-                      </el-dropdown-item>
-                      <el-dropdown-item divided @click="handleLogout">
-                        <el-icon><Switch /></el-icon>退出登录
-                      </el-dropdown-item>
-                    </el-dropdown-menu>
-                  </template>
-                </el-dropdown>
+              <el-button class="logout-btn" size="large" @click="handleLogout">
+                <el-icon><Switch /></el-icon>
+                退出登录
+              </el-button>
+            </div>
+          </el-footer>
+        </el-container>
+      </template>
+      
+      <!-- 其他角色保持原有布局 -->
+      <template v-else>
+        <el-aside width="240px" class="tech-sidebar">
+          <div class="logo-container">
+            <img src="../../assets/logo.svg" alt="和庆酒店" class="logo" />
+            <span class="title">后台管理系统</span>
+          </div>
+          <el-menu
+            :default-active="activeMenu"
+            class="el-menu-vertical tech-menu"
+            background-color="#0c1a2b"
+            text-color="#8a9ab1"
+            active-text-color="#f8f9fc"
+          >
+            <template v-if="userRole === 'admin'">
+              <el-menu-item index="/admin/dashboard" @click="switchComponent('dashboard')" class="tech-menu-item">
+                <el-icon><DataLine /></el-icon>
+                <span>数据看板</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/users" @click="switchComponent('users')" class="tech-menu-item">
+                <el-icon><User /></el-icon>
+                <span>用户管理</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/staff" @click="switchComponent('staff')" class="tech-menu-item">
+                <el-icon><UserFilled /></el-icon>
+                <span>员工管理</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/invite-codes" @click="switchComponent('inviteCodes')" class="tech-menu-item">
+                <el-icon><Key /></el-icon>
+                <span>邀请码管理</span>
+              </el-menu-item>
+            </template>
+
+            <template v-if="userRole === 'receptionist'">
+              <el-menu-item index="/admin/reception/bookings" @click="switchComponent('bookings')" class="tech-menu-item">
+                <el-icon><Calendar /></el-icon>
+                <span>预订管理</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/reception/checkin" @click="switchComponent('checkin')" class="tech-menu-item">
+                <el-icon><House /></el-icon>
+                <span>入住登记</span>
+              </el-menu-item>
+              <el-menu-item index="/admin/reception/visitors" @click="switchComponent('visitors')" class="tech-menu-item">
+                <el-icon><List /></el-icon>
+                <span>访客登记</span>
+              </el-menu-item>
+            </template>
+          </el-menu>
+          
+          <div class="sidebar-footer">
+            <div class="version">V 1.0.0</div>
+            <div class="copyright">© 2023 和庆酒店</div>
+          </div>
+        </el-aside>
+        
+        <el-container>
+          <el-header height="70px" class="tech-header">
+            <div class="header-content">
+              <div class="breadcrumb">
+                <el-breadcrumb separator="/">
+                  <el-breadcrumb-item>后台管理</el-breadcrumb-item>
+                  <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
+                </el-breadcrumb>
+              </div>
+              
+              <div class="header-controls">
+                <div class="time-display">
+                  {{ currentTime }}
+                </div>
+                <el-button class="notification-btn" icon="el-icon-bell" circle></el-button>
+                <div class="user-info">
+                  <el-dropdown trigger="click">
+                    <span class="user-dropdown">
+                      <el-avatar :size="32" class="user-avatar">{{ username.charAt(0) }}</el-avatar>
+                      <span class="username">{{ username }}</span>
+                      <el-icon class="el-icon--right"><arrow-down /></el-icon>
+                    </span>
+                    <template #dropdown>
+                      <el-dropdown-menu class="user-dropdown-menu">
+                        <el-dropdown-item>
+                          <el-icon><User /></el-icon>个人信息
+                        </el-dropdown-item>
+                        <el-dropdown-item>
+                          <el-icon><Setting /></el-icon>系统设置
+                        </el-dropdown-item>
+                        <el-dropdown-item divided @click="handleLogout">
+                          <el-icon><Switch /></el-icon>退出登录
+                        </el-dropdown-item>
+                      </el-dropdown-menu>
+                    </template>
+                  </el-dropdown>
+                </div>
               </div>
             </div>
-          </div>
-        </el-header>
-        
-        <el-main class="tech-main">
-          <div class="content-wrapper">
-            <!-- 使用动态组件渲染 -->
-            <component :is="currentComponent" />
-          </div>
-        </el-main>
-      </el-container>
+          </el-header>
+          
+          <el-main class="tech-main">
+            <div class="content-wrapper">
+              <!-- 使用动态组件渲染 -->
+              <component :is="currentComponent" />
+            </div>
+          </el-main>
+        </el-container>
+      </template>
     </el-container>
   </div>
 </template>
@@ -286,208 +341,226 @@ onBeforeUnmount(() => {
 <style scoped>
 .admin-layout {
   height: 100vh;
-  background-color: #f3f4f8;
-  font-family: "Helvetica Neue", "Microsoft YaHei", sans-serif;
+  overflow: hidden;
 }
 
 .tech-sidebar {
   background-color: #0c1a2b;
-  box-shadow: 0 0 20px rgba(0, 0, 0, 0.15);
+  height: 100vh;
   display: flex;
   flex-direction: column;
-  position: relative;
-  transition: all 0.3s ease;
-  height: 100vh;
-  width: 240px;
+  overflow-y: auto;
 }
 
 .logo-container {
-  height: 70px;
   display: flex;
   align-items: center;
-  padding: 0 20px;
-  background-color: #0a1623;
-  color: white;
+  padding: 20px 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .logo {
   width: 32px;
   height: 32px;
-  margin-right: 12px;
+  margin-right: 10px;
 }
 
 .title {
+  color: #fff;
   font-size: 18px;
   font-weight: 500;
-  color: #ffffff;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .tech-menu {
   border-right: none;
-  height: calc(100vh - 140px);
-  overflow-y: auto;
-  flex: 1;
 }
 
 .tech-menu-item {
-  height: 56px;
-  line-height: 56px;
-  margin: 4px 0;
-  border-radius: 6px;
-  margin-right: 10px;
-  margin-left: 10px;
-}
-
-.tech-menu-item:hover {
-  background-color: rgba(255, 255, 255, 0.05) !important;
-}
-
-.tech-menu-item.is-active {
-  background-color: rgba(255, 255, 255, 0.1) !important;
-  color: white !important;
-}
-
-.sidebar-footer {
-  padding: 15px 20px;
-  text-align: center;
-  color: #8a9ab1;
-  font-size: 12px;
-  border-top: 1px solid rgba(255, 255, 255, 0.05);
-  margin-top: auto;
-}
-
-.version {
-  margin-bottom: 5px;
+  margin: 8px 0;
 }
 
 .tech-header {
-  background-color: white;
-  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
-  border-bottom: none;
-  padding: 0 25px;
-  height: 70px;
+  background-color: #fff;
+  border-bottom: 1px solid #f0f0f0;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
 }
 
 .header-content {
-  height: 100%;
   display: flex;
-  align-items: center;
   justify-content: space-between;
-}
-
-.breadcrumb {
-  font-size: 15px;
-}
-
-.header-controls {
-  display: flex;
   align-items: center;
-}
-
-.time-display {
-  margin-right: 20px;
-  color: #606266;
-  font-size: 13px;
-  padding: 0 15px;
-  border-radius: 15px;
-  background-color: #f7f8fa;
-  height: 30px;
-  line-height: 30px;
-}
-
-.notification-btn {
-  margin-right: 20px;
-  color: #606266;
-  background: #f7f8fa;
-  border: none;
+  height: 100%;
 }
 
 .user-dropdown {
-  cursor: pointer;
   display: flex;
   align-items: center;
-  padding: 5px 0;
-  color: #303133;
-}
-
-.user-avatar {
-  background: linear-gradient(135deg, #0c1a2b, #244060);
-  color: white;
-  font-weight: 500;
-  margin-right: 8px;
+  cursor: pointer;
 }
 
 .username {
-  margin-right: 5px;
+  margin: 0 8px;
   font-size: 14px;
 }
 
-.user-dropdown-menu {
-  min-width: 150px;
-}
-
 .tech-main {
-  background-color: #f3f4f8;
-  padding: 25px;
+  background-color: #f5f7fa;
   overflow-y: auto;
+  padding: 20px;
 }
 
 .content-wrapper {
-  background-color: white;
-  border-radius: 8px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.06);
-  padding: 20px;
-  min-height: calc(100vh - 120px);
+  max-width: 1600px;
+  margin: 0 auto;
 }
 
-/* Animations */
-.el-menu-item {
-  transition: all 0.3s ease;
+.sidebar-footer {
+  margin-top: auto;
+  padding: 15px;
+  border-top: 1px solid rgba(255, 255, 255, 0.05);
+  text-align: center;
 }
 
-/* Custom scrollbar */
-.tech-menu::-webkit-scrollbar {
-  width: 5px;
+.version {
+  color: #586a88;
+  font-size: 12px;
+  margin-bottom: 5px;
 }
 
-.tech-menu::-webkit-scrollbar-track {
-  background: #0c1a2b;
+.copyright {
+  color: #586a88;
+  font-size: 12px;
 }
 
-.tech-menu::-webkit-scrollbar-thumb {
-  background-color: rgba(255, 255, 255, 0.1);
+.time-display {
+  font-size: 14px;
+  color: #606266;
+}
+
+.user-avatar {
+  background-color: #409eff;
+  color: #fff;
+}
+
+/* 保洁人员专用样式 - 移动端垂直布局 */
+.cleaner-mobile-layout {
+  min-height: 100vh;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+}
+
+.cleaner-header {
+  background-color: #0c1a2b;
+  color: #fff;
+  padding: 12px 15px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+}
+
+.cleaner-header .logo-container {
+  border-bottom: none;
+  padding: 0;
+}
+
+.cleaner-header .title {
+  font-size: 20px;
+}
+
+.user-display {
+  display: flex;
+  align-items: center;
+}
+
+.user-display .username {
+  color: #fff;
+  font-size: 16px;
+}
+
+.cleaner-menu {
+  padding: 15px;
+  background-color: #f8f9fa;
+}
+
+.menu-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 15px;
+}
+
+.menu-item {
+  background-color: #fff;
   border-radius: 10px;
+  padding: 15px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  cursor: pointer;
+  transition: all 0.3s;
+  height: 120px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
 }
 
-/* Responsive styles */
-@media (max-width: 768px) {
-  .tech-sidebar {
-    width: 60px;
+.menu-item.active {
+  background-color: #e6f1ff;
+  border: 2px solid #409eff;
+}
+
+.menu-icon {
+  font-size: 40px;
+  color: #409eff;
+  margin-bottom: 10px;
+}
+
+.menu-icon .el-icon {
+  font-size: 40px;
+}
+
+.menu-label {
+  font-size: 18px;
+  color: #303133;
+  font-weight: 500;
+}
+
+.cleaner-main {
+  flex: 1;
+  padding: 0;
+  background-color: #f5f7fa;
+  overflow-y: auto;
+}
+
+.cleaner-footer {
+  background-color: #fff;
+  border-top: 1px solid #f0f0f0;
+  box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
+  padding: 10px 15px;
+}
+
+.footer-content {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.logout-btn {
+  font-size: 16px;
+}
+
+@media screen and (max-width: 768px) {
+  .menu-item {
+    height: 100px;
   }
   
-  .title {
-    display: none;
+  .menu-icon {
+    font-size: 30px;
   }
   
-  .sidebar-footer {
-    display: none;
-  }
-  
-  .logo-container {
-    justify-content: center;
-    padding: 0;
-  }
-  
-  .logo {
-    margin-right: 0;
-  }
-  
-  .time-display {
-    display: none;
+  .menu-label {
+    font-size: 16px;
   }
 }
 </style> 
