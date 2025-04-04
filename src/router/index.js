@@ -113,6 +113,11 @@ const router = createRouter({
           component: () => import('../views/admin/reception/Visitors.vue')
         },
         {
+          path: 'reception/visitor-records',
+          name: 'reception-visitor-records',
+          component: () => import('../views/admin/reception/VisitorRecords.vue')
+        },
+        {
           path: 'cleaning/tasks',
           name: 'cleaning-tasks',
           component: () => import('../views/admin/cleaning/Tasks.vue')
