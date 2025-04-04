@@ -8,7 +8,7 @@
     <!-- 任务统计卡片 -->
     <el-row :gutter="20" class="task-stats">
       <el-col :span="6" v-for="stat in taskStats" :key="stat.type">
-        <el-card class="stat-card" :body-style="{ padding: '20px' }">
+        <el-card class="stat-card" :body-style="{ padding: '20px' }" @click="handleFilterByType(stat.type)" :class="{ active: isActiveFilter(stat.type) }">
           <div class="stat-content">
             <div class="stat-icon" :class="stat.type">
               <el-icon><component :is="stat.icon" /></el-icon>
@@ -26,9 +26,9 @@
     <el-card class="task-list-card">
       <template #header>
         <div class="card-header">
-          <div class="header-title">任务列表</div>
+          <div class="header-title">{{ taskFilterTitle }}</div>
           <div class="header-filter">
-            <el-radio-group v-model="taskFilter" size="small">
+            <el-radio-group v-model="taskFilter" size="small" @change="updateTaskFilterTitle">
               <el-radio-button label="all">全部</el-radio-button>
               <el-radio-button label="pending">待处理</el-radio-button>
               <el-radio-button label="processing">进行中</el-radio-button>
@@ -249,7 +249,51 @@ const taskList = ref([
     expectedTime: '10:30',
     notes: '客人即将入住，请优先处理'
   },
-  // 更多模拟数据...
+  {
+    roomNumber: '302',
+    roomType: '标准双人间',
+    priority: 'medium',
+    cleaner: '张阿姨',
+    status: 'processing',
+    expectedTime: '11:00',
+    notes: '请更换浴室毛巾'
+  },
+  {
+    roomNumber: '401',
+    roomType: '豪华套房',
+    priority: 'high',
+    cleaner: '王阿姨',
+    status: 'pending',
+    expectedTime: '10:45',
+    notes: 'VIP客人，请注意细节清洁'
+  },
+  {
+    roomNumber: '201',
+    roomType: '标准单人间',
+    priority: 'low',
+    cleaner: '李阿姨',
+    status: 'completed',
+    expectedTime: '09:30',
+    notes: '已完成'
+  },
+  {
+    roomNumber: '202',
+    roomType: '标准单人间',
+    priority: 'medium',
+    cleaner: '张阿姨',
+    status: 'completed',
+    expectedTime: '09:45',
+    notes: '已完成'
+  },
+  {
+    roomNumber: '303',
+    roomType: '标准双人间',
+    priority: 'low',
+    cleaner: '王阿姨',
+    status: 'processing',
+    expectedTime: '11:15',
+    notes: '一般清洁'
+  }
 ])
 
 // 可用房间列表
@@ -269,8 +313,13 @@ const cleaners = ref([
 
 // 过滤后的任务列表
 const filteredTasks = computed(() => {
-  if (taskFilter.value === 'all') return taskList.value
-  return taskList.value.filter(task => task.status === taskFilter.value)
+  if (taskFilter.value === 'all') {
+    return taskList.value
+  } else if (taskFilter.value === 'high-priority') {
+    return taskList.value.filter(task => task.priority === 'high')
+  } else {
+    return taskList.value.filter(task => task.status === taskFilter.value)
+  }
 })
 
 // 任务表单
@@ -430,8 +479,22 @@ const handleCompleteSubmit = async () => {
       try {
         // TODO: 调用后端API更新任务状态和完成信息
         await new Promise(resolve => setTimeout(resolve, 1000))
+        
+        // 更新任务状态
         currentTask.value.status = 'completed'
-        ElMessage.success('清洁任务已完成')
+        
+        // 更新任务计数
+        const processingIndex = taskStats.findIndex(s => s.type === 'processing');
+        const completedIndex = taskStats.findIndex(s => s.type === 'completed');
+        if (processingIndex !== -1 && completedIndex !== -1) {
+          taskStats[processingIndex].count--;
+          taskStats[completedIndex].count++;
+        }
+        
+        // 更新房间状态为可入住（这里只是模拟，实际应该调用API）
+        updateRoomStatus(currentTask.value.roomNumber, 'available');
+        
+        ElMessage.success('清洁任务已完成，房间状态已更新为可入住')
         completeDialogVisible.value = false
       } catch (error) {
         console.error('提交完成信息失败:', error)
@@ -439,6 +502,18 @@ const handleCompleteSubmit = async () => {
       }
     }
   })
+}
+
+// 更新房间状态
+const updateRoomStatus = (roomNumber, status) => {
+  // 这里模拟房间状态更新，实际项目中应该调用后端API
+  console.log(`房间${roomNumber}状态已更新为${status}`);
+  
+  // 如果有房间管理相关的状态，也可以在此更新
+  const room = availableRooms.value.find(r => r.number === roomNumber);
+  if (room) {
+    room.status = status;
+  }
 }
 
 // 查看检查
@@ -453,6 +528,13 @@ const fetchTaskList = async () => {
   try {
     // TODO: 调用后端API获取任务列表
     await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 更新任务统计数据
+    updateTaskStats();
+    
+    // 更新任务筛选标题
+    updateTaskFilterTitle();
+    
     loading.value = false
   } catch (error) {
     console.error('获取任务列表失败:', error)
@@ -460,6 +542,55 @@ const fetchTaskList = async () => {
     loading.value = false
   }
 }
+
+// 更新任务统计数据
+const updateTaskStats = () => {
+  const pendingCount = taskList.value.filter(task => task.status === 'pending').length;
+  const processingCount = taskList.value.filter(task => task.status === 'processing').length;
+  const completedCount = taskList.value.filter(task => task.status === 'completed').length;
+  const highPriorityCount = taskList.value.filter(task => task.priority === 'high').length;
+  
+  taskStats[0].count = pendingCount;
+  taskStats[1].count = processingCount;
+  taskStats[2].count = completedCount;
+  taskStats[3].count = highPriorityCount;
+}
+
+// 处理卡片点击筛选
+const handleFilterByType = (type) => {
+  if (type === 'high-priority') {
+    // 高优先级筛选
+    taskFilter.value = 'high-priority'
+  } else {
+    // 普通状态筛选
+    taskFilter.value = type
+  }
+  // 更新表格标题
+  updateTaskFilterTitle()
+}
+
+// 判断是否为当前激活的筛选器
+const isActiveFilter = (type) => {
+  if (type === 'high-priority' && taskFilter.value === 'high-priority') {
+    return true
+  }
+  return taskFilter.value === type
+}
+
+// 更新任务筛选标题
+const updateTaskFilterTitle = () => {
+  const filterTitles = {
+    'all': '全部',
+    'pending': '待处理任务',
+    'processing': '进行中任务',
+    'completed': '已完成任务',
+    'high-priority': '高优先级任务'
+  }
+  taskFilterTitle.value = filterTitles[taskFilter.value] || '任务列表'
+}
+
+// 任务筛选标题
+const taskFilterTitle = ref('任务列表')
 
 // 初始化
 fetchTaskList()
@@ -483,6 +614,18 @@ fetchTaskList()
 
 .stat-card {
   background-color: #fff;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.stat-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.active {
+  border-color: #409eff;
+  box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
 }
 
 .stat-content {
