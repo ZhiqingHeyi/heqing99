@@ -1,93 +1,157 @@
 <template>
-  <div class="tasks-container">
-    <div class="page-header">
+  <div class="mobile-cleaning-tasks">
+    <!-- 页面头部 -->
+    <div class="mobile-header">
       <h2>清洁任务</h2>
-      <el-button type="primary" @click="handleAdd">分配任务</el-button>
+      <div class="current-time">{{ currentTime }}</div>
     </div>
 
-    <!-- 任务统计卡片 -->
-    <el-row :gutter="20" class="task-stats">
-      <el-col :span="6" v-for="stat in taskStats" :key="stat.type">
-        <el-card class="stat-card" :body-style="{ padding: '20px' }" @click="handleFilterByType(stat.type)" :class="{ active: isActiveFilter(stat.type) }">
-          <div class="stat-content">
-            <div class="stat-icon" :class="stat.type">
-              <el-icon><component :is="stat.icon" /></el-icon>
-            </div>
-            <div class="stat-info">
-              <div class="stat-title">{{ stat.title }}</div>
-              <div class="stat-count">{{ stat.count }}</div>
-            </div>
+    <!-- 任务统计卡片 - 水平滚动 -->
+    <div class="stat-cards-wrapper">
+      <div class="stat-cards">
+        <div 
+          v-for="stat in taskStats" 
+          :key="stat.type" 
+          @click="handleFilterByType(stat.type)" 
+          class="stat-card" 
+          :class="{ active: isActiveFilter(stat.type), [stat.type]: true }"
+        >
+          <div class="stat-icon">
+            <el-icon><component :is="stat.icon" /></el-icon>
           </div>
-        </el-card>
-      </el-col>
-    </el-row>
-
-    <!-- 任务列表 -->
-    <el-card class="task-list-card">
-      <template #header>
-        <div class="card-header">
-          <div class="header-title">{{ taskFilterTitle }}</div>
-          <div class="header-filter">
-            <el-radio-group v-model="taskFilter" size="small" @change="updateTaskFilterTitle">
-              <el-radio-button label="all">全部</el-radio-button>
-              <el-radio-button label="pending">待处理</el-radio-button>
-              <el-radio-button label="processing">进行中</el-radio-button>
-              <el-radio-button label="completed">已完成</el-radio-button>
-            </el-radio-group>
+          <div class="stat-info">
+            <div class="stat-count">{{ stat.count }}</div>
+            <div class="stat-title">{{ stat.title }}</div>
           </div>
         </div>
-      </template>
+      </div>
+    </div>
 
-      <el-table :data="filteredTasks" style="width: 100%" v-loading="loading">
-        <el-table-column prop="roomNumber" label="房间号" width="100" />
-        <el-table-column prop="roomType" label="房间类型" width="120" />
-        <el-table-column prop="priority" label="优先级" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getPriorityType(row.priority)" effect="dark">
-              {{ getPriorityLabel(row.priority) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="cleaner" label="保洁员" />
-        <el-table-column prop="status" label="状态" width="100">
-          <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
-              {{ getStatusLabel(row.status) }}
-            </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column prop="expectedTime" label="预计完成时间" width="180" />
-        <el-table-column prop="notes" label="备注" show-overflow-tooltip />
-        <el-table-column label="操作" width="200" fixed="right">
-          <template #default="{ row }">
-            <el-button 
-              type="primary" 
-              link 
-              @click="handleStart(row)"
-              v-if="row.status === 'pending'"
-            >开始清洁</el-button>
-            <el-button 
-              type="success" 
-              link 
-              @click="handleComplete(row)"
-              v-if="row.status === 'processing'"
-            >完成清洁</el-button>
-            <el-button 
-              type="primary" 
-              link 
-              @click="handleInspect(row)"
-              v-if="row.status === 'completed'"
-            >查看检查</el-button>
-          </template>
-        </el-table-column>
-      </el-table>
-    </el-card>
+    <!-- 任务列表 -->
+    <div class="task-list-section">
+      <div class="section-header">
+        <h3>{{ taskFilterTitle }}</h3>
+        <div class="filter-toggle">
+          <el-radio-group v-model="taskFilter" size="large" @change="updateTaskFilterTitle">
+            <el-radio-button label="pending">待处理</el-radio-button>
+            <el-radio-button label="processing">进行中</el-radio-button>
+            <el-radio-button label="completed">已完成</el-radio-button>
+          </el-radio-group>
+        </div>
+      </div>
+
+      <!-- 移动版任务卡片列表 -->
+      <div class="task-cards" v-loading="loading">
+        <div 
+          v-for="task in filteredTasks" 
+          :key="task.roomNumber" 
+          class="task-card"
+          :class="{ 
+            'high-priority': task.priority === 'high',
+            'medium-priority': task.priority === 'medium',
+            'low-priority': task.priority === 'low',
+            'status-pending': task.status === 'pending',
+            'status-processing': task.status === 'processing',
+            'status-completed': task.status === 'completed'
+          }"
+        >
+          <div class="task-header">
+            <div class="room-info">
+              <span class="room-number">{{ task.roomNumber }}</span>
+              <span class="room-type">{{ task.roomType }}</span>
+            </div>
+            <div class="task-status-tag" :class="task.status">
+              {{ getStatusLabel(task.status) }}
+            </div>
+          </div>
+          
+          <div class="task-body">
+            <div class="task-detail">
+              <div class="detail-item">
+                <div class="item-label">优先级：</div>
+                <div class="item-value priority" :class="`priority-${task.priority}`">
+                  {{ getPriorityLabel(task.priority) }}
+                </div>
+              </div>
+              
+              <div class="detail-item">
+                <div class="item-label">预计完成：</div>
+                <div class="item-value">{{ task.expectedTime }}</div>
+              </div>
+              
+              <div class="detail-item">
+                <div class="item-label">保洁员：</div>
+                <div class="item-value">{{ task.cleaner }}</div>
+              </div>
+              
+              <div class="detail-item notes">
+                <div class="item-label">备注：</div>
+                <div class="item-value">{{ task.notes }}</div>
+              </div>
+            </div>
+            
+            <div class="task-actions">
+              <!-- 待处理任务 -->
+              <el-button 
+                v-if="task.status === 'pending'"
+                type="primary" 
+                size="large" 
+                round
+                @click="handleStart(task)"
+                class="action-button start-button"
+              >
+                开始清洁
+              </el-button>
+              
+              <!-- 进行中任务 -->
+              <el-button 
+                v-if="task.status === 'processing'"
+                type="success" 
+                size="large" 
+                round
+                @click="handleComplete(task)"
+                class="action-button complete-button"
+              >
+                完成清洁
+              </el-button>
+              
+              <!-- 已完成任务 -->
+              <el-button 
+                v-if="task.status === 'completed'"
+                type="info" 
+                size="large" 
+                round
+                @click="handleInspect(task)"
+                class="action-button inspect-button"
+              >
+                查看详情
+              </el-button>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 空状态 -->
+        <div v-if="filteredTasks.length === 0" class="empty-tasks">
+          <el-empty description="暂无任务" :image-size="120">
+            <span class="empty-tip">当前没有{{ taskFilterTitle }}，请查看其他分类</span>
+          </el-empty>
+        </div>
+      </div>
+    </div>
+
+    <!-- 管理员才能看到的分配任务按钮 -->
+    <div v-if="userRole === 'admin'" class="floating-action">
+      <el-button type="primary" circle size="large" @click="handleAdd" class="add-button">
+        <el-icon><Plus /></el-icon>
+      </el-button>
+    </div>
 
     <!-- 分配任务对话框 -->
     <el-dialog
       title="分配清洁任务"
       v-model="dialogVisible"
-      width="500px"
+      width="90%"
+      class="mobile-dialog"
     >
       <el-form
         ref="taskFormRef"
@@ -140,73 +204,142 @@
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-button size="large" @click="dialogVisible = false">取消</el-button>
+          <el-button size="large" type="primary" @click="handleSubmit">确定</el-button>
+        </div>
       </template>
     </el-dialog>
 
     <!-- 完成清洁对话框 -->
     <el-dialog
-      title="完成清洁确认"
+      title="完成清洁"
       v-model="completeDialogVisible"
-      width="500px"
+      width="90%"
+      class="mobile-dialog complete-dialog"
     >
       <el-form
         ref="completeFormRef"
         :model="completeForm"
         :rules="completeFormRules"
-        label-width="100px"
+        label-position="top"
       >
-        <el-form-item label="实际用时" prop="actualDuration">
-          <el-input-number
+        <el-form-item label="实际用时(分钟)" prop="actualDuration">
+          <el-slider
             v-model="completeForm.actualDuration"
             :min="5"
             :max="120"
             :step="5"
+            :marks="{
+              5: '5',
+              30: '30',
+              60: '60',
+              90: '90',
+              120: '120'
+            }"
           />
-          <span class="unit-text">分钟</span>
+          <div class="duration-display">{{ completeForm.actualDuration }} 分钟</div>
         </el-form-item>
-        <el-form-item label="清洁项目" prop="cleanItems">
-          <el-checkbox-group v-model="completeForm.cleanItems">
-            <el-checkbox label="bedding">床品更换</el-checkbox>
-            <el-checkbox label="bathroom">浴室清洁</el-checkbox>
-            <el-checkbox label="floor">地面清洁</el-checkbox>
-            <el-checkbox label="furniture">家具除尘</el-checkbox>
-            <el-checkbox label="garbage">垃圾清理</el-checkbox>
-          </el-checkbox-group>
+        
+        <el-form-item label="清洁项目" prop="cleanItems" class="checkbox-item">
+          <div class="checkbox-grid">
+            <el-checkbox label="bedding" size="large" border v-model="completeForm.cleanItems">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-bed"></i>
+                <span>床品更换</span>
+              </div>
+            </el-checkbox>
+            <el-checkbox label="bathroom" size="large" border v-model="completeForm.cleanItems">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-bathroom"></i>
+                <span>浴室清洁</span>
+              </div>
+            </el-checkbox>
+            <el-checkbox label="floor" size="large" border v-model="completeForm.cleanItems">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-floor"></i>
+                <span>地面清洁</span>
+              </div>
+            </el-checkbox>
+            <el-checkbox label="furniture" size="large" border v-model="completeForm.cleanItems">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-furniture"></i>
+                <span>家具除尘</span>
+              </div>
+            </el-checkbox>
+            <el-checkbox label="garbage" size="large" border v-model="completeForm.cleanItems">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-garbage"></i>
+                <span>垃圾清理</span>
+              </div>
+            </el-checkbox>
+          </div>
         </el-form-item>
-        <el-form-item label="物品补充" prop="supplies">
-          <el-checkbox-group v-model="completeForm.supplies">
-            <el-checkbox label="toiletries">洗漱用品</el-checkbox>
-            <el-checkbox label="towels">毛巾浴巾</el-checkbox>
-            <el-checkbox label="water">饮用水</el-checkbox>
-          </el-checkbox-group>
+        
+        <el-form-item label="物品补充" prop="supplies" class="checkbox-item">
+          <div class="checkbox-grid">
+            <el-checkbox label="toiletries" size="large" border v-model="completeForm.supplies">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-toiletries"></i>
+                <span>洗漱用品</span>
+              </div>
+            </el-checkbox>
+            <el-checkbox label="towels" size="large" border v-model="completeForm.supplies">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-towels"></i>
+                <span>毛巾浴巾</span>
+              </div>
+            </el-checkbox>
+            <el-checkbox label="water" size="large" border v-model="completeForm.supplies">
+              <div class="checkbox-content">
+                <i class="checkbox-icon icon-water"></i>
+                <span>饮用水</span>
+              </div>
+            </el-checkbox>
+          </div>
         </el-form-item>
+        
         <el-form-item label="特殊情况" prop="issues">
           <el-input
             v-model="completeForm.issues"
             type="textarea"
             rows="3"
-            placeholder="请记录房间内发现的任何问题或特殊情况"
+            placeholder="请记录房间内发现的问题(如有)"
           />
         </el-form-item>
       </el-form>
       <template #footer>
-        <span class="dialog-footer">
-          <el-button @click="completeDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleCompleteSubmit">确认完成</el-button>
-        </span>
+        <div class="dialog-footer">
+          <el-button size="large" @click="completeDialogVisible = false">取消</el-button>
+          <el-button size="large" type="primary" @click="handleCompleteSubmit">确认完成</el-button>
+        </div>
       </template>
     </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Clock, Loading, Check, Warning } from '@element-plus/icons-vue'
+import { Clock, Loading, Check, Warning, Plus } from '@element-plus/icons-vue'
+
+// 获取用户角色
+const userRole = ref(localStorage.getItem('userRole') || 'cleaner')
+
+// 当前时间
+const currentTime = ref('')
+const updateCurrentTime = () => {
+  const now = new Date()
+  const hours = now.getHours().toString().padStart(2, '0')
+  const minutes = now.getMinutes().toString().padStart(2, '0')
+  currentTime.value = `${hours}:${minutes}`
+}
+
+// 初始化当前时间并每分钟更新
+onMounted(() => {
+  updateCurrentTime()
+  setInterval(updateCurrentTime, 60000)
+})
 
 // 任务统计数据
 const taskStats = reactive([
@@ -597,50 +730,112 @@ fetchTaskList()
 </script>
 
 <style scoped>
-.tasks-container {
-  padding: 20px;
+/* 移动端优化样式 */
+.mobile-cleaning-tasks {
+  padding: 10px;
+  max-width: 100%;
+  background-color: #f5f5f5;
+  min-height: 100vh;
+  font-family: "Microsoft YaHei", Arial, sans-serif;
 }
 
-.page-header {
+/* 页面头部 */
+.mobile-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 15px 5px;
   margin-bottom: 20px;
+  border-bottom: 1px solid rgba(0, 0, 0, 0.1);
 }
 
-.task-stats {
+.mobile-header h2 {
+  margin: 0;
+  font-size: 22px;
+  color: #333;
+  font-weight: 600;
+}
+
+.current-time {
+  font-size: 18px;
+  font-weight: 500;
+  color: #666;
+}
+
+/* 统计卡片 */
+.stat-cards-wrapper {
   margin-bottom: 20px;
+  overflow-x: auto;
+  -webkit-overflow-scrolling: touch;
+  padding: 5px 0;
+}
+
+.stat-cards {
+  display: flex;
+  gap: 10px;
+  padding: 5px;
+  min-width: max-content;
 }
 
 .stat-card {
-  background-color: #fff;
-  transition: all 0.3s;
+  flex: 0 0 150px;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+  background: white;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  transition: all 0.3s ease;
   cursor: pointer;
-}
-
-.stat-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  border-top: 5px solid transparent;
 }
 
 .stat-card.active {
-  border-color: #409eff;
-  box-shadow: 0 0 10px rgba(64, 158, 255, 0.3);
+  transform: translateY(-5px);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
-.stat-content {
-  display: flex;
-  align-items: center;
+.stat-card.pending {
+  border-top-color: #e6a23c;
+}
+
+.stat-card.processing {
+  border-top-color: #409eff;
+}
+
+.stat-card.completed {
+  border-top-color: #67c23a;
+}
+
+.stat-card.high-priority {
+  border-top-color: #f56c6c;
 }
 
 .stat-icon {
   width: 48px;
   height: 48px;
-  border-radius: 8px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
+  margin-bottom: 10px;
+}
+
+.stat-card.pending .stat-icon {
+  background-color: #e6a23c;
+}
+
+.stat-card.processing .stat-icon {
+  background-color: #409eff;
+}
+
+.stat-card.completed .stat-icon {
+  background-color: #67c23a;
+}
+
+.stat-card.high-priority .stat-icon {
+  background-color: #f56c6c;
 }
 
 .stat-icon .el-icon {
@@ -648,46 +843,319 @@ fetchTaskList()
   color: #fff;
 }
 
-.stat-icon.pending {
-  background-color: #e6a23c;
+.stat-info {
+  text-align: center;
 }
 
-.stat-icon.processing {
-  background-color: #409eff;
-}
-
-.stat-icon.completed {
-  background-color: #67c23a;
-}
-
-.stat-icon.high-priority {
-  background-color: #f56c6c;
+.stat-count {
+  font-size: 28px;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
+  line-height: 1;
 }
 
 .stat-title {
   font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
+  color: #666;
 }
 
-.stat-count {
-  font-size: 24px;
-  font-weight: bold;
+/* 任务列表区域 */
+.task-list-section {
+  background: white;
+  border-radius: 12px;
+  padding: 15px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.05);
 }
 
-.card-header {
+.section-header {
+  margin-bottom: 15px;
+}
+
+.section-header h3 {
+  margin: 0 0 15px 0;
+  font-size: 18px;
+  color: #333;
+}
+
+.filter-toggle {
+  margin-bottom: 15px;
+  overflow-x: auto;
+  white-space: nowrap;
+  -webkit-overflow-scrolling: touch;
+}
+
+.filter-toggle .el-radio-button {
+  margin-right: 5px;
+}
+
+/* 任务卡片 */
+.task-cards {
+  display: flex;
+  flex-direction: column;
+  gap: 15px;
+}
+
+.task-card {
+  background: #fff;
+  border-radius: 10px;
+  padding: 15px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+  position: relative;
+  border-left: 5px solid #ddd;
+}
+
+.task-card.high-priority {
+  border-left-color: #f56c6c;
+}
+
+.task-card.medium-priority {
+  border-left-color: #e6a23c;
+}
+
+.task-card.low-priority {
+  border-left-color: #909399;
+}
+
+.task-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #f0f0f0;
 }
 
-.header-title {
+.room-info {
+  display: flex;
+  align-items: baseline;
+}
+
+.room-number {
+  font-size: 22px;
+  font-weight: 700;
+  color: #333;
+  margin-right: 10px;
+}
+
+.room-type {
+  font-size: 14px;
+  color: #666;
+}
+
+.task-status-tag {
+  padding: 4px 10px;
+  border-radius: 15px;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.task-status-tag.pending {
+  background-color: #fef6e9;
+  color: #e6a23c;
+}
+
+.task-status-tag.processing {
+  background-color: #ebf5ff;
+  color: #409eff;
+}
+
+.task-status-tag.completed {
+  background-color: #f0f9eb;
+  color: #67c23a;
+}
+
+.task-body {
+  display: flex;
+  flex-direction: column;
+}
+
+.task-detail {
+  margin-bottom: 15px;
+}
+
+.detail-item {
+  display: flex;
+  margin-bottom: 10px;
   font-size: 16px;
-  font-weight: bold;
 }
 
-.unit-text {
-  margin-left: 10px;
-  color: #606266;
+.item-label {
+  width: 90px;
+  color: #666;
+  flex-shrink: 0;
+}
+
+.item-value {
+  flex: 1;
+  color: #333;
+}
+
+.item-value.priority {
+  font-weight: 600;
+}
+
+.priority-high {
+  color: #f56c6c;
+}
+
+.priority-medium {
+  color: #e6a23c;
+}
+
+.priority-low {
+  color: #909399;
+}
+
+.detail-item.notes {
+  align-items: flex-start;
+}
+
+.task-actions {
+  display: flex;
+  justify-content: center;
+  margin-top: 10px;
+}
+
+.action-button {
+  width: 100%;
+  max-width: 200px;
+  height: 50px;
+  font-size: 18px;
+}
+
+.start-button {
+  background-color: #409eff;
+  border-color: #409eff;
+}
+
+.complete-button {
+  background-color: #67c23a;
+  border-color: #67c23a;
+}
+
+.inspect-button {
+  background-color: #909399;
+  border-color: #909399;
+}
+
+/* 空状态 */
+.empty-tasks {
+  padding: 30px 0;
+  text-align: center;
+}
+
+.empty-tip {
+  color: #999;
+  font-size: 14px;
+  margin-top: 10px;
+  display: block;
+}
+
+/* 浮动操作按钮 */
+.floating-action {
+  position: fixed;
+  right: 20px;
+  bottom: 30px;
+  z-index: 10;
+}
+
+.add-button {
+  width: 60px;
+  height: 60px;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+}
+
+.add-button .el-icon {
+  font-size: 24px;
+}
+
+/* 完成清洁对话框自定义样式 */
+.complete-dialog :deep(.el-dialog__body) {
+  padding: 20px 15px;
+}
+
+.checkbox-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+  gap: 10px;
+}
+
+.checkbox-content {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.checkbox-icon {
+  width: 24px;
+  height: 24px;
+  margin-right: 8px;
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+}
+
+.duration-display {
+  text-align: center;
+  font-size: 18px;
+  color: #333;
+  font-weight: 500;
+  margin-top: 10px;
+}
+
+.checkbox-item :deep(.el-checkbox) {
+  margin-right: 0;
+  margin-bottom: 0;
+  height: 46px;
+}
+
+.checkbox-item :deep(.el-checkbox__label) {
+  font-size: 16px;
+}
+
+/* 对话框样式 */
+.mobile-dialog :deep(.el-dialog__title) {
+  font-size: 20px;
+}
+
+.mobile-dialog :deep(.el-form-item__label) {
+  font-size: 16px;
+}
+
+.mobile-dialog :deep(.el-input__inner),
+.mobile-dialog :deep(.el-textarea__inner) {
+  font-size: 16px;
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 0 10px;
+}
+
+.dialog-footer .el-button {
+  flex: 1;
+  margin: 0 5px;
+  font-size: 16px;
+}
+
+@media screen and (max-width: 480px) {
+  .room-number {
+    font-size: 20px;
+  }
+  
+  .detail-item {
+    font-size: 15px;
+  }
+  
+  .item-label {
+    width: 80px;
+  }
+  
+  .action-button {
+    height: 46px;
+    font-size: 16px;
+  }
 }
 </style>
