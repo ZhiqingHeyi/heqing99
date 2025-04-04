@@ -7,30 +7,26 @@
           <span class="title">后台管理</span>
         </div>
         <el-menu
-          :default-active="$route.path"
+          :default-active="activeMenu"
           class="el-menu-vertical"
-          :router="true"
-          @select="handleMenuSelect"
         >
           <template v-if="userRole === 'admin'">
-            <el-menu-item index="/admin/dashboard">
+            <el-menu-item index="/admin/dashboard" @click="switchComponent('dashboard')">
               <el-icon><DataLine /></el-icon>
               <span>数据看板</span>
             </el-menu-item>
-            <el-menu-item index="/admin/users">
+            <el-menu-item index="/admin/users" @click="switchComponent('users')">
               <el-icon><User /></el-icon>
               <span>用户管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin/staff">
+            <el-menu-item index="/admin/staff" @click="switchComponent('staff')">
               <el-icon><UserFilled /></el-icon>
               <span>员工管理</span>
             </el-menu-item>
-            <div @click="navigateToInviteCodes">
-              <el-menu-item index="/admin/invite-codes">
-                <el-icon><Key /></el-icon>
-                <span>邀请码管理</span>
-              </el-menu-item>
-            </div>
+            <el-menu-item index="/admin/invite-codes" @click="switchComponent('inviteCodes')">
+              <el-icon><Key /></el-icon>
+              <span>邀请码管理</span>
+            </el-menu-item>
           </template>
 
           <template v-if="userRole === 'receptionist'">
@@ -67,7 +63,7 @@
             <div class="breadcrumb">
               <el-breadcrumb>
                 <el-breadcrumb-item>后台管理</el-breadcrumb-item>
-                <el-breadcrumb-item>{{ currentPage }}</el-breadcrumb-item>
+                <el-breadcrumb-item>{{ currentPageTitle }}</el-breadcrumb-item>
               </el-breadcrumb>
             </div>
             <div class="user-info">
@@ -87,7 +83,8 @@
         </el-header>
         
         <el-main>
-          <router-view :key="$route.fullPath"></router-view>
+          <!-- 使用动态组件渲染 -->
+          <component :is="currentComponent" />
         </el-main>
       </el-container>
     </el-container>
@@ -95,62 +92,94 @@
 </template>
 
 <script setup>
-import { ref, computed } from 'vue'
-import { useRouter, useRoute } from 'vue-router'
+import { ref, computed, shallowRef, markRaw, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key } from '@element-plus/icons-vue'
 
+// 导入组件
+import Dashboard from './Dashboard.vue'
+import InviteCodes from './InviteCodes.vue'
+import Staff from './Staff.vue'
+import Users from './Users.vue'
+
 const router = useRouter()
-const route = useRoute()
 
 // 从登录状态获取用户数据
 const userRole = ref(localStorage.getItem('userRole') || 'admin')
 const username = ref(localStorage.getItem('username') || '管理员')
 
-const currentPage = computed(() => {
-  const pathMap = {
-    '/admin/dashboard': '数据看板',
-    '/admin/users': '用户管理',
-    '/admin/staff': '员工管理',
-    '/admin/invite-codes': '邀请码管理',
-    '/admin/reception/bookings': '预订管理',
-    '/admin/reception/checkin': '入住登记',
-    '/admin/reception/visitors': '访客登记',
-    '/admin/cleaning/tasks': '清洁任务',
-    '/admin/cleaning/records': '清洁记录'
-  }
-  return pathMap[route.path] || '首页'
-})
+// 当前激活的菜单
+const activeMenu = ref('/admin/dashboard')
 
+// 当前显示的组件
+const currentComponent = shallowRef(null)
+
+// 当前页面标题
+const currentPageTitle = ref('数据看板')
+
+// 页面标题映射
+const pageTitles = {
+  'dashboard': '数据看板',
+  'users': '用户管理',
+  'staff': '员工管理',
+  'inviteCodes': '邀请码管理'
+}
+
+// 组件映射
+const componentMap = {
+  'dashboard': markRaw(Dashboard),
+  'users': markRaw(Users),
+  'staff': markRaw(Staff),
+  'inviteCodes': markRaw(InviteCodes)
+}
+
+// 切换组件
+const switchComponent = (componentName) => {
+  console.log('切换到组件:', componentName)
+  currentComponent.value = componentMap[componentName]
+  currentPageTitle.value = pageTitles[componentName]
+
+  // 更新激活菜单
+  const pathMap = {
+    'dashboard': '/admin/dashboard',
+    'users': '/admin/users',
+    'staff': '/admin/staff',
+    'inviteCodes': '/admin/invite-codes'
+  }
+  activeMenu.value = pathMap[componentName]
+
+  // 同步更新路由，但不触发实际导航
+  const path = pathMap[componentName]
+  router.push(path).catch(() => {})
+}
+
+// 处理退出登录
 const handleLogout = () => {
   // 清除登录状态
   localStorage.removeItem('userRole')
   localStorage.removeItem('username')
-  localStorage.removeItem('token') // 如果使用token认证
-  // 重定向到登录页面，并带上logout=true查询参数
+  localStorage.removeItem('token')
+  // 重定向到登录页面
   router.push('/admin/login?logout=true')
 }
 
-const handleMenuSelect = (index) => {
-  // 处理菜单选择逻辑
-  console.log(`Selected index: ${index}`)
-  console.log('当前路由:', route.path)
-  console.log('路由name:', route.name)
+// 组件挂载时设置初始组件
+onMounted(() => {
+  // 根据当前URL路径决定显示哪个组件
+  const path = window.location.pathname
+  console.log('当前路径:', path)
   
-  // 处理特殊情况：邀请码管理
-  if (index === '/admin/invite-codes' && route.path !== '/admin/invite-codes') {
-    console.log('手动导航到邀请码管理')
-    router.push('/admin/invite-codes')
-      .then(() => console.log('导航成功'))
-      .catch(err => console.error('导航失败:', err))
+  if (path.includes('/admin/invite-codes')) {
+    switchComponent('inviteCodes')
+  } else if (path.includes('/admin/users')) {
+    switchComponent('users')
+  } else if (path.includes('/admin/staff')) {
+    switchComponent('staff')
+  } else {
+    // 默认显示数据看板
+    switchComponent('dashboard')
   }
-}
-
-const navigateToInviteCodes = () => {
-  // 实现导航到邀请码管理的逻辑
-  console.log('手动导航到邀请码管理')
-  // 使用直接跳转方式
-  window.location.href = '/admin/invite-codes'
-}
+})
 </script>
 
 <style scoped>
@@ -206,4 +235,4 @@ const navigateToInviteCodes = () => {
   background-color: #f5f7fa;
   padding: 20px;
 }
-</style>
+</style> 

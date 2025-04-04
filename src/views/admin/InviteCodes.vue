@@ -116,7 +116,7 @@
           <li>注册成功后，系统自动分配相应的角色权限</li>
         </ol>
         <div class="register-link">
-          <p>员工注册链接：<el-link type="primary" href="/register" target="_blank">{{ window.location.origin }}/register</el-link></p>
+          <p>员工注册链接：<el-link type="primary" href="/register" target="_blank">{{ baseUrl }}/register</el-link></p>
         </div>
       </div>
     </el-card>
@@ -136,8 +136,8 @@
         </el-form-item>
         <el-form-item label="过期方式" required>
           <el-radio-group v-model="inviteCodeForm.expireType">
-            <el-radio label="days">固定天数</el-radio>
-            <el-radio label="date">指定日期</el-radio>
+            <el-radio :value="'days'">固定天数</el-radio>
+            <el-radio :value="'date'">指定日期</el-radio>
           </el-radio-group>
         </el-form-item>
         <el-form-item label="有效期" required v-if="inviteCodeForm.expireType === 'days'">
@@ -216,19 +216,13 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed, onMounted, defineComponent } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Download, Delete } from '@element-plus/icons-vue'
 import QRCode from 'qrcodejs2-fix'
-import { useRoute } from 'vue-router'
 
-// 定义组件
-defineComponent({
-  name: 'InviteCodes'
-})
-
-// 获取当前路由
-const route = useRoute()
+// 基础URL，用于生成链接，替代window.location.origin
+const baseUrl = 'http://localhost:3000'
 
 // 邀请码管理状态
 const generateCodeVisible = ref(false)
@@ -435,7 +429,7 @@ const showInviteCodeQR = (row) => {
     if (qrCodeRef.value) {
       qrCodeRef.value.innerHTML = ''
       new QRCode(qrCodeRef.value, {
-        text: `${window.location.origin}/register?code=${row.code}`,
+        text: `${baseUrl}/register?code=${row.code}`,
         width: 200,
         height: 200,
         colorDark: '#000000',
@@ -462,12 +456,6 @@ const downloadQRCode = () => {
     ElMessage.error('下载失败，请稍后重试')
   }
 }
-
-// 添加一个mounted钩子，确认组件被正确加载
-onMounted(() => {
-  console.log('邀请码管理组件已挂载', new Date().toLocaleString())
-  console.log('当前路由路径:', route.path)
-})
 
 // 导出邀请码
 const exportInviteCodes = () => {
@@ -543,6 +531,11 @@ const confirmBatchExpire = () => {
   // 清空选择
   selectedCodes.value = []
 }
+
+// 在组件挂载时执行的逻辑
+onMounted(() => {
+  console.log('邀请码管理组件已挂载')
+})
 </script>
 
 <style scoped>

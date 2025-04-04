@@ -86,17 +86,14 @@ const router = createRouter({
         {
           path: 'dashboard',
           name: 'admin-dashboard',
-          component: () => import('../views/admin/Dashboard.vue')
         },
         {
           path: 'users',
           name: 'admin-users',
-          component: () => import('../views/admin/Users.vue')
         },
         {
           path: 'staff',
           name: 'admin-staff',
-          component: () => import('../views/admin/Staff.vue')
         },
         {
           path: 'invite-codes',
@@ -106,32 +103,26 @@ const router = createRouter({
         {
           path: 'reception/bookings',
           name: 'reception-bookings',
-          component: () => import('../views/admin/reception/Bookings.vue')
         },
         {
           path: 'reception/checkin',
           name: 'reception-checkin',
-          component: () => import('../views/admin/reception/Checkin.vue')
         },
         {
           path: 'reception/visitors',
           name: 'reception-visitors',
-          component: () => import('../views/admin/reception/Visitors.vue')
         },
         {
           path: 'reception/visitor-records',
           name: 'reception-visitor-records',
-          component: () => import('../views/admin/reception/VisitorRecords.vue')
         },
         {
           path: 'cleaning/tasks',
           name: 'cleaning-tasks',
-          component: () => import('../views/admin/cleaning/Tasks.vue')
         },
         {
           path: 'cleaning/records',
           name: 'cleaning-records',
-          component: () => import('../views/admin/cleaning/Records.vue')
         }
       ]
     }
