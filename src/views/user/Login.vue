@@ -2,8 +2,16 @@
   <div class="login-container">
     <div class="background-image"></div>
     <div class="login-content">
-      <el-card class="login-card glass-effect">
-        <h2 class="login-title">会员登录</h2>
+      <el-card class="login-card luxury-card">
+        <div class="luxury-header">
+          <div class="logo-wrapper">
+            <img src="../../assets/logo.svg" alt="鹤清酒店" class="logo" />
+          </div>
+          <h2 class="login-title">尊贵会员登录</h2>
+          <div class="luxury-divider">
+            <span class="divider-icon"></span>
+          </div>
+        </div>
         
         <el-form :model="loginForm" :rules="rules" ref="loginFormRef" label-width="0" class="login-form">
           <el-form-item prop="username">
@@ -11,7 +19,7 @@
               v-model="loginForm.username" 
               placeholder="用户名/手机号" 
               prefix-icon="el-icon-user"
-              class="custom-input"
+              class="luxury-input"
             />
           </el-form-item>
           
@@ -22,31 +30,32 @@
               placeholder="密码" 
               prefix-icon="el-icon-lock"
               show-password
-              class="custom-input"
+              class="luxury-input"
             />
           </el-form-item>
           
           <div class="remember-forgot">
-            <el-checkbox v-model="loginForm.remember">记住我</el-checkbox>
-            <router-link to="/forgot-password" class="forgot-link">忘记密码?</router-link>
+            <el-checkbox v-model="loginForm.remember" class="luxury-checkbox">记住我</el-checkbox>
+            <router-link to="/forgot-password" class="forgot-link luxury-link">忘记密码?</router-link>
           </div>
           
           <el-form-item>
-            <el-button type="primary" class="login-btn" @click="handleLogin" :loading="loading">登录</el-button>
+            <el-button type="primary" class="login-btn luxury-btn" @click="handleLogin" :loading="loading">登录</el-button>
           </el-form-item>
         </el-form>
         
         <div class="register-link">
-          还没有账号? <router-link to="/register">立即注册</router-link>
+          还没有账号? <router-link to="/register" class="luxury-link">立即注册</router-link>
         </div>
 
-        <div class="login-benefits">
-          <h4>会员专享特权</h4>
+        <div class="login-benefits luxury-benefits">
+          <h4>会员尊享礼遇</h4>
           <ul>
-            <li>预订免押金</li>
-            <li>累计积分兑换免费住宿</li>
-            <li>专属优惠价格</li>
-            <li>生日特惠</li>
+            <li><i class="el-icon-check benefit-icon"></i> 预订免押金</li>
+            <li><i class="el-icon-check benefit-icon"></i> 累计积分兑换免费住宿</li>
+            <li><i class="el-icon-check benefit-icon"></i> 专属优惠价格</li>
+            <li><i class="el-icon-check benefit-icon"></i> 生日特惠礼遇</li>
+            <li><i class="el-icon-check benefit-icon"></i> 会员专享休息室</li>
           </ul>
         </div>
       </el-card>
@@ -154,7 +163,7 @@ const handleLogin = async () => {
   justify-content: center;
   align-items: center;
   padding: 20px;
-  font-family: "Microsoft YaHei", "SimSun", serif;
+  font-family: "Times New Roman", "SimSun", serif;
 }
 
 .background-image {
@@ -163,7 +172,7 @@ const handleLogin = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('../../assets/hotel1.jpg');
+  background-image: url('../../assets/images/luxury-hotel.jpg'), url('../../assets/hotel1.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -173,88 +182,195 @@ const handleLogin = async () => {
 
 .login-content {
   width: 100%;
-  max-width: 450px;
+  max-width: 500px;
   z-index: 1;
+  animation: fadeIn 0.8s ease-in-out;
 }
 
-.login-card {
-  background-color: rgba(255, 255, 255, 0.85);
-  border: none;
-  padding: 15px;
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.luxury-card {
+  border-radius: 8px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
+  overflow: visible;
+  background-color: rgba(255, 255, 255, 0.92);
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3);
+  padding: 30px;
+}
+
+.luxury-header {
+  text-align: center;
+  margin-bottom: 40px;
+}
+
+.logo-wrapper {
+  margin-bottom: 15px;
+}
+
+.logo {
+  height: 60px;
 }
 
 .login-title {
+  color: #8b6c38;
+  font-size: 32px;
+  margin-bottom: 15px;
+  font-weight: normal;
+  letter-spacing: 2px;
+}
+
+.luxury-divider {
+  position: relative;
+  height: 20px;
   text-align: center;
-  margin-bottom: 30px;
-  font-size: 28px;
-  color: #333;
-  font-weight: 600;
+  margin: 20px 0;
+}
+
+.luxury-divider:before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 0;
+  right: 0;
+  height: 1px;
+  background: linear-gradient(to right, transparent, #d4af37, transparent);
+}
+
+.divider-icon {
+  display: inline-block;
+  position: relative;
+  width: 40px;
+  height: 40px;
+  background-image: url('../../assets/divider-icon.png');
+  background-size: contain;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-color: white;
+  border-radius: 50%;
+  z-index: 1;
 }
 
 .login-form {
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
-.custom-input {
-  height: 45px;
+.luxury-input {
+  height: 50px;
+  font-size: 14px;
+  border-radius: 4px;
+  border: 1px solid #d4d4d4;
+  transition: all 0.3s;
+}
+
+.luxury-input:hover, .luxury-input:focus {
+  border-color: #8b6c38;
+  box-shadow: 0 0 8px rgba(212, 175, 55, 0.2);
+}
+
+.luxury-checkbox {
+  color: #333;
+}
+
+.luxury-link {
+  color: #8b6c38;
+  text-decoration: none;
+  transition: color 0.3s;
+}
+
+.luxury-link:hover {
+  color: #d4af37;
+  text-decoration: underline;
 }
 
 .remember-forgot {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 30px;
 }
 
 .forgot-link {
-  color: #409EFF;
-  text-decoration: none;
+  font-size: 14px;
 }
 
-.login-btn {
+.luxury-btn {
   width: 100%;
-  height: 45px;
+  height: 50px;
   border-radius: 4px;
   font-size: 16px;
+  letter-spacing: 2px;
+  background: linear-gradient(135deg, #d4af37, #8b6c38);
+  border: none;
+  color: white;
+  transition: all 0.3s;
+}
+
+.luxury-btn:hover, .luxury-btn:focus {
+  background: linear-gradient(135deg, #e5c158, #a88546);
+  transform: translateY(-1px);
+  box-shadow: 0 4px 12px rgba(139, 108, 56, 0.3);
 }
 
 .register-link {
   text-align: center;
-  margin-top: 20px;
-  font-size: 14px;
-}
-
-.register-link a {
-  color: #409EFF;
-  text-decoration: none;
-}
-
-.login-benefits {
-  margin-top: 30px;
-  padding: 15px;
-  background-color: rgba(64, 158, 255, 0.1);
-  border-radius: 4px;
-}
-
-.login-benefits h4 {
-  font-size: 16px;
-  margin-bottom: 10px;
+  margin-top: 25px;
+  font-size: 15px;
   color: #333;
 }
 
-.login-benefits ul {
-  padding-left: 20px;
+.luxury-benefits {
+  margin-top: 40px;
+  padding: 25px;
+  background-color: rgba(212, 175, 55, 0.05);
+  border-left: 3px solid #d4af37;
+  border-radius: 4px;
+}
+
+.luxury-benefits h4 {
+  font-size: 20px;
+  margin-bottom: 15px;
+  color: #8b6c38;
+  font-weight: normal;
+  letter-spacing: 1px;
+}
+
+.luxury-benefits ul {
+  padding-left: 10px;
   margin: 0;
+  list-style-type: none;
 }
 
-.login-benefits li {
-  margin-bottom: 5px;
-  font-size: 14px;
-  color: #666;
+.luxury-benefits li {
+  margin-bottom: 10px;
+  color: #333;
+  font-size: 15px;
+  display: flex;
+  align-items: center;
 }
 
-.glass-effect {
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+.benefit-icon {
+  color: #d4af37;
+  margin-right: 10px;
+  font-size: 18px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .login-content {
+    max-width: 95%;
+  }
+  
+  .luxury-card {
+    padding: 20px;
+  }
+  
+  .login-title {
+    font-size: 24px;
+  }
 }
 </style> 

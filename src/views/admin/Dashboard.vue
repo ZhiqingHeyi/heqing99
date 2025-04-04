@@ -3,11 +3,13 @@
     <el-row :gutter="20">
       <!-- 数据概览卡片 -->
       <el-col :span="6" v-for="card in dataCards" :key="card.title">
-        <el-card class="data-card" :body-style="{ padding: '20px' }" @click="showCardDetails(card)" hover>
+        <el-card class="data-card premium-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover>
           <div class="card-content">
-            <el-icon class="card-icon" :class="card.type">
-              <component :is="card.icon" />
-            </el-icon>
+            <div class="card-icon-wrapper" :class="card.type">
+              <el-icon class="card-icon">
+                <component :is="card.icon" />
+              </el-icon>
+            </div>
             <div class="card-info">
               <div class="card-title">{{ card.title }}</div>
               <div class="card-value">{{ card.value }}</div>
@@ -23,11 +25,14 @@
     <el-row :gutter="20" class="chart-row">
       <!-- 入住率趋势图 -->
       <el-col :span="12">
-        <el-card>
+        <el-card class="premium-chart-card">
           <template #header>
             <div class="card-header">
-              <span>入住率趋势</span>
-              <el-radio-group v-model="occupancyTimeRange" size="small">
+              <div class="header-left">
+                <span class="header-title">入住率趋势</span>
+                <span class="header-subtitle">实时动态监控，优化房间配置</span>
+              </div>
+              <el-radio-group v-model="occupancyTimeRange" size="small" class="time-filter">
                 <el-radio-button label="week">周</el-radio-button>
                 <el-radio-button label="month">月</el-radio-button>
               </el-radio-group>
@@ -35,18 +40,21 @@
           </template>
           <div class="chart-container">
             <!-- 这里将使用echarts绘制图表 -->
-            <div ref="occupancyChart" style="height: 300px;"></div>
+            <div ref="occupancyChart" style="height: 320px;"></div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 收入统计图 -->
       <el-col :span="12">
-        <el-card>
+        <el-card class="premium-chart-card">
           <template #header>
             <div class="card-header">
-              <span>收入统计</span>
-              <el-radio-group v-model="revenueTimeRange" size="small">
+              <div class="header-left">
+                <span class="header-title">收入统计</span>
+                <span class="header-subtitle">财务分析与预测</span>
+              </div>
+              <el-radio-group v-model="revenueTimeRange" size="small" class="time-filter">
                 <el-radio-button label="week">周</el-radio-button>
                 <el-radio-button label="month">月</el-radio-button>
               </el-radio-group>
@@ -54,7 +62,7 @@
           </template>
           <div class="chart-container">
             <!-- 这里将使用echarts绘制图表 -->
-            <div ref="revenueChart" style="height: 300px;"></div>
+            <div ref="revenueChart" style="height: 320px;"></div>
           </div>
         </el-card>
       </el-col>
@@ -63,30 +71,34 @@
     <el-row :gutter="20" class="chart-row">
       <!-- 房间状态统计 -->
       <el-col :span="12">
-        <el-card>
+        <el-card class="premium-chart-card">
           <template #header>
             <div class="card-header">
-              <span>房间状态统计</span>
+              <div class="header-left">
+                <span class="header-title">房间状态统计</span>
+                <span class="header-subtitle">实时房态管理</span>
+              </div>
             </div>
           </template>
           <div class="chart-container">
-            <!-- 这里将使用echarts绘制饼图 -->
-            <div ref="roomStatusChart" style="height: 300px;"></div>
+            <div ref="roomStatusChart" style="height: 320px;"></div>
           </div>
         </el-card>
       </el-col>
 
       <!-- 清洁任务完成情况 -->
       <el-col :span="12">
-        <el-card>
+        <el-card class="premium-chart-card">
           <template #header>
             <div class="card-header">
-              <span>清洁任务完成情况</span>
+              <div class="header-left">
+                <span class="header-title">清洁任务完成情况</span>
+                <span class="header-subtitle">服务质量监控</span>
+              </div>
             </div>
           </template>
           <div class="chart-container">
-            <!-- 这里将使用echarts绘制进度图 -->
-            <div ref="cleaningTaskChart" style="height: 300px;"></div>
+            <div ref="cleaningTaskChart" style="height: 320px;"></div>
           </div>
         </el-card>
       </el-col>
@@ -98,6 +110,7 @@
       :title="currentCard?.title + '详细数据'" 
       width="70%"
       destroy-on-close
+      class="premium-dialog"
     >
       <div v-if="currentCard?.type === 'success'" class="details-content">
         <el-descriptions title="入住率详情" :column="2" border>
@@ -399,44 +412,71 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-container {
-  padding: 20px;
+  padding: 10px 0;
 }
 
-.data-card {
-  margin-bottom: 20px;
+/* 高级卡片样式 */
+.premium-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   cursor: pointer;
-  transition: all 0.3s;
+  height: 120px;
 }
 
-.data-card:hover {
+.premium-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 10px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+}
+
+.premium-chart-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 .card-content {
   display: flex;
   align-items: center;
+  padding: 20px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+}
+
+.card-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 60px;
+  height: 60px;
+  border-radius: 15px;
+  margin-right: 15px;
+  background: rgba(0, 0, 0, 0.1);
+}
+
+.card-icon-wrapper.success {
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+}
+
+.card-icon-wrapper.primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+}
+
+.card-icon-wrapper.warning {
+  background: linear-gradient(135deg, #f6d365, #fda085);
+}
+
+.card-icon-wrapper.info {
+  background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
 }
 
 .card-icon {
-  font-size: 48px;
-  margin-right: 20px;
-}
-
-.card-icon.success {
-  color: #67c23a;
-}
-
-.card-icon.primary {
-  color: #409eff;
-}
-
-.card-icon.warning {
-  color: #e6a23c;
-}
-
-.card-icon.info {
-  color: #909399;
+  font-size: 24px;
+  color: white;
 }
 
 .card-info {
@@ -451,12 +491,16 @@ onMounted(() => {
 
 .card-value {
   font-size: 24px;
-  font-weight: bold;
-  margin-bottom: 8px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 5px;
+  font-family: 'Arial', sans-serif;
 }
 
 .card-change {
-  font-size: 12px;
+  font-size: 13px;
+  display: flex;
+  align-items: center;
 }
 
 .card-change.up {
@@ -467,22 +511,78 @@ onMounted(() => {
   color: #f56c6c;
 }
 
+.premium-card.success {
+  background: linear-gradient(to right, rgba(54, 209, 220, 0.1), rgba(91, 134, 229, 0.1));
+}
+
+.premium-card.primary {
+  background: linear-gradient(to right, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+}
+
+.premium-card.warning {
+  background: linear-gradient(to right, rgba(246, 211, 101, 0.1), rgba(253, 160, 133, 0.1));
+}
+
+.premium-card.info {
+  background: linear-gradient(to right, rgba(161, 196, 253, 0.1), rgba(194, 233, 251, 0.1));
+}
+
 .chart-row {
-  margin-bottom: 20px;
+  margin-top: 20px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
+  padding: 0 5px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title {
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-subtitle {
+  font-size: 12px;
+  color: #909399;
+  margin-top: 5px;
+}
+
+.time-filter {
+  background-color: #f5f7fa;
+  border-radius: 15px;
+  padding: 2px;
 }
 
 .chart-container {
-  height: 300px;
+  padding: 15px;
+  position: relative;
 }
 
-.details-content {
-  margin: 20px 0;
+.premium-dialog .el-dialog__header {
+  padding: 20px;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.premium-dialog .el-dialog__body {
+  padding: 20px;
+}
+
+.details-content h3 {
+  margin-top: 30px;
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  border-left: 3px solid #5b86e5;
+  padding-left: 10px;
 }
 
 .room-details, .revenue-details, .visitor-details, .booking-details {
@@ -492,5 +592,16 @@ onMounted(() => {
 .room-details h3, .revenue-details h3, .visitor-details h3, .booking-details h3 {
   margin-bottom: 15px;
   font-weight: 500;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .el-col {
+    width: 100% !important;
+  }
+  
+  .premium-card {
+    margin-bottom: 15px;
+  }
 }
 </style>
