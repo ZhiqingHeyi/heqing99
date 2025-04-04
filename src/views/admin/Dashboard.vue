@@ -243,11 +243,9 @@ const currentCard = ref(null)
 
 // 详细数据
 const occupancyDetails = ref([
-  { roomType: '豪华套房', total: 20, occupied: 18, available: 2, rate: '90%' },
-  { roomType: '商务套房', total: 30, occupied: 24, available: 6, rate: '80%' },
-  { roomType: '标准双人间', total: 50, occupied: 45, available: 5, rate: '90%' },
-  { roomType: '标准单人间', total: 30, occupied: 23, available: 7, rate: '77%' },
-  { roomType: '经济房', total: 20, occupied: 16, available: 4, rate: '80%' }
+  { roomType: '豪华大床房', total: 40, occupied: 35, available: 5, rate: '87.5%' },
+  { roomType: '行政套房', total: 25, occupied: 21, available: 4, rate: '84%' },
+  { roomType: '家庭套房', total: 35, occupied: 30, available: 5, rate: '85.7%' }
 ])
 
 const revenueDetails = ref([

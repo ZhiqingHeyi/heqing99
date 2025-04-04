@@ -2,6 +2,7 @@ import { createRouter, createWebHistory } from 'vue-router'
 import Home from '../views/Home.vue'
 import AdminLayout from '../views/admin/Layout.vue'
 import AdminLogin from '../views/admin/Login.vue'
+import InviteCodes from '../views/admin/InviteCodes.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -98,6 +99,11 @@ const router = createRouter({
           component: () => import('../views/admin/Staff.vue')
         },
         {
+          path: 'invite-codes',
+          name: 'admin-invite-codes',
+          component: InviteCodes
+        },
+        {
           path: 'reception/bookings',
           name: 'reception-bookings',
           component: () => import('../views/admin/reception/Bookings.vue')
@@ -135,6 +141,26 @@ const router = createRouter({
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
   console.log('路由守卫检查:', to.path)
+  
+  // 如果直接访问邀请码管理页面，特殊处理
+  if (to.path === '/admin/invite-codes') {
+    console.log('正在尝试访问邀请码管理页面')
+    const userRole = localStorage.getItem('userRole')
+    const token = localStorage.getItem('token')
+    const isLoggedIn = userRole !== null && token !== null
+    
+    if (isLoggedIn && userRole === 'admin') {
+      console.log('有权限访问邀请码管理页面')
+      next()
+      return
+    } else if (!isLoggedIn) {
+      next('/admin/login')
+      return
+    } else {
+      next('/admin/dashboard')
+      return
+    }
+  }
   
   // 获取用户角色和登录状态
   const userRole = localStorage.getItem('userRole')
@@ -202,22 +228,22 @@ router.beforeEach((to, from, next) => {
     }
 
     // 根据角色验证访问权限
-    const adminPaths = ['/admin/dashboard', '/admin/users', '/admin/staff']
+    const adminPaths = ['/admin/dashboard', '/admin/users', '/admin/staff', '/admin/invite-codes']
     const receptionistPaths = ['/admin/reception/bookings', '/admin/reception/checkin', '/admin/reception/visitors']
     const cleanerPaths = ['/admin/cleaning/tasks', '/admin/cleaning/records']
 
     // 检查用户是否有权限访问该路径
     let hasPermission = false
     
-    if (userRole === 'admin' && adminPaths.some(path => to.path.startsWith(path))) {
+    if (userRole === 'admin' && adminPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
       hasPermission = true
-    } else if (userRole === 'receptionist' && receptionistPaths.some(path => to.path.startsWith(path))) {
+    } else if (userRole === 'receptionist' && receptionistPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
       hasPermission = true
-    } else if (userRole === 'cleaner' && cleanerPaths.some(path => to.path.startsWith(path))) {
+    } else if (userRole === 'cleaner' && cleanerPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
       hasPermission = true
     }
     
-    console.log('权限检查结果:', hasPermission)
+    console.log('权限检查结果:', hasPermission, '路径:', to.path)
 
     if (!hasPermission) {
       // 无权限访问，重定向到对应的首页

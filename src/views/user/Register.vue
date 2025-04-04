@@ -354,16 +354,27 @@ const verifyInviteCode = async () => {
     // 这里应该是实际调用API验证邀请码的地方
     // 以下仅为模拟数据
     const mockValidCodes = [
-      { code: 'HQ2404A1BCD3', role: 'receptionist' },
-      { code: 'HQ2404B2EFG4', role: 'cleaner' },
+      { code: 'HQ2404A1BCD3', role: 'receptionist', expireAt: '2024-04-30 10:00:00' },
+      { code: 'HQ2404B2EFG4', role: 'cleaner', expireAt: '2024-05-15 14:30:00' },
+      { code: 'HQ2404ABCDEF1', role: 'receptionist', expireAt: '2024-06-01 09:00:00' },
+      { code: 'HQ2404GHIJKL2', role: 'cleaner', expireAt: '2024-05-20 16:00:00' }
     ]
     
     const foundCode = mockValidCodes.find(item => item.code === staffForm.inviteCode)
     
     if (foundCode) {
-      inviteCodeVerified.value = true
-      inviteCodeRole.value = foundCode.role
-      ElMessage.success('邀请码验证成功')
+      // 检查邀请码是否过期
+      const expireTime = new Date(foundCode.expireAt).getTime()
+      const now = new Date().getTime()
+      
+      if (expireTime < now) {
+        inviteCodeVerified.value = false
+        ElMessage.error('邀请码已过期')
+      } else {
+        inviteCodeVerified.value = true
+        inviteCodeRole.value = foundCode.role
+        ElMessage.success('邀请码验证成功')
+      }
     } else {
       inviteCodeVerified.value = false
       ElMessage.error('邀请码无效或已过期')

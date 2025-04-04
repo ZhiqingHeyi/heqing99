@@ -10,6 +10,7 @@
           :default-active="$route.path"
           class="el-menu-vertical"
           :router="true"
+          @select="handleMenuSelect"
         >
           <template v-if="userRole === 'admin'">
             <el-menu-item index="/admin/dashboard">
@@ -24,6 +25,12 @@
               <el-icon><UserFilled /></el-icon>
               <span>员工管理</span>
             </el-menu-item>
+            <div @click="navigateToInviteCodes">
+              <el-menu-item index="/admin/invite-codes">
+                <el-icon><Key /></el-icon>
+                <span>邀请码管理</span>
+              </el-menu-item>
+            </div>
           </template>
 
           <template v-if="userRole === 'receptionist'">
@@ -80,7 +87,7 @@
         </el-header>
         
         <el-main>
-          <router-view></router-view>
+          <router-view :key="$route.fullPath"></router-view>
         </el-main>
       </el-container>
     </el-container>
@@ -90,7 +97,7 @@
 <script setup>
 import { ref, computed } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
-import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown } from '@element-plus/icons-vue'
+import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key } from '@element-plus/icons-vue'
 
 const router = useRouter()
 const route = useRoute()
@@ -104,6 +111,7 @@ const currentPage = computed(() => {
     '/admin/dashboard': '数据看板',
     '/admin/users': '用户管理',
     '/admin/staff': '员工管理',
+    '/admin/invite-codes': '邀请码管理',
     '/admin/reception/bookings': '预订管理',
     '/admin/reception/checkin': '入住登记',
     '/admin/reception/visitors': '访客登记',
@@ -120,6 +128,28 @@ const handleLogout = () => {
   localStorage.removeItem('token') // 如果使用token认证
   // 重定向到登录页面，并带上logout=true查询参数
   router.push('/admin/login?logout=true')
+}
+
+const handleMenuSelect = (index) => {
+  // 处理菜单选择逻辑
+  console.log(`Selected index: ${index}`)
+  console.log('当前路由:', route.path)
+  console.log('路由name:', route.name)
+  
+  // 处理特殊情况：邀请码管理
+  if (index === '/admin/invite-codes' && route.path !== '/admin/invite-codes') {
+    console.log('手动导航到邀请码管理')
+    router.push('/admin/invite-codes')
+      .then(() => console.log('导航成功'))
+      .catch(err => console.error('导航失败:', err))
+  }
+}
+
+const navigateToInviteCodes = () => {
+  // 实现导航到邀请码管理的逻辑
+  console.log('手动导航到邀请码管理')
+  // 使用直接跳转方式
+  window.location.href = '/admin/invite-codes'
 }
 </script>
 
