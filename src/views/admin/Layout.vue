@@ -133,11 +133,13 @@
                 <div class="time-display">
                   {{ currentTime }}
                 </div>
-                <el-button class="notification-btn" icon="el-icon-bell" circle></el-button>
+                <el-button class="notification-btn" type="primary" text circle>
+                  <el-icon><Bell /></el-icon>
+                </el-button>
                 <div class="user-info">
                   <el-dropdown trigger="click">
                     <span class="user-dropdown">
-                      <el-avatar :size="32" class="user-avatar">{{ username.charAt(0) }}</el-avatar>
+                      <el-avatar :size="36" class="user-avatar">{{ username.charAt(0) }}</el-avatar>
                       <span class="username">{{ username }}</span>
                       <el-icon class="el-icon--right"><arrow-down /></el-icon>
                     </span>
@@ -175,7 +177,7 @@
 <script setup>
 import { ref, computed, shallowRef, markRaw, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch } from '@element-plus/icons-vue'
+import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch, Bell } from '@element-plus/icons-vue'
 
 // 导入组件
 import Dashboard from './Dashboard.vue'
@@ -342,6 +344,7 @@ onBeforeUnmount(() => {
 .admin-layout {
   height: 100vh;
   overflow: hidden;
+  background-color: #f5f7fa;
 }
 
 .tech-sidebar {
@@ -350,39 +353,52 @@ onBeforeUnmount(() => {
   display: flex;
   flex-direction: column;
   overflow-y: auto;
+  box-shadow: 4px 0 10px rgba(0, 0, 0, 0.1);
+  transition: all 0.3s ease;
 }
 
 .logo-container {
   display: flex;
   align-items: center;
-  padding: 20px 15px;
+  padding: 24px 15px;
   border-bottom: 1px solid rgba(255, 255, 255, 0.05);
 }
 
 .logo {
-  width: 32px;
-  height: 32px;
-  margin-right: 10px;
+  width: 36px;
+  height: 36px;
+  margin-right: 12px;
 }
 
 .title {
   color: #fff;
   font-size: 18px;
   font-weight: 500;
+  letter-spacing: 0.5px;
 }
 
 .tech-menu {
   border-right: none;
+  padding: 10px 0;
 }
 
 .tech-menu-item {
   margin: 8px 0;
+  height: 52px;
+  line-height: 52px;
+  border-radius: 0;
+  transition: all 0.3s ease;
+}
+
+.tech-menu-item:hover {
+  background-color: rgba(255, 255, 255, 0.05) !important;
 }
 
 .tech-header {
   background-color: #fff;
   border-bottom: 1px solid #f0f0f0;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.05);
+  padding: 0 20px;
 }
 
 .header-content {
@@ -392,31 +408,81 @@ onBeforeUnmount(() => {
   height: 100%;
 }
 
+.breadcrumb {
+  font-size: 15px;
+}
+
+.header-controls {
+  display: flex;
+  align-items: center;
+  gap: 20px;
+}
+
+.notification-btn {
+  font-size: 18px;
+  padding: 8px;
+  color: #409eff;
+}
+
 .user-dropdown {
   display: flex;
   align-items: center;
   cursor: pointer;
+  padding: 6px 10px;
+  border-radius: 24px;
+  transition: all 0.3s ease;
+}
+
+.user-dropdown:hover {
+  background-color: #f5f7fa;
+}
+
+.user-avatar {
+  background-color: #409eff;
+  color: #fff;
+  font-weight: 600;
 }
 
 .username {
-  margin: 0 8px;
+  margin: 0 10px;
+  font-size: 15px;
+  font-weight: 500;
+  color: #303133;
+}
+
+.user-dropdown-menu {
+  min-width: 150px;
+  border-radius: 8px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.1);
+  padding: 6px 0;
+}
+
+.user-dropdown-menu .el-dropdown-item {
+  padding: 10px 16px;
+  line-height: 1.5;
   font-size: 14px;
+}
+
+.user-dropdown-menu .el-dropdown-item i {
+  margin-right: 8px;
 }
 
 .tech-main {
   background-color: #f5f7fa;
   overflow-y: auto;
   padding: 20px;
+  height: calc(100vh - 70px);
 }
 
 .content-wrapper {
-  max-width: 1600px;
+  max-width: 1680px;
   margin: 0 auto;
+  height: 100%;
 }
 
 .sidebar-footer {
   margin-top: auto;
-  padding: 15px;
+  padding: 20px 15px;
   border-top: 1px solid rgba(255, 255, 255, 0.05);
   text-align: center;
 }
@@ -424,7 +490,7 @@ onBeforeUnmount(() => {
 .version {
   color: #586a88;
   font-size: 12px;
-  margin-bottom: 5px;
+  margin-bottom: 6px;
 }
 
 .copyright {
@@ -435,11 +501,10 @@ onBeforeUnmount(() => {
 .time-display {
   font-size: 14px;
   color: #606266;
-}
-
-.user-avatar {
-  background-color: #409eff;
-  color: #fff;
+  background-color: #f8f9fa;
+  padding: 6px 12px;
+  border-radius: 20px;
+  font-weight: 500;
 }
 
 /* 保洁人员专用样式 - 移动端垂直布局 */
@@ -448,16 +513,19 @@ onBeforeUnmount(() => {
   height: auto;
   display: flex;
   flex-direction: column;
+  background-color: #f8f9fa;
 }
 
 .cleaner-header {
   background-color: #0c1a2b;
   color: #fff;
-  padding: 12px 15px;
+  padding: 16px 20px;
   display: flex;
   justify-content: space-between;
   align-items: center;
-  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  position: relative;
+  z-index: 10;
 }
 
 .cleaner-header .logo-container {
@@ -467,69 +535,71 @@ onBeforeUnmount(() => {
 
 .cleaner-header .title {
   font-size: 20px;
+  letter-spacing: 0.5px;
 }
 
 .user-display {
   display: flex;
   align-items: center;
+  gap: 10px;
 }
 
 .user-display .username {
   color: #fff;
   font-size: 16px;
+  font-weight: 500;
 }
 
 .cleaner-menu {
-  padding: 15px;
+  padding: 20px;
   background-color: #f8f9fa;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  position: relative;
+  z-index: 5;
 }
 
 .menu-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
+  gap: 20px;
 }
 
 .menu-item {
   background-color: #fff;
-  border-radius: 10px;
-  padding: 15px;
+  border-radius: 12px;
+  padding: 20px;
   text-align: center;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  transition: all 0.3s;
-  height: 120px;
-  display: flex;
-  flex-direction: column;
-  justify-content: center;
-  align-items: center;
+  transition: all 0.3s ease;
+}
+
+.menu-item:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
 }
 
 .menu-item.active {
-  background-color: #e6f1ff;
-  border: 2px solid #409eff;
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+  color: white;
 }
 
 .menu-icon {
-  font-size: 40px;
-  color: #409eff;
+  font-size: 28px;
   margin-bottom: 10px;
-}
-
-.menu-icon .el-icon {
-  font-size: 40px;
+  display: flex;
+  justify-content: center;
 }
 
 .menu-label {
-  font-size: 18px;
-  color: #303133;
+  font-size: 16px;
   font-weight: 500;
 }
 
 .cleaner-main {
   flex: 1;
-  padding: 0;
-  background-color: #f5f7fa;
+  padding: 20px;
+  background-color: #f8f9fa;
   overflow-y: auto;
 }
 
@@ -537,30 +607,64 @@ onBeforeUnmount(() => {
   background-color: #fff;
   border-top: 1px solid #f0f0f0;
   box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.05);
-  padding: 10px 15px;
+  padding: 0 20px;
 }
 
 .footer-content {
+  height: 100%;
   display: flex;
   justify-content: space-between;
   align-items: center;
 }
 
 .logout-btn {
-  font-size: 16px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background-color: #f56c6c;
+  color: white;
+  border: none;
+  font-weight: 500;
 }
 
-@media screen and (max-width: 768px) {
-  .menu-item {
-    height: 100px;
+@media (max-width: 768px) {
+  .tech-sidebar {
+    width: 60px !important;
+    overflow-x: hidden;
   }
   
-  .menu-icon {
-    font-size: 30px;
+  .tech-sidebar .logo-container {
+    padding: 15px 0;
+    justify-content: center;
   }
   
-  .menu-label {
-    font-size: 16px;
+  .tech-sidebar .title,
+  .tech-sidebar .el-menu-item span {
+    display: none;
+  }
+  
+  .tech-sidebar .logo {
+    margin-right: 0;
+  }
+  
+  .tech-header {
+    padding: 0 10px;
+  }
+  
+  .header-controls {
+    gap: 10px;
+  }
+  
+  .time-display {
+    display: none;
+  }
+  
+  .username {
+    display: none;
+  }
+  
+  .tech-main {
+    padding: 10px;
   }
 }
 </style> 

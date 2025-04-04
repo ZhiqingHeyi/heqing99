@@ -2,10 +2,10 @@
   <div class="dashboard-container">
     <!-- 管理员才能看到的内容 -->
     <div v-if="userRole === 'admin'">
-      <el-row :gutter="20">
+      <el-row :gutter="24">
         <!-- 数据概览卡片 -->
-        <el-col :span="6" v-for="card in dataCards" :key="card.title">
-          <el-card class="data-card premium-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover>
+        <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="card in dataCards" :key="card.title">
+          <el-card class="data-card luxury-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover shadow="hover">
             <div class="card-content">
               <div class="card-icon-wrapper" :class="card.type">
                 <el-icon class="card-icon">
@@ -24,10 +24,10 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20" class="chart-row">
+      <el-row :gutter="24" class="chart-row">
         <!-- 入住率趋势图 -->
-        <el-col :span="12">
-          <el-card class="premium-chart-card">
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
             <template #header>
               <div class="card-header">
                 <div class="header-left">
@@ -48,8 +48,8 @@
         </el-col>
 
         <!-- 收入统计图 -->
-        <el-col :span="12">
-          <el-card class="premium-chart-card">
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
             <template #header>
               <div class="card-header">
                 <div class="header-left">
@@ -70,10 +70,10 @@
         </el-col>
       </el-row>
 
-      <el-row :gutter="20" class="chart-row">
+      <el-row :gutter="24" class="chart-row">
         <!-- 房间状态统计 -->
-        <el-col :span="12">
-          <el-card class="premium-chart-card">
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
             <template #header>
               <div class="card-header">
                 <div class="header-left">
@@ -89,8 +89,8 @@
         </el-col>
 
         <!-- 清洁任务完成情况 -->
-        <el-col :span="12">
-          <el-card class="premium-chart-card">
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
             <template #header>
               <div class="card-header">
                 <div class="header-left">
@@ -112,7 +112,7 @@
         :title="currentCard?.title + '详细数据'" 
         width="70%"
         destroy-on-close
-        class="premium-dialog"
+        class="luxury-dialog"
       >
         <div v-if="currentCard?.type === 'success'" class="details-content">
           <el-descriptions title="入住率详情" :column="2" border>
@@ -431,31 +431,41 @@ onMounted(() => {
 
 <style scoped>
 .dashboard-container {
-  padding: 10px 0;
+  padding: 20px 0;
+  height: 100%;
+  overflow-y: auto;
 }
 
-/* 高级卡片样式 */
-.premium-card {
+/* 高级豪华卡片样式 */
+.luxury-card {
   border-radius: 12px;
   overflow: hidden;
   transition: all 0.3s ease;
   border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
   cursor: pointer;
-  height: 120px;
+  height: 130px;
+  position: relative;
+  background: #fff;
+  margin-bottom: 16px;
 }
 
-.premium-card:hover {
+.luxury-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
 }
 
-.premium-chart-card {
+.luxury-chart-card {
   border-radius: 12px;
   overflow: hidden;
   border: none;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.luxury-chart-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
 }
 
 .card-content {
@@ -463,63 +473,87 @@ onMounted(() => {
   align-items: center;
   padding: 20px;
   height: 100%;
-  background: linear-gradient(to right, rgba(255, 255, 255, 0.9), rgba(255, 255, 255, 0.6));
+  background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
+  position: relative;
+  overflow: hidden;
+}
+
+.card-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  height: 50%;
+  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
+  z-index: 1;
+  border-radius: 50% 0 0 0;
 }
 
 .card-icon-wrapper {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 60px;
-  height: 60px;
-  border-radius: 15px;
-  margin-right: 15px;
-  background: rgba(0, 0, 0, 0.1);
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  margin-right: 20px;
+  position: relative;
+  z-index: 2;
 }
 
 .card-icon-wrapper.success {
   background: linear-gradient(135deg, #36d1dc, #5b86e5);
+  box-shadow: 0 4px 12px rgba(91, 134, 229, 0.3);
 }
 
 .card-icon-wrapper.primary {
   background: linear-gradient(135deg, #667eea, #764ba2);
+  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
 }
 
 .card-icon-wrapper.warning {
   background: linear-gradient(135deg, #f6d365, #fda085);
+  box-shadow: 0 4px 12px rgba(253, 160, 133, 0.3);
 }
 
 .card-icon-wrapper.info {
   background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+  box-shadow: 0 4px 12px rgba(194, 233, 251, 0.3);
 }
 
 .card-icon {
-  font-size: 24px;
+  font-size: 28px;
   color: white;
 }
 
 .card-info {
   flex: 1;
+  position: relative;
+  z-index: 2;
 }
 
 .card-title {
-  font-size: 14px;
+  font-size: 15px;
   color: #606266;
-  margin-bottom: 8px;
+  margin-bottom: 10px;
+  font-weight: 500;
 }
 
 .card-value {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 600;
   color: #303133;
-  margin-bottom: 5px;
-  font-family: 'Arial', sans-serif;
+  margin-bottom: 8px;
+  font-family: 'Helvetica Neue', sans-serif;
+  letter-spacing: 0.5px;
 }
 
 .card-change {
-  font-size: 13px;
+  font-size: 14px;
   display: flex;
   align-items: center;
+  font-weight: 500;
 }
 
 .card-change.up {
@@ -530,31 +564,35 @@ onMounted(() => {
   color: #f56c6c;
 }
 
-.premium-card.success {
-  background: linear-gradient(to right, rgba(54, 209, 220, 0.1), rgba(91, 134, 229, 0.1));
+.luxury-card.success {
+  background: linear-gradient(to right, rgba(54, 209, 220, 0.05), rgba(91, 134, 229, 0.08));
+  border-left: 4px solid #5b86e5;
 }
 
-.premium-card.primary {
-  background: linear-gradient(to right, rgba(102, 126, 234, 0.1), rgba(118, 75, 162, 0.1));
+.luxury-card.primary {
+  background: linear-gradient(to right, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.08));
+  border-left: 4px solid #764ba2;
 }
 
-.premium-card.warning {
-  background: linear-gradient(to right, rgba(246, 211, 101, 0.1), rgba(253, 160, 133, 0.1));
+.luxury-card.warning {
+  background: linear-gradient(to right, rgba(246, 211, 101, 0.05), rgba(253, 160, 133, 0.08));
+  border-left: 4px solid #fda085;
 }
 
-.premium-card.info {
-  background: linear-gradient(to right, rgba(161, 196, 253, 0.1), rgba(194, 233, 251, 0.1));
+.luxury-card.info {
+  background: linear-gradient(to right, rgba(161, 196, 253, 0.05), rgba(194, 233, 251, 0.08));
+  border-left: 4px solid #a1c4fd;
 }
 
 .chart-row {
-  margin-top: 20px;
+  margin-top: 24px;
 }
 
 .card-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  padding: 0 5px;
+  padding: 5px 10px;
 }
 
 .header-left {
@@ -563,35 +601,37 @@ onMounted(() => {
 }
 
 .header-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: 600;
   color: #303133;
 }
 
 .header-subtitle {
-  font-size: 12px;
+  font-size: 13px;
   color: #909399;
   margin-top: 5px;
 }
 
 .time-filter {
   background-color: #f5f7fa;
-  border-radius: 15px;
-  padding: 2px;
+  border-radius: 18px;
+  padding: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
 }
 
 .chart-container {
-  padding: 15px;
+  padding: 20px;
   position: relative;
 }
 
-.premium-dialog .el-dialog__header {
+.luxury-dialog .el-dialog__header {
   padding: 20px;
   border-bottom: 1px solid #ebeef5;
+  background: linear-gradient(to right, #f7f8fb, #f4f5f7);
 }
 
-.premium-dialog .el-dialog__body {
-  padding: 20px;
+.luxury-dialog .el-dialog__body {
+  padding: 24px;
 }
 
 .details-content h3 {
@@ -600,27 +640,29 @@ onMounted(() => {
   font-size: 18px;
   font-weight: 600;
   color: #303133;
-  border-left: 3px solid #5b86e5;
-  padding-left: 10px;
+  border-left: 4px solid #5b86e5;
+  padding-left: 12px;
+  position: relative;
+}
+
+.details-content h3::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #5b86e5;
 }
 
 .room-details, .revenue-details, .visitor-details, .booking-details {
-  margin-top: 20px;
-}
-
-.room-details h3, .revenue-details h3, .visitor-details h3, .booking-details h3 {
-  margin-bottom: 15px;
-  font-weight: 500;
+  margin-top: 24px;
 }
 
 /* Responsive adjustments */
 @media (max-width: 768px) {
-  .el-col {
-    width: 100% !important;
-  }
-  
-  .premium-card {
-    margin-bottom: 15px;
+  .luxury-card {
+    margin-bottom: 16px;
   }
 }
 
@@ -635,8 +677,8 @@ onMounted(() => {
 .role-dashboard .el-empty {
   padding: 40px;
   background-color: #fff;
-  border-radius: 10px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
   text-align: center;
 }
 
