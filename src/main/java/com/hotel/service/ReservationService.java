@@ -1,17 +1,30 @@
 package com.hotel.service;
 
+import com.hotel.entity.Booking;
+import com.hotel.entity.CheckInRecord;
 import com.hotel.entity.Reservation;
 import com.hotel.entity.Room;
 import com.hotel.entity.User;
 
 import java.time.LocalDateTime;
 import java.util.List;
+import java.util.Map;
 
 public interface ReservationService {
     /**
      * 创建预订
      */
     Reservation createReservation(Reservation reservation);
+
+    /**
+     * 获取指定用户的预订列表
+     */
+    List<Reservation> getUserReservations(Long userId);
+
+    /**
+     * 获取预订详情
+     */
+    Reservation getReservationById(Long id);
 
     /**
      * 更新预订信息
@@ -21,7 +34,42 @@ public interface ReservationService {
     /**
      * 取消预订
      */
-    void cancelReservation(Long reservationId);
+    void cancelReservation(Long id);
+
+    /**
+     * 获取所有预订列表
+     */
+    List<Reservation> getAllReservations();
+
+    /**
+     * 检查房间在指定日期是否可预订
+     */
+    boolean isRoomAvailable(Long roomId, String startDate, String endDate);
+
+    /**
+     * 统计今日预订数量
+     */
+    long countTodayReservations();
+    
+    /**
+     * 获取今日预订详情列表
+     */
+    List<Map<String, Object>> getTodayReservationsWithDetails();
+    
+    /**
+     * 根据预订号查询预订详情
+     */
+    Map<String, Object> getBookingDetailsByNumber(String bookingNo);
+    
+    /**
+     * 处理入住
+     */
+    CheckInRecord processCheckIn(CheckInRecord checkInRecord);
+    
+    /**
+     * 处理退房
+     */
+    void processCheckOut(String roomNumber);
 
     /**
      * 确认预订
@@ -39,11 +87,6 @@ public interface ReservationService {
     Reservation checkOut(Long reservationId);
 
     /**
-     * 获取预订详情
-     */
-    Reservation getReservationById(Long id);
-
-    /**
      * 获取用户的所有预订
      */
     List<Reservation> getReservationsByUser(User user);
@@ -57,11 +100,6 @@ public interface ReservationService {
      * 获取指定状态的预订
      */
     List<Reservation> getReservationsByStatus(Reservation.ReservationStatus status);
-
-    /**
-     * 检查房间在指定时间段是否可预订
-     */
-    boolean isRoomAvailable(Room room, LocalDateTime startTime, LocalDateTime endTime);
 
     /**
      * 获取当前所有有效预订

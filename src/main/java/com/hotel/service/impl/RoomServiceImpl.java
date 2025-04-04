@@ -42,6 +42,11 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    public Room getRoomByNumber(String roomNumber) {
+        return roomRepository.findByRoomNumber(roomNumber).orElse(null);
+    }
+
+    @Override
     public List<Room> getAllRooms() {
         return roomRepository.findAll();
     }
@@ -114,6 +119,11 @@ public class RoomServiceImpl implements RoomService {
     }
 
     @Override
+    public long countByStatus(Room.RoomStatus status) {
+        return roomRepository.countByStatus(status);
+    }
+
+    @Override
     public Room getRoomByTypeId(Long typeId) {
         // 根据房间类型ID查找对应类型
         Optional<RoomType> roomType = roomTypeRepository.findById(typeId);
@@ -129,5 +139,15 @@ public class RoomServiceImpl implements RoomService {
         
         // 返回第一个可用的房间
         return availableRooms.get(0);
+    }
+
+    @Override
+    public List<RoomType> getAllRoomTypes() {
+        return roomTypeRepository.findAll();
+    }
+
+    @Override
+    public RoomType addRoomType(RoomType roomType) {
+        return roomTypeRepository.save(roomType);
     }
 }

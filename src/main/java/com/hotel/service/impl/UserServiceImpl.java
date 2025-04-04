@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.List;
 
 @Service
@@ -127,11 +128,42 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllActiveStaff() {
-        return userRepository.findAllActiveStaff();
+        return userRepository.findByRoleAndEnabledTrue(User.UserRole.cleaner);
+    }
+
+    @Override
+    public List<User> getAllStaff() {
+        List<User> staff = new ArrayList<>();
+        staff.addAll(userRepository.findByRole(User.UserRole.cleaner));
+        staff.addAll(userRepository.findByRole(User.UserRole.receptionist));
+        return staff;
     }
 
     @Override
     public long countUsersByRole(User.UserRole role) {
         return userRepository.countByRole(role);
+    }
+
+    @Override
+    public long countAllUsers() {
+        return userRepository.count();
+    }
+
+    @Override
+    public User createUser(User user) {
+        // 检查用户名是否已存在
+        if (userRepository.existsByUsername(user.getUsername())) {
+            throw new RuntimeException("用户名已存在");
+        }
+        
+        // 密码加密
+        user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        // 设置默认值
+        if (user.getRole() == null) {
+            user.setRole(User.UserRole.CUSTOMER);
+        }
+        
+        return userRepository.save(user);
     }
 }

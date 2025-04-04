@@ -26,6 +26,11 @@ public interface UserService {
     User getUserByUsername(String username);
 
     /**
+     * 创建用户
+     */
+    User createUser(User user);
+
+    /**
      * 更新用户信息
      */
     User updateUser(User user);
@@ -61,7 +66,17 @@ public interface UserService {
     List<User> getAllActiveStaff();
 
     /**
+     * 获取所有员工（包括前台和清洁人员）
+     */
+    List<User> getAllStaff();
+
+    /**
      * 统计特定角色的用户数量
      */
     long countUsersByRole(User.UserRole role);
+    
+    /**
+     * 统计所有用户数量
+     */
+    long countAllUsers();
 }

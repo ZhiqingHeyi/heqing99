@@ -27,6 +27,11 @@ public interface RoomService {
     Room getRoomById(Long id);
 
     /**
+     * 根据房间号获取房间
+     */
+    Room getRoomByNumber(String roomNumber);
+
+    /**
      * 获取所有房间列表
      */
     List<Room> getAllRooms();
@@ -85,4 +90,19 @@ public interface RoomService {
      * 根据房间类型获取可用房间
      */
     List<Room> getAvailableRoomsByType(RoomType type);
+
+    /**
+     * 根据房间状态统计数量
+     */
+    long countByStatus(Room.RoomStatus status);
+
+    /**
+     * 获取所有房间类型
+     */
+    List<RoomType> getAllRoomTypes();
+
+    /**
+     * 添加新房间类型
+     */
+    RoomType addRoomType(RoomType roomType);
 }
