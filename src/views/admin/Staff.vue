@@ -97,7 +97,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" fixed="right" min-width="180">
+        <el-table-column label="操作" fixed="right" min-width="280">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button type="primary" link @click="handleEdit(row)" class="action-button">
@@ -336,7 +336,7 @@
               </el-tag>
             </template>
           </el-table-column>
-          <el-table-column label="操作" width="180">
+          <el-table-column label="操作" width="220">
             <template #default="{ row }">
               <el-button 
                 type="primary" 
@@ -481,7 +481,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Delete, Ticket, Plus, Search, Refresh } from '@element-plus/icons-vue'
+import { Download, Delete, Ticket, Plus, Search, Refresh, Edit, Calendar, CircleClose, CircleCheck, User, Iphone } from '@element-plus/icons-vue'
 import QRCode from 'qrcodejs2-fix'
 import { useRouter } from 'vue-router'
 
@@ -499,11 +499,12 @@ const searchForm = reactive({
 const loading = ref(false)
 const staffList = ref([
   {
+    id: 1,
     name: '李四',
     role: 'receptionist',
     phone: '13800138001',
     email: 'lisi@example.com',
-    workSchedule: '早班 (6:00-14:00)',
+    workSchedule: 'night',
     joinDate: '2024-01-01',
     status: 'active'
   },
@@ -513,7 +514,7 @@ const staffList = ref([
 // 分页
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(staffList.value.length)
+const total = ref(1)
 
 // 表单对话框
 const dialogVisible = ref(false)
@@ -1288,6 +1289,8 @@ fetchStaffList()
   display: flex;
   justify-content: flex-start;
   gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .action-button {
@@ -1298,6 +1301,7 @@ fetchStaffList()
   border-radius: 6px;
   transition: all 0.25s ease;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .action-button:hover {

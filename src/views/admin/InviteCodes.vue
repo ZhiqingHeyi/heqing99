@@ -88,13 +88,9 @@
         stripe
         highlight-current-row
       >
-        <el-table-column type="selection" width="55" />
-        <el-table-column prop="code" label="邀请码" min-width="150">
-          <template #default="{ row }">
-            <span class="invite-code-text">{{ row.code }}</span>
-          </template>
-        </el-table-column>
-        <el-table-column prop="role" label="角色权限" min-width="110" align="center">
+        <el-table-column type="selection" width="55" fixed="left" />
+        <el-table-column prop="code" label="邀请码" min-width="120" />
+        <el-table-column prop="role" label="角色权限" min-width="90" align="center">
           <template #default="{ row }">
             <el-tag 
               :type="row.role === 'receptionist' ? 'primary' : 'success'"
@@ -105,10 +101,10 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" min-width="160" />
-        <el-table-column prop="expireAt" label="过期时间" min-width="160" />
-        <el-table-column prop="usedBy" label="使用人" min-width="120" />
-        <el-table-column prop="status" label="状态" min-width="90" align="center">
+        <el-table-column prop="createdAt" label="创建时间" min-width="140" />
+        <el-table-column prop="expireAt" label="过期时间" min-width="140" />
+        <el-table-column prop="usedBy" label="使用人" min-width="100" />
+        <el-table-column prop="status" label="状态" min-width="80" align="center">
           <template #default="{ row }">
             <el-tag 
               :type="row.status === 'active' ? 'success' : row.status === 'used' ? 'info' : 'danger'"
@@ -119,8 +115,8 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="note" label="备注" min-width="150" />
-        <el-table-column label="操作" fixed="right" min-width="200">
+        <el-table-column prop="note" label="备注" min-width="120" />
+        <el-table-column label="操作" fixed="right" min-width="280">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button 
@@ -1069,6 +1065,8 @@ onMounted(() => {
   display: flex;
   justify-content: flex-start;
   gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
 .action-button {
@@ -1079,6 +1077,7 @@ onMounted(() => {
   border-radius: 6px;
   transition: all 0.25s ease;
   font-weight: 500;
+  white-space: nowrap;
 }
 
 .action-button:hover {
@@ -1489,4 +1488,4 @@ onMounted(() => {
     justify-content: center;
   }
 }
-</style> 
+</style>
