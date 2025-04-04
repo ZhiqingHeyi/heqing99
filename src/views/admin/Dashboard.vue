@@ -223,7 +223,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted, reactive } from 'vue'
+import { ref, onMounted, reactive, watch } from 'vue'
 import { House, Money, User, Calendar } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
 
@@ -315,19 +315,91 @@ const revenueChart = ref(null)
 const roomStatusChart = ref(null)
 const cleaningTaskChart = ref(null)
 
+// 图表实例
+let occupancyChartInstance = null
+let revenueChartInstance = null
+let roomStatusChartInstance = null
+let cleaningTaskChartInstance = null
+
+// 图表数据
+const chartData = {
+  occupancy: {
+    week: {
+      xAxis: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: [80, 85, 75, 90, 95, 88, 85]
+    },
+    month: {
+      xAxis: ['1日', '5日', '10日', '15日', '20日', '25日', '30日'],
+      data: [75, 82, 88, 92, 86, 78, 83]
+    }
+  },
+  revenue: {
+    week: {
+      xAxis: ['周一', '周二', '周三', '周四', '周五', '周六', '周日'],
+      data: [15000, 18000, 16000, 20000, 25000, 28000, 22000]
+    },
+    month: {
+      xAxis: ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'],
+      data: [95000, 88000, 110000, 128500, 145000, 160000, 182000, 195000, 168000, 152000, 138000, 165000]
+    }
+  }
+}
+
+// 更新入住率图表
+const updateOccupancyChart = () => {
+  if (!occupancyChartInstance) return
+  
+  const data = chartData.occupancy[occupancyTimeRange.value]
+  occupancyChartInstance.setOption({
+    xAxis: {
+      data: data.xAxis
+    },
+    series: [{
+      data: data.data,
+      type: 'line',
+      smooth: true
+    }]
+  })
+}
+
+// 更新收入统计图表
+const updateRevenueChart = () => {
+  if (!revenueChartInstance) return
+  
+  const data = chartData.revenue[revenueTimeRange.value]
+  revenueChartInstance.setOption({
+    xAxis: {
+      data: data.xAxis
+    },
+    series: [{
+      data: data.data,
+      type: 'bar'
+    }]
+  })
+}
+
+// 监听时间范围变化
+watch(occupancyTimeRange, () => {
+  updateOccupancyChart()
+})
+
+watch(revenueTimeRange, () => {
+  updateRevenueChart()
+})
+
 // 初始化图表
 onMounted(() => {
   // 只有管理员角色才初始化图表
   if (userRole.value === 'admin') {
     // 入住率趋势图
-    const occupancyChartInstance = echarts.init(occupancyChart.value)
+    occupancyChartInstance = echarts.init(occupancyChart.value)
     occupancyChartInstance.setOption({
       tooltip: {
         trigger: 'axis'
       },
       xAxis: {
         type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        data: chartData.occupancy.week.xAxis
       },
       yAxis: {
         type: 'value',
@@ -338,21 +410,38 @@ onMounted(() => {
         }
       },
       series: [{
-        data: [80, 85, 75, 90, 95, 88, 85],
+        data: chartData.occupancy.week.data,
         type: 'line',
-        smooth: true
+        smooth: true,
+        itemStyle: {
+          color: '#5b86e5'
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(91, 134, 229, 0.3)'
+            }, {
+              offset: 1, color: 'rgba(91, 134, 229, 0.1)'
+            }]
+          }
+        }
       }]
     })
 
     // 收入统计图
-    const revenueChartInstance = echarts.init(revenueChart.value)
+    revenueChartInstance = echarts.init(revenueChart.value)
     revenueChartInstance.setOption({
       tooltip: {
         trigger: 'axis'
       },
       xAxis: {
         type: 'category',
-        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+        data: chartData.revenue.week.xAxis
       },
       yAxis: {
         type: 'value',
@@ -361,13 +450,28 @@ onMounted(() => {
         }
       },
       series: [{
-        data: [15000, 18000, 16000, 20000, 25000, 28000, 22000],
-        type: 'bar'
+        data: chartData.revenue.week.data,
+        type: 'bar',
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: '#667eea'
+            }, {
+              offset: 1, color: '#764ba2'
+            }]
+          },
+          borderRadius: [4, 4, 0, 0]
+        }
       }]
     })
 
     // 房间状态统计图
-    const roomStatusChartInstance = echarts.init(roomStatusChart.value)
+    roomStatusChartInstance = echarts.init(roomStatusChart.value)
     roomStatusChartInstance.setOption({
       tooltip: {
         trigger: 'item'
@@ -391,12 +495,20 @@ onMounted(() => {
             shadowOffsetX: 0,
             shadowColor: 'rgba(0, 0, 0, 0.5)'
           }
+        },
+        itemStyle: {
+          borderRadius: 6,
+          borderWidth: 2,
+          borderColor: '#fff'
+        },
+        label: {
+          formatter: '{b}: {d}%'
         }
       }]
     })
 
     // 清洁任务完成情况图
-    const cleaningTaskChartInstance = echarts.init(cleaningTaskChart.value)
+    cleaningTaskChartInstance = echarts.init(cleaningTaskChart.value)
     cleaningTaskChartInstance.setOption({
       tooltip: {
         trigger: 'axis'
@@ -414,6 +526,21 @@ onMounted(() => {
         showBackground: true,
         backgroundStyle: {
           color: 'rgba(180, 180, 180, 0.2)'
+        },
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: '#f6d365'
+            }, {
+              offset: 1, color: '#fda085'
+            }]
+          },
+          borderRadius: [4, 4, 0, 0]
         }
       }]
     })
