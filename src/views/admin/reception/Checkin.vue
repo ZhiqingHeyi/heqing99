@@ -26,10 +26,10 @@
     </el-row>
 
     <!-- 入住登记表单 -->
-    <el-card class="checkin-form-card">
+    <el-card class="checkin-form-card" shadow="hover">
       <template #header>
         <div class="card-header">
-          <span>入住信息登记</span>
+          <span><el-icon><Document /></el-icon> 入住信息登记</span>
         </div>
       </template>
       
@@ -38,6 +38,7 @@
         :model="checkinForm"
         :rules="checkinFormRules"
         label-width="100px"
+        class="checkin-form"
       >
         <el-row :gutter="20">
           <el-col :span="12">
@@ -48,14 +49,16 @@
                 clearable
               >
                 <template #append>
-                  <el-button @click="handleSearchBooking">查询</el-button>
+                  <el-button @click="handleSearchBooking" class="search-booking-btn">
+                    <el-icon><Search /></el-icon>
+                  </el-button>
                 </template>
               </el-input>
             </el-form-item>
           </el-col>
           <el-col :span="12">
             <el-form-item label="入住类型" prop="checkinType">
-              <el-radio-group v-model="checkinForm.checkinType">
+              <el-radio-group v-model="checkinForm.checkinType" class="custom-radio-group">
                 <el-radio label="normal">普通入住</el-radio>
                 <el-radio label="booking">预订入住</el-radio>
               </el-radio-group>
@@ -84,7 +87,7 @@
           </el-col>
           <el-col :span="12">
             <el-form-item label="入住人数" prop="guestCount">
-              <el-input-number v-model="checkinForm.guestCount" :min="1" :max="4" />
+              <el-input-number v-model="checkinForm.guestCount" :min="1" :max="4" style="width: 100%" />
             </el-form-item>
           </el-col>
         </el-row>
@@ -106,11 +109,12 @@
                 placeholder="请选择房间号"
                 style="width: 100%"
                 :disabled="!checkinForm.roomType"
+                filterable
               >
                 <el-option
                   v-for="room in availableRooms"
                   :key="room.number"
-                  :label="room.number"
+                  :label="`${room.number} (${room.type})`"
                   :value="room.number"
                 />
               </el-select>
@@ -153,9 +157,13 @@
           />
         </el-form-item>
 
-        <el-form-item>
-          <el-button type="primary" @click="handleSubmit">确认入住</el-button>
-          <el-button @click="resetForm">重置</el-button>
+        <el-form-item class="form-buttons">
+          <el-button type="primary" @click="handleSubmit" class="submit-btn">
+            <el-icon><Check /></el-icon>确认入住
+          </el-button>
+          <el-button @click="resetForm" class="reset-btn">
+            <el-icon><Refresh /></el-icon>重置
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
@@ -164,15 +172,16 @@
     <el-dialog
       v-model="roomListDialogVisible"
       :title="roomListDialogTitle"
-      width="70%"
+      width="75%"
       destroy-on-close
+      class="custom-dialog"
     >
-      <el-table :data="filteredRooms" style="width: 100%" border>
+      <el-table :data="filteredRooms" style="width: 100%" border stripe highlight-current-row class="room-table">
         <el-table-column prop="number" label="房间号" width="100" />
         <el-table-column prop="typeName" label="房间类型" width="120" />
         <el-table-column prop="status" label="状态">
           <template #default="scope">
-            <el-tag :type="getRoomStatusType(scope.row.status)">
+            <el-tag :type="getRoomStatusType(scope.row.status)" effect="light" class="status-tag">
               {{ getRoomStatusText(scope.row.status) }}
             </el-tag>
           </template>
@@ -180,32 +189,37 @@
         <el-table-column prop="price" label="价格(元/晚)" width="120" />
         <el-table-column prop="guestName" label="客人姓名" width="120" />
         <el-table-column prop="checkoutDate" label="预计退房时间" width="180" />
-        <el-table-column label="操作" width="180">
+        <el-table-column label="操作" width="180" fixed="right">
           <template #default="scope">
-            <el-button 
-              type="primary" 
-              size="small" 
-              v-if="currentRoomType === 'available'"
-              @click="selectRoomForCheckin(scope.row)"
-            >
-              选择入住
-            </el-button>
-            <el-button 
-              type="warning" 
-              size="small" 
-              v-if="currentRoomType === 'occupied'"
-              @click="showCheckoutDialog(scope.row)"
-            >
-              办理退房
-            </el-button>
-            <el-button 
-              type="success" 
-              size="small" 
-              v-if="currentRoomType === 'cleaning'"
-              @click="markRoomAsClean(scope.row)"
-            >
-              标记清洁完成
-            </el-button>
+            <div class="action-buttons">
+              <el-button 
+                type="primary" 
+                size="small" 
+                v-if="currentRoomType === 'available'"
+                @click="selectRoomForCheckin(scope.row)"
+                class="action-btn"
+              >
+                <el-icon><Select /></el-icon>选择入住
+              </el-button>
+              <el-button 
+                type="warning" 
+                size="small" 
+                v-if="currentRoomType === 'occupied'"
+                @click="showCheckoutDialog(scope.row)"
+                class="action-btn"
+              >
+                <el-icon><SwitchButton /></el-icon>办理退房
+              </el-button>
+              <el-button 
+                type="success" 
+                size="small" 
+                v-if="currentRoomType === 'cleaning'"
+                @click="markRoomAsClean(scope.row)"
+                class="action-btn"
+              >
+                <el-icon><Check /></el-icon>标记清洁完成
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -216,7 +230,10 @@
 <script setup>
 import { ref, reactive, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { House, Key, Tools, Check } from '@element-plus/icons-vue'
+import { 
+  House, Key, Tools, Check, Document, Search, 
+  Refresh, Select, SwitchButton, View
+} from '@element-plus/icons-vue'
 
 // 房间状态数据
 const roomStatusList = reactive([
@@ -248,11 +265,11 @@ const roomStatusList = reactive([
 
 // 可用房间列表
 const availableRooms = ref([
-  { number: '201', type: 'single' },
-  { number: '202', type: 'single' },
-  { number: '301', type: 'double' },
-  { number: '302', type: 'double' },
-  { number: '501', type: 'suite' }
+  { number: '201', type: '标准单人间' },
+  { number: '202', type: '标准单人间' },
+  { number: '301', type: '豪华大床房' },
+  { number: '302', type: '豪华大床房' },
+  { number: '501', type: '行政套房' }
 ])
 
 // 房间列表对话框相关
@@ -291,7 +308,7 @@ const allRooms = reactive([
   },
   { 
     number: '301', 
-    typeName: '标准双人间', 
+    typeName: '豪华大床房', 
     type: 'double', 
     status: 'occupied', 
     price: 298, 
@@ -300,7 +317,7 @@ const allRooms = reactive([
   },
   { 
     number: '302', 
-    typeName: '标准双人间', 
+    typeName: '豪华大床房', 
     type: 'double', 
     status: 'cleaning', 
     price: 298, 
@@ -309,7 +326,7 @@ const allRooms = reactive([
   },
   { 
     number: '303', 
-    typeName: '标准双人间', 
+    typeName: '豪华大床房', 
     type: 'double', 
     status: 'cleaning', 
     price: 298, 
@@ -318,7 +335,7 @@ const allRooms = reactive([
   },
   { 
     number: '401', 
-    typeName: '豪华套房', 
+    typeName: '行政套房', 
     type: 'suite', 
     status: 'booked', 
     price: 598, 
@@ -327,7 +344,7 @@ const allRooms = reactive([
   },
   { 
     number: '402', 
-    typeName: '豪华套房', 
+    typeName: '行政套房', 
     type: 'suite', 
     status: 'booked', 
     price: 598, 
@@ -386,10 +403,15 @@ const getRoomStatusText = (status) => {
 
 // 选择房间进行入住
 const selectRoomForCheckin = (room) => {
-  checkinForm.roomType = room.type
+  checkinForm.roomType = room.type === 'single' ? 'single' : 
+                         room.type === 'double' ? 'deluxe' : 'executive'
   checkinForm.roomNumber = room.number
   roomListDialogVisible.value = false
-  ElMessage.success(`已选择房间${room.number}，请填写入住信息`)
+  ElMessage({
+    message: `已选择房间${room.number}，请填写入住信息`,
+    type: 'success',
+    duration: 2000
+  })
 }
 
 // 显示退房对话框
@@ -400,7 +422,8 @@ const showCheckoutDialog = (room) => {
     {
       confirmButtonText: '确认退房',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'warning',
+      draggable: true
     }
   ).then(() => {
     // 模拟退房操作
@@ -413,7 +436,11 @@ const showCheckoutDialog = (room) => {
     // 更新房间状态数量
     roomStatusList[1].count--
     roomStatusList[2].count++
-    ElMessage.success(`房间${room.number}退房成功，已标记为待清洁状态`)
+    ElMessage({
+      message: `房间${room.number}退房成功，已标记为待清洁状态`,
+      type: 'success',
+      duration: 2000
+    })
     roomListDialogVisible.value = false
   }).catch(() => {})
 }
@@ -428,7 +455,11 @@ const markRoomAsClean = (room) => {
   // 更新房间状态数量
   roomStatusList[0].count++
   roomStatusList[2].count--
-  ElMessage.success(`房间${room.number}已清洁完成，标记为空闲状态`)
+  ElMessage({
+    message: `房间${room.number}已清洁完成，标记为空闲状态`,
+    type: 'success',
+    duration: 2000
+  })
   roomListDialogVisible.value = false
 }
 
@@ -486,14 +517,25 @@ const handleSearchBooking = async () => {
   }
 
   try {
+    // 展示查询加载状态
+    const loading = ElMessage({
+      message: '正在查询预订信息...',
+      type: 'info',
+      duration: 0
+    })
+    
     // TODO: 调用后端API查询预订信息
     await new Promise(resolve => setTimeout(resolve, 1000))
+    
+    // 关闭加载提示
+    loading.close()
+    
     // 模拟数据
     const bookingInfo = {
       guestName: '张三',
       phone: '13800138000',
       idCard: '110101199001011234',
-      roomType: 'double',
+      roomType: 'deluxe',
       dateRange: [new Date(), new Date(Date.now() + 86400000 * 2)]
     }
     
@@ -501,7 +543,12 @@ const handleSearchBooking = async () => {
       checkinForm[key] = bookingInfo[key]
     })
     checkinForm.checkinType = 'booking'
-    ElMessage.success('预订信息查询成功')
+    
+    ElMessage({
+      message: '预订信息查询成功',
+      type: 'success',
+      duration: 2000
+    })
   } catch (error) {
     console.error('查询预订信息失败:', error)
     ElMessage.error('预订信息查询失败')
@@ -515,14 +562,51 @@ const handleSubmit = async () => {
   await checkinFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
+        // 展示操作加载状态
+        const loading = ElMessage({
+          message: '正在处理入住登记...',
+          type: 'info',
+          duration: 0
+        })
+        
         // TODO: 调用后端API保存入住信息
         await new Promise(resolve => setTimeout(resolve, 1000))
-        ElMessage.success('入住登记成功')
+        
+        // 关闭加载提示
+        loading.close()
+        
+        ElMessage({
+          message: '入住登记成功',
+          type: 'success',
+          duration: 2000
+        })
+        
+        // 更新房间状态
+        if (checkinForm.roomNumber) {
+          const index = allRooms.findIndex(r => r.number === checkinForm.roomNumber)
+          if (index !== -1) {
+            allRooms[index].status = 'occupied'
+            allRooms[index].guestName = checkinForm.guestName
+            
+            // 计算退房时间
+            if (checkinForm.dateRange && checkinForm.dateRange[1]) {
+              const checkoutDate = new Date(checkinForm.dateRange[1])
+              allRooms[index].checkoutDate = `${checkoutDate.getFullYear()}-${String(checkoutDate.getMonth() + 1).padStart(2, '0')}-${String(checkoutDate.getDate()).padStart(2, '0')} 12:00`
+            }
+            
+            // 更新房间状态数量
+            roomStatusList[0].count--
+            roomStatusList[1].count++
+          }
+        }
+        
         resetForm()
       } catch (error) {
         console.error('入住登记失败:', error)
-        ElMessage.error('入住登记失败')
+        ElMessage.error('入住登记失败，请重试')
       }
+    } else {
+      ElMessage.warning('请填写完整的入住信息')
     }
   })
 }
@@ -552,7 +636,7 @@ const resetForm = () => {
   margin-bottom: 20px;
   background: #fff;
   padding: 20px 24px;
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
@@ -579,7 +663,7 @@ const resetForm = () => {
 }
 
 .status-card {
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   transition: all 0.3s ease;
   cursor: pointer;
@@ -625,7 +709,7 @@ const resetForm = () => {
   background: linear-gradient(135deg, #3498db, #2980b9);
 }
 
-.status-card-maintenance .status-icon {
+.status-card-booked .status-icon {
   background: linear-gradient(135deg, #f39c12, #d35400);
 }
 
@@ -646,7 +730,7 @@ const resetForm = () => {
 }
 
 .checkin-form-card {
-  border-radius: 10px;
+  border-radius: 8px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
   margin-bottom: 20px;
 }
@@ -654,9 +738,83 @@ const resetForm = () => {
 .card-header {
   display: flex;
   align-items: center;
-  padding-bottom: 15px;
+  gap: 8px;
   font-size: 16px;
   font-weight: 600;
   color: #303133;
+}
+
+.checkin-form {
+  padding: 20px 0 0;
+}
+
+.custom-radio-group {
+  padding: 8px 0;
+}
+
+.search-booking-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  color: white;
+}
+
+.search-booking-btn:hover {
+  background: linear-gradient(135deg, #2980b9, #2c3e50);
+}
+
+.form-buttons {
+  margin-top: 20px;
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+}
+
+.submit-btn {
+  min-width: 120px;
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #2980b9, #2c3e50);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(41, 128, 185, 0.3);
+}
+
+.reset-btn {
+  min-width: 100px;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.room-table {
+  border-radius: 4px;
+  margin-bottom: 10px;
+}
+
+.status-tag {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.custom-dialog .el-dialog__header {
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
 }
 </style>

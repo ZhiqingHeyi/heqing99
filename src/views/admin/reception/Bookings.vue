@@ -1,12 +1,18 @@
 <template>
   <div class="bookings-container">
+    <!-- 页面标题区域 -->
     <div class="page-header">
-      <h2>预订管理</h2>
-      <el-button type="primary" @click="handleAdd">新增预订</el-button>
+      <div class="header-content">
+        <h2><span class="gradient-text">预订管理</span></h2>
+        <p class="header-description">管理客户预订信息、确认和入住安排</p>
+      </div>
+      <el-button type="primary" @click="handleAdd" class="btn-add">
+        <el-icon><Plus /></el-icon>新增预订
+      </el-button>
     </div>
 
     <!-- 搜索栏 -->
-    <el-card class="search-card">
+    <el-card class="search-card" shadow="hover">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="预订号">
           <el-input v-model="searchForm.bookingNo" placeholder="请输入预订号" clearable />
@@ -36,15 +42,27 @@
           />
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="resetSearch">重置</el-button>
+          <el-button type="primary" @click="handleSearch" class="search-btn">
+            <el-icon><Search /></el-icon>搜索
+          </el-button>
+          <el-button @click="resetSearch" class="reset-btn">
+            <el-icon><Refresh /></el-icon>重置
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- 预订列表 -->
-    <el-card class="list-card">
-      <el-table :data="bookingList" style="width: 100%" v-loading="loading">
+    <el-card class="list-card" shadow="hover">
+      <el-table 
+        :data="bookingList" 
+        style="width: 100%" 
+        v-loading="loading"
+        border
+        stripe
+        highlight-current-row
+        class="booking-table"
+      >
         <el-table-column prop="bookingNo" label="预订号" width="120" />
         <el-table-column prop="customerName" label="客户姓名" />
         <el-table-column prop="phone" label="手机号" />
@@ -54,38 +72,49 @@
         <el-table-column prop="checkOutDate" label="离店日期" />
         <el-table-column prop="status" label="状态">
           <template #default="{ row }">
-            <el-tag :type="getStatusType(row.status)">
+            <el-tag :type="getStatusType(row.status)" effect="light" class="status-tag">
               {{ getStatusText(row.status) }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250">
+        <el-table-column label="操作" width="250" fixed="right">
           <template #default="{ row }">
-            <el-button 
-              type="primary" 
-              link 
-              @click="handleEdit(row)"
-              v-if="row.status === 'pending'"
-            >编辑</el-button>
-            <el-button 
-              type="success" 
-              link 
-              @click="handleConfirm(row)"
-              v-if="row.status === 'pending'"
-            >确认</el-button>
-            <el-button 
-              type="primary" 
-              link 
-              @click="handleCheckIn(row)"
-              v-if="row.status === 'confirmed'"
-            >办理入住</el-button>
-            <el-button 
-              type="danger" 
-              link 
-              @click="handleCancel(row)"
-              v-if="['pending', 'confirmed'].includes(row.status)"
-            >取消</el-button>
-            <el-button type="primary" link @click="handleView(row)">查看</el-button>
+            <div class="action-buttons">
+              <el-button 
+                type="primary" 
+                link 
+                @click="handleEdit(row)"
+                v-if="row.status === 'pending'"
+                class="action-btn"
+              ><el-icon><Edit /></el-icon>编辑</el-button>
+              <el-button 
+                type="success" 
+                link 
+                @click="handleConfirm(row)"
+                v-if="row.status === 'pending'"
+                class="action-btn"
+              ><el-icon><Check /></el-icon>确认</el-button>
+              <el-button 
+                type="primary" 
+                link 
+                @click="handleCheckIn(row)"
+                v-if="row.status === 'confirmed'"
+                class="action-btn"
+              ><el-icon><Key /></el-icon>办理入住</el-button>
+              <el-button 
+                type="danger" 
+                link 
+                @click="handleCancel(row)"
+                v-if="['pending', 'confirmed'].includes(row.status)"
+                class="action-btn"
+              ><el-icon><Close /></el-icon>取消</el-button>
+              <el-button 
+                type="info" 
+                link 
+                @click="handleView(row)"
+                class="action-btn"
+              ><el-icon><View /></el-icon>查看</el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -100,6 +129,8 @@
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
+          background
+          class="custom-pagination"
         />
       </div>
     </el-card>
@@ -108,30 +139,51 @@
     <el-dialog
       :title="dialogType === 'add' ? '新增预订' : '编辑预订'"
       v-model="dialogVisible"
-      width="600px"
+      width="650px"
+      destroy-on-close
+      class="custom-dialog"
     >
       <el-form
         ref="bookingFormRef"
         :model="bookingForm"
         :rules="bookingFormRules"
         label-width="100px"
+        class="booking-form"
       >
-        <el-form-item label="客户姓名" prop="customerName">
-          <el-input v-model="bookingForm.customerName" />
-        </el-form-item>
-        <el-form-item label="手机号" prop="phone">
-          <el-input v-model="bookingForm.phone" />
-        </el-form-item>
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="客户姓名" prop="customerName">
+              <el-input v-model="bookingForm.customerName" placeholder="请输入客户姓名" />
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="手机号" prop="phone">
+              <el-input v-model="bookingForm.phone" placeholder="请输入手机号" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
         <el-form-item label="身份证号" prop="idCard">
-          <el-input v-model="bookingForm.idCard" />
+          <el-input v-model="bookingForm.idCard" placeholder="请输入身份证号" />
         </el-form-item>
-        <el-form-item label="房间类型" prop="roomType">
-          <el-select v-model="bookingForm.roomType" placeholder="请选择房间类型" style="width: 100%">
-            <el-option label="豪华大床房" value="deluxe" />
-            <el-option label="行政套房" value="executive" />
-            <el-option label="家庭套房" value="family" />
-          </el-select>
-        </el-form-item>
+        
+        <el-row :gutter="20">
+          <el-col :span="12">
+            <el-form-item label="房间类型" prop="roomType">
+              <el-select v-model="bookingForm.roomType" placeholder="请选择房间类型" style="width: 100%">
+                <el-option label="豪华大床房" value="deluxe" />
+                <el-option label="行政套房" value="executive" />
+                <el-option label="家庭套房" value="family" />
+              </el-select>
+            </el-form-item>
+          </el-col>
+          <el-col :span="12">
+            <el-form-item label="房间数量" prop="roomCount">
+              <el-input-number v-model="bookingForm.roomCount" :min="1" :max="5" style="width: 100%" />
+            </el-form-item>
+          </el-col>
+        </el-row>
+        
         <el-form-item label="入住日期" prop="dateRange">
           <el-date-picker
             v-model="bookingForm.dateRange"
@@ -142,9 +194,7 @@
             style="width: 100%"
           />
         </el-form-item>
-        <el-form-item label="房间数量" prop="roomCount">
-          <el-input-number v-model="bookingForm.roomCount" :min="1" :max="5" />
-        </el-form-item>
+        
         <el-form-item label="特殊要求" prop="specialRequests">
           <el-input
             v-model="bookingForm.specialRequests"
@@ -156,8 +206,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button @click="dialogVisible = false" class="cancel-btn">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" class="submit-btn">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -166,7 +216,9 @@
     <el-dialog
       title="办理入住"
       v-model="checkInVisible"
-      width="500px"
+      width="550px"
+      destroy-on-close
+      class="custom-dialog"
     >
       <el-form
         ref="checkInFormRef"
@@ -179,13 +231,13 @@
             <el-option
               v-for="room in availableRooms"
               :key="room.number"
-              :label="room.number"
+              :label="`${room.number} (${room.type})`"
               :value="room.number"
             />
           </el-select>
         </el-form-item>
         <el-form-item label="押金" prop="deposit">
-          <el-input-number v-model="checkInForm.deposit" :min="0" :step="100" />
+          <el-input-number v-model="checkInForm.deposit" :min="0" :step="100" :precision="2" style="width: 100%" />
         </el-form-item>
         <el-form-item label="备注" prop="remarks">
           <el-input
@@ -198,8 +250,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="checkInVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleCheckInSubmit">确认入住</el-button>
+          <el-button @click="checkInVisible = false" class="cancel-btn">取消</el-button>
+          <el-button type="primary" @click="handleCheckInSubmit" class="submit-btn">确认入住</el-button>
         </span>
       </template>
     </el-dialog>
@@ -209,6 +261,9 @@
 <script setup>
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { 
+  Search, Refresh, Plus, Edit, Check, Close, View, Key 
+} from '@element-plus/icons-vue'
 
 // 搜索表单
 const searchForm = reactive({
@@ -265,9 +320,11 @@ const checkInForm = reactive({
 
 // 可用房间列表
 const availableRooms = ref([
-  { number: '201', type: 'double' },
-  { number: '202', type: 'double' },
-  { number: '203', type: 'double' }
+  { number: '201', type: '标准单人间' },
+  { number: '202', type: '标准单人间' },
+  { number: '301', type: '豪华大床房' },
+  { number: '302', type: '豪华大床房' },
+  { number: '401', type: '行政套房' }
 ])
 
 // 表单验证规则
@@ -346,6 +403,7 @@ const fetchBookingList = async () => {
   try {
     // TODO: 调用后端API获取预订列表
     await new Promise(resolve => setTimeout(resolve, 1000))
+    // 这里可以添加过滤逻辑，根据searchForm中的条件过滤预订列表
     loading.value = false
   } catch (error) {
     console.error('获取预订列表失败:', error)
@@ -397,12 +455,16 @@ const handleSubmit = async () => {
       try {
         // TODO: 调用后端API保存预订信息
         await new Promise(resolve => setTimeout(resolve, 1000))
-        ElMessage.success(dialogType.value === 'add' ? '预订成功' : '修改成功')
+        ElMessage.success({
+          message: dialogType.value === 'add' ? '预订创建成功' : '预订信息已更新',
+          type: 'success',
+          duration: 2000
+        })
         dialogVisible.value = false
         fetchBookingList()
       } catch (error) {
         console.error('保存预订信息失败:', error)
-        ElMessage.error('操作失败')
+        ElMessage.error('操作失败，请重试')
       }
     }
   })
@@ -411,20 +473,24 @@ const handleSubmit = async () => {
 // 确认预订
 const handleConfirm = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要确认该预订吗？', '提示', {
-      confirmButtonText: '确定',
+    await ElMessageBox.confirm('确定要确认该预订吗？', '预订确认', {
+      confirmButtonText: '确认',
       cancelButtonText: '取消',
-      type: 'warning'
+      type: 'info'
     })
     
     // TODO: 调用后端API确认预订
     await new Promise(resolve => setTimeout(resolve, 1000))
-    ElMessage.success('预订确认成功')
+    ElMessage.success({
+      message: '预订已确认',
+      type: 'success',
+      duration: 2000
+    })
     row.status = 'confirmed'
   } catch (error) {
     if (error !== 'cancel') {
       console.error('确认预订失败:', error)
-      ElMessage.error('确认失败')
+      ElMessage.error('确认操作失败')
     }
   }
 }
@@ -432,20 +498,24 @@ const handleConfirm = async (row) => {
 // 取消预订
 const handleCancel = async (row) => {
   try {
-    await ElMessageBox.confirm('确定要取消该预订吗？', '提示', {
-      confirmButtonText: '确定',
-      cancelButtonText: '取消',
+    await ElMessageBox.confirm('确定要取消该预订吗？此操作不可恢复。', '取消预订', {
+      confirmButtonText: '确认取消',
+      cancelButtonText: '返回',
       type: 'warning'
     })
     
     // TODO: 调用后端API取消预订
     await new Promise(resolve => setTimeout(resolve, 1000))
-    ElMessage.success('预订取消成功')
+    ElMessage.success({
+      message: '预订已取消',
+      type: 'success',
+      duration: 2000
+    })
     row.status = 'cancelled'
   } catch (error) {
     if (error !== 'cancel') {
       console.error('取消预订失败:', error)
-      ElMessage.error('取消失败')
+      ElMessage.error('取消操作失败')
     }
   }
 }
@@ -455,7 +525,16 @@ const handleCheckIn = (row) => {
   checkInForm.roomNumber = ''
   checkInForm.deposit = 500
   checkInForm.remarks = ''
-  // TODO: 获取可用房间列表
+  
+  // 根据预订房间类型过滤可用房间
+  const filteredRooms = availableRooms.value.filter(room => {
+    if (row.roomType === '标准双人间') return room.type.includes('双人');
+    if (row.roomType === '豪华大床房') return room.type.includes('大床');
+    if (row.roomType === '行政套房') return room.type.includes('套房');
+    return true;
+  });
+  
+  availableRooms.value = filteredRooms.length > 0 ? filteredRooms : availableRooms.value;
   checkInVisible.value = true
 }
 
@@ -468,7 +547,11 @@ const handleCheckInSubmit = async () => {
       try {
         // TODO: 调用后端API办理入住
         await new Promise(resolve => setTimeout(resolve, 1000))
-        ElMessage.success('入住登记成功')
+        ElMessage.success({
+          message: '入住登记成功',
+          type: 'success',
+          duration: 2000
+        })
         checkInVisible.value = false
         fetchBookingList()
       } catch (error) {
@@ -481,8 +564,25 @@ const handleCheckInSubmit = async () => {
 
 // 查看详情
 const handleView = (row) => {
-  // TODO: 实现查看详情功能
-  console.log('查看预订详情:', row)
+  // 实现查看详情功能
+  ElMessageBox.alert(
+    `<div class="booking-detail">
+      <p><strong>预订号：</strong>${row.bookingNo}</p>
+      <p><strong>客户姓名：</strong>${row.customerName}</p>
+      <p><strong>联系电话：</strong>${row.phone}</p>
+      <p><strong>房间类型：</strong>${row.roomType}</p>
+      <p><strong>房间号：</strong>${row.roomNumber || '未分配'}</p>
+      <p><strong>入住日期：</strong>${row.checkInDate}</p>
+      <p><strong>离店日期：</strong>${row.checkOutDate}</p>
+      <p><strong>状态：</strong>${getStatusText(row.status)}</p>
+      <p><strong>创建时间：</strong>${row.createTime || '2024-03-31 10:30:00'}</p>
+    </div>`,
+    '预订详情',
+    {
+      dangerouslyUseHTMLString: true,
+      confirmButtonText: '关闭'
+    }
+  )
 }
 
 // 初始化
@@ -492,6 +592,8 @@ fetchBookingList()
 <style scoped>
 .bookings-container {
   padding: 20px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
 }
 
 .page-header {
@@ -499,21 +601,150 @@ fetchBookingList()
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
+  background: #fff;
+  padding: 20px 24px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.header-content h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #3498db, #2c3e50);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-description {
+  margin: 5px 0 0;
+  color: #606266;
+  font-size: 14px;
+}
+
+.btn-add {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  padding: 10px 16px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.btn-add:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(41, 128, 185, 0.3);
 }
 
 .search-card {
   margin-bottom: 20px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .search-form {
   display: flex;
   flex-wrap: wrap;
-  gap: 10px;
+  gap: 15px;
+  padding: 10px 0;
+}
+
+.search-btn, .reset-btn {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.list-card {
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.booking-table {
+  border-radius: 4px;
+  margin-bottom: 20px;
+}
+
+.status-tag {
+  padding: 6px 12px;
+  border-radius: 4px;
+  font-weight: 500;
+}
+
+.action-buttons {
+  display: flex;
+  gap: 8px;
+  flex-wrap: wrap;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
 }
 
 .pagination-container {
   margin-top: 20px;
   display: flex;
   justify-content: flex-end;
+}
+
+.custom-pagination {
+  padding: 5px;
+  border-radius: 4px;
+}
+
+.custom-dialog {
+  border-radius: 8px;
+}
+
+.custom-dialog .el-dialog__header {
+  padding: 20px;
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.booking-form {
+  padding: 10px 0;
+}
+
+.dialog-footer {
+  width: 100%;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.cancel-btn, .submit-btn {
+  min-width: 90px;
+}
+
+.submit-btn {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+}
+
+.submit-btn:hover {
+  background: linear-gradient(135deg, #2980b9, #2c3e50);
+  transform: translateY(-2px);
+  box-shadow: 0 4px 8px rgba(41, 128, 185, 0.3);
+}
+
+.booking-detail {
+  line-height: 1.8;
+}
+
+.booking-detail p {
+  margin: 8px 0;
+  border-bottom: 1px dashed #f0f0f0;
+  padding-bottom: 8px;
+}
+
+.booking-detail p:last-child {
+  border-bottom: none;
 }
 </style>
