@@ -18,20 +18,35 @@ public class Visitor {
     private Long id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "check_in_record_id", nullable = false)
+    @JoinColumn(name = "check_in_record_id")
     private CheckInRecord checkInRecord;
 
     @Column(nullable = false)
     private String name;
 
-    @Column(name = "id_type", nullable = false)
+    @Column(name = "id_type")
     @Enumerated(EnumType.STRING)
     private IdType idType;
 
-    @Column(name = "id_number", nullable = false)
+    @Column(name = "id_number")
     private String idNumber;
 
     private String phone;
+    
+    // 访问时间
+    @Column(name = "visit_time")
+    private LocalDateTime visitTime;
+    
+    // 离开时间
+    @Column(name = "leave_time")
+    private LocalDateTime leaveTime;
+    
+    // 访问房间号
+    @Column(name = "room_number")
+    private String roomNumber;
+    
+    // 访问目的
+    private String purpose;
 
     @CreatedDate
     private LocalDateTime createTime;
