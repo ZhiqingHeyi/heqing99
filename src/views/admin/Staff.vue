@@ -1,10 +1,14 @@
 <template>
   <div class="staff-container">
     <div class="page-header">
-      <h2>员工管理</h2>
+      <div class="header-content">
+        <h2><span class="gradient-text">员工管理</span></h2>
+        <p class="header-description">管理酒店员工信息、排班和权限</p>
+      </div>
       <div class="header-actions">
-        <el-button type="success" @click="goToInviteCodes">邀请码管理</el-button>
-        <el-button type="primary" @click="handleAdd">添加员工</el-button>
+        <el-button type="primary" @click="handleAdd" class="add-button">
+          <el-icon class="button-icon"><Plus /></el-icon>添加员工
+        </el-button>
       </div>
     </div>
 
@@ -12,10 +16,10 @@
     <el-card class="search-card">
       <el-form :inline="true" :model="searchForm" class="search-form">
         <el-form-item label="员工姓名">
-          <el-input v-model="searchForm.name" placeholder="请输入员工姓名" clearable />
+          <el-input v-model="searchForm.name" placeholder="请输入员工姓名" clearable prefix-icon="User" />
         </el-form-item>
         <el-form-item label="手机号">
-          <el-input v-model="searchForm.phone" placeholder="请输入手机号" clearable />
+          <el-input v-model="searchForm.phone" placeholder="请输入手机号" clearable prefix-icon="Iphone" />
         </el-form-item>
         <el-form-item label="角色">
           <el-select v-model="searchForm.role" placeholder="请选择角色" clearable>
@@ -30,46 +34,88 @@
           </el-select>
         </el-form-item>
         <el-form-item>
-          <el-button type="primary" @click="handleSearch">搜索</el-button>
-          <el-button @click="resetSearch">重置</el-button>
+          <el-button type="primary" @click="handleSearch" class="search-button">
+            <el-icon class="button-icon"><Search /></el-icon>搜索
+          </el-button>
+          <el-button @click="resetSearch" class="reset-button">
+            <el-icon class="button-icon"><Refresh /></el-icon>重置
+          </el-button>
         </el-form-item>
       </el-form>
     </el-card>
 
     <!-- 员工列表 -->
     <el-card class="list-card">
-      <el-table :data="staffList" style="width: 100%" v-loading="loading">
-        <el-table-column prop="name" label="姓名" />
-        <el-table-column prop="role" label="角色">
+      <div class="list-header">
+        <div class="list-title">员工列表</div>
+        <div class="list-summary">共 <span class="highlight-text">{{ total }}</span> 名员工</div>
+      </div>
+      
+      <el-table 
+        :data="staffList" 
+        style="width: 100%" 
+        v-loading="loading"
+        border
+        stripe
+        highlight-current-row
+        class="staff-table"
+      >
+        <el-table-column prop="name" label="姓名" min-width="90" />
+        <el-table-column prop="role" label="角色" min-width="90" align="center">
           <template #default="{ row }">
-            <el-tag :type="row.role === 'receptionist' ? 'primary' : 'success'">
+            <el-tag 
+              :type="row.role === 'receptionist' ? 'primary' : 'success'"
+              effect="dark"
+              class="role-tag"
+            >
               {{ row.role === 'receptionist' ? '前台' : '保洁' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="phone" label="手机号" />
-        <el-table-column prop="email" label="邮箱" />
-        <el-table-column prop="workSchedule" label="工作时间" />
-        <el-table-column prop="joinDate" label="入职日期" />
-        <el-table-column prop="status" label="状态">
+        <el-table-column prop="phone" label="手机号" min-width="120" />
+        <el-table-column prop="email" label="邮箱" min-width="180" />
+        <el-table-column prop="workSchedule" label="工作时间" min-width="150">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'active' ? 'success' : 'info'">
+            <span class="work-schedule">
+              {{ 
+                row.workSchedule === 'morning' ? '早班 (6:00-14:00)' : 
+                row.workSchedule === 'afternoon' ? '中班 (14:00-22:00)' : 
+                '晚班 (22:00-6:00)' 
+              }}
+            </span>
+          </template>
+        </el-table-column>
+        <el-table-column prop="joinDate" label="入职日期" min-width="100" />
+        <el-table-column prop="status" label="状态" width="80" align="center">
+          <template #default="{ row }">
+            <el-tag 
+              :type="row.status === 'active' ? 'success' : 'info'"
+              effect="dark"
+              class="status-tag"
+            >
               {{ row.status === 'active' ? '在职' : '离职' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="200">
+        <el-table-column label="操作" fixed="right" min-width="180">
           <template #default="{ row }">
-            <el-button type="primary" link @click="handleEdit(row)">编辑</el-button>
-            <el-button type="primary" link @click="handleSchedule(row)">排班</el-button>
-            <el-button 
-              type="primary" 
-              link 
-              :type="row.status === 'active' ? 'danger' : 'success'"
-              @click="handleToggleStatus(row)"
-            >
-              {{ row.status === 'active' ? '离职' : '复职' }}
-            </el-button>
+            <div class="table-actions">
+              <el-button type="primary" link @click="handleEdit(row)" class="action-button">
+                <el-icon><Edit /></el-icon>编辑
+              </el-button>
+              <el-button type="primary" link @click="handleSchedule(row)" class="action-button">
+                <el-icon><Calendar /></el-icon>排班
+              </el-button>
+              <el-button 
+                :type="row.status === 'active' ? 'danger' : 'success'"
+                link 
+                @click="handleToggleStatus(row)"
+                class="action-button"
+              >
+                <el-icon><component :is="row.status === 'active' ? 'CircleClose' : 'CircleCheck'" /></el-icon>
+                {{ row.status === 'active' ? '离职' : '复职' }}
+              </el-button>
+            </div>
           </template>
         </el-table-column>
       </el-table>
@@ -84,6 +130,7 @@
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
+          background
         />
       </div>
     </el-card>
@@ -93,12 +140,15 @@
       :title="dialogType === 'add' ? '添加员工' : '编辑员工'"
       v-model="dialogVisible"
       width="500px"
+      class="custom-dialog"
+      destroy-on-close
     >
       <el-form
         ref="staffFormRef"
         :model="staffForm"
         :rules="staffFormRules"
         label-width="100px"
+        class="custom-form"
       >
         <el-form-item label="姓名" prop="name">
           <el-input v-model="staffForm.name" />
@@ -133,8 +183,8 @@
       </el-form>
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="dialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleSubmit">确定</el-button>
+          <el-button @click="dialogVisible = false" class="cancel-button">取消</el-button>
+          <el-button type="primary" @click="handleSubmit" class="confirm-button">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -143,17 +193,38 @@
     <el-dialog
       title="员工排班"
       v-model="scheduleVisible"
-      width="600px"
+      width="700px"
+      class="custom-dialog schedule-dialog"
+      destroy-on-close
     >
-      <el-calendar v-model="currentDate">
+      <div class="schedule-header">
+        <div class="employee-info">
+          <el-avatar :size="50" class="employee-avatar">{{ currentStaff?.name?.charAt(0) }}</el-avatar>
+          <div class="employee-details">
+            <div class="employee-name">{{ currentStaff?.name }}</div>
+            <div class="employee-role">
+              <el-tag size="small" :type="currentStaff?.role === 'receptionist' ? 'primary' : 'success'">
+                {{ currentStaff?.role === 'receptionist' ? '前台' : '保洁' }}
+              </el-tag>
+            </div>
+          </div>
+        </div>
+        <div class="schedule-actions">
+          <el-button type="info" @click="applyWeekendRest">周末休息</el-button>
+          <el-button type="primary" @click="applyRotationSchedule">轮班排期</el-button>
+        </div>
+      </div>
+      
+      <el-calendar v-model="currentDate" class="schedule-calendar">
         <template #dateCell="{ data }">
-          <div class="calendar-cell">
-            <p>{{ data.day.split('-').slice(1).join('-') }}</p>
+          <div class="calendar-cell" :class="{ 'is-weekend': isWeekend(data.day) }">
+            <p class="date-display">{{ formatCalendarDate(data.day) }}</p>
             <el-select
               v-model="scheduleData[data.day]"
               placeholder="选择班次"
               size="small"
-              style="width: 100px"
+              style="width: 100%"
+              class="shift-select"
             >
               <el-option label="早班" value="morning" />
               <el-option label="中班" value="afternoon" />
@@ -163,10 +234,30 @@
           </div>
         </template>
       </el-calendar>
+      
+      <div class="schedule-legend">
+        <div class="legend-item">
+          <span class="legend-color morning"></span>
+          <span class="legend-label">早班 (6:00-14:00)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color afternoon"></span>
+          <span class="legend-label">中班 (14:00-22:00)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color night"></span>
+          <span class="legend-label">晚班 (22:00-6:00)</span>
+        </div>
+        <div class="legend-item">
+          <span class="legend-color rest"></span>
+          <span class="legend-label">休息</span>
+        </div>
+      </div>
+      
       <template #footer>
         <span class="dialog-footer">
-          <el-button @click="scheduleVisible = false">取消</el-button>
-          <el-button type="primary" @click="handleScheduleSubmit">保存排班</el-button>
+          <el-button @click="scheduleVisible = false" class="cancel-button">取消</el-button>
+          <el-button type="primary" @click="handleScheduleSubmit" class="confirm-button">保存排班</el-button>
         </span>
       </template>
     </el-dialog>
@@ -390,7 +481,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { Download, Delete } from '@element-plus/icons-vue'
+import { Download, Delete, Ticket, Plus, Search, Refresh } from '@element-plus/icons-vue'
 import QRCode from 'qrcodejs2-fix'
 import { useRouter } from 'vue-router'
 
@@ -422,7 +513,7 @@ const staffList = ref([
 // 分页
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(100)
+const total = ref(staffList.value.length)
 
 // 表单对话框
 const dialogVisible = ref(false)
@@ -889,115 +980,653 @@ fetchStaffList()
 
 <style scoped>
 .staff-container {
-  padding: 20px;
+  padding: 24px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  background: #fff;
+  padding: 24px 28px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(44, 62, 80, 0.08));
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.header-content h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
+}
+
+.gradient-text {
+  background: linear-gradient(135deg, #3498db, #2c3e50);
+  -webkit-background-clip: text;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+}
+
+.gradient-text::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(135deg, #3498db, #2c3e50);
+  border-radius: 3px;
+}
+
+.header-description {
+  margin: 16px 0 0;
+  color: #606266;
+  font-size: 15px;
+  max-width: 450px;
 }
 
 .header-actions {
   display: flex;
-  gap: 10px;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.add-button, .invite-button {
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.add-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.invite-button {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.add-button::before, .invite-button::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.add-button::before {
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+}
+
+.invite-button::before {
+  background: linear-gradient(135deg, #27ae60, #1e8449);
+}
+
+.add-button:hover, .invite-button:hover {
+  transform: translateY(-3px);
+}
+
+.add-button:hover {
+  box-shadow: 0 8px 20px rgba(41, 128, 185, 0.3);
+}
+
+.invite-button:hover {
+  box-shadow: 0 8px 20px rgba(39, 174, 96, 0.3);
+}
+
+.add-button:hover::before, .invite-button:hover::before {
+  opacity: 1;
+}
+
+.button-icon {
+  margin-right: 8px;
+  font-size: 16px;
 }
 
 .search-card {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding: 5px 10px;
+  border: none;
 }
 
 .search-form {
   display: flex;
   flex-wrap: wrap;
+  align-items: center;
   gap: 10px;
+  padding: 10px;
+}
+
+.search-form :deep(.el-form-item) {
+  margin-bottom: 10px;
+  margin-right: 20px;
+}
+
+.search-form :deep(.el-input__wrapper),
+.search-form :deep(.el-select__wrapper) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.search-form :deep(.el-input__wrapper:hover),
+.search-form :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.search-form :deep(.el-input__wrapper:focus-within),
+.search-form :deep(.el-select__wrapper:focus-within) {
+  box-shadow: 0 0 0 1px #3498db inset, 0 3px 10px rgba(52, 152, 219, 0.1);
+}
+
+.search-button,
+.reset-button {
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 10px 18px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+.search-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  margin-right: 12px;
+}
+
+.search-button:hover {
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(41, 128, 185, 0.2);
+}
+
+.reset-button {
+  border: 1px solid #dcdfe6;
+}
+
+.reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+  background-color: #f8f9fa;
 }
 
 .list-card {
-  margin-bottom: 20px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding-bottom: 0;
+  border: none;
+  overflow: hidden;
 }
 
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-}
-
-.calendar-cell {
-  height: 80px;
-  padding: 5px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-}
-
-.invite-code-container {
-  margin-bottom: 20px;
-}
-
-.invite-code-header {
+.list-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 15px;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(to right, #f8f9fa, #f0f7ff);
 }
 
-.invite-instruction {
-  background-color: #f2f6fc;
-  padding: 15px;
-  border-radius: 4px;
-  margin-top: 20px;
+.list-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  position: relative;
+  padding-left: 15px;
 }
 
-.invite-instruction h3 {
-  margin-top: 0;
-  margin-bottom: 10px;
-  font-weight: 500;
+.list-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(to bottom, #3498db, #2980b9);
+  border-radius: 2px;
 }
 
-.invite-instruction ol {
-  padding-left: 20px;
+.list-summary {
+  font-size: 15px;
+  color: #606266;
+}
+
+.highlight-text {
+  color: #3498db;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.staff-table {
   margin: 10px 0;
 }
 
-.invite-instruction li {
-  margin-bottom: 5px;
+.staff-table :deep(.el-table__header-wrapper) {
+  background-color: #f8f9fb;
 }
 
-.register-link {
-  margin-top: 10px;
-  padding-top: 10px;
-  border-top: 1px dashed #dcdfe6;
+.staff-table :deep(.el-table__header) {
+  font-weight: 600;
 }
 
-.invite-code-stats {
-  margin-bottom: 20px;
+.staff-table :deep(.el-table__header th) {
+  background-color: #f5f7fa;
+  color: #303133;
+  font-size: 15px;
+  padding: 16px 0;
 }
 
-.stats-container {
+.staff-table :deep(.el-table__row) {
+  transition: all 0.3s ease;
+}
+
+.staff-table :deep(.el-table__row td) {
+  padding: 16px 0;
+}
+
+.staff-table :deep(.el-table__row:hover) {
+  background-color: #f0f7ff !important;
+}
+
+.role-tag, .status-tag {
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-weight: 500;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+}
+
+.work-schedule {
+  font-size: 14px;
+  color: #606266;
+  padding: 5px 10px;
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  display: inline-block;
+}
+
+.table-actions {
   display: flex;
-  justify-content: space-between;
+  justify-content: flex-start;
+  gap: 8px;
 }
 
-.stat-item {
+.action-button {
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  font-weight: 500;
+}
+
+.action-button:hover {
+  background-color: rgba(64, 158, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.action-button:deep(.el-icon) {
+  margin-right: 4px;
+  font-size: 14px;
+}
+
+.pagination-container {
+  padding: 24px;
+  text-align: right;
+  background-color: #fff;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pagination-container :deep(.el-pagination) {
+  justify-content: flex-end;
+}
+
+.pagination-container :deep(.el-pagination__total) {
+  font-size: 14px;
+  color: #606266;
+}
+
+.pagination-container :deep(.el-pagination .btn-prev),
+.pagination-container :deep(.el-pagination .btn-next),
+.pagination-container :deep(.el-pagination .number) {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin: 0 3px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-container :deep(.el-pagination .btn-prev:hover),
+.pagination-container :deep(.el-pagination .btn-next:hover),
+.pagination-container :deep(.el-pagination .number:hover) {
+  background-color: #ecf5ff;
+  color: #3498db;
+}
+
+.pagination-container :deep(.el-pagination .active) {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+.custom-dialog :deep(.el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.custom-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px;
+  background: linear-gradient(to right, #f8f9fa, #f0f7ff);
+  border-bottom: 1px solid #f0f0f0;
   text-align: center;
 }
 
-.stat-value {
+.custom-dialog :deep(.el-dialog__title) {
+  font-weight: 600;
   font-size: 18px;
+  color: #303133;
+  position: relative;
+}
+
+.custom-dialog :deep(.el-dialog__headerbtn) {
+  top: 24px;
+  right: 24px;
+}
+
+.custom-dialog :deep(.el-dialog__body) {
+  padding: 32px 40px;
+}
+
+.custom-dialog :deep(.el-dialog__footer) {
+  padding: 20px 24px;
+  background-color: #f9fafc;
+  border-top: 1px solid #f0f0f0;
+}
+
+.custom-form :deep(.el-form-item__label) {
   font-weight: 500;
-  margin-bottom: 5px;
+  color: #303133;
+  padding-right: 20px;
 }
 
-.stat-label {
-  font-size: 12px;
-  color: #909399;
+.custom-form :deep(.el-input__wrapper),
+.custom-form :deep(.el-select__wrapper) {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  padding: 2px 15px;
+  transition: all 0.3s ease;
 }
 
-.qr-code-container {
+.custom-form :deep(.el-input__wrapper:hover),
+.custom-form :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.custom-form :deep(.el-input__wrapper:focus-within),
+.custom-form :deep(.el-select__wrapper:focus-within) {
+  box-shadow: 0 0 0 1px #3498db inset, 0 3px 10px rgba(52, 152, 219, 0.1);
+}
+
+.dialog-footer {
+  display: flex;
+  justify-content: center;
+  width: 100%;
+  gap: 16px;
+}
+
+.cancel-button,
+.confirm-button {
+  min-width: 120px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+.confirm-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+}
+
+.confirm-button:hover {
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(41, 128, 185, 0.2);
+}
+
+.cancel-button {
+  border: 1px solid #dcdfe6;
+}
+
+.cancel-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+  background-color: #f8f9fa;
+}
+
+/* 排班日历样式 */
+.schedule-dialog :deep(.el-dialog__body) {
+  padding: 0;
+}
+
+.schedule-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(to right, #f8f9fa, #f0f7ff);
+  border-bottom: 1px solid #f0f0f0;
+}
+
+.employee-info {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+}
+
+.employee-avatar {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+  font-weight: 600;
+  font-size: 20px;
+  box-shadow: 0 4px 12px rgba(52, 152, 219, 0.3);
+}
+
+.employee-details {
   display: flex;
   flex-direction: column;
+  gap: 5px;
+}
+
+.employee-name {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.schedule-actions {
+  display: flex;
+  gap: 12px;
+}
+
+.schedule-calendar {
+  padding: 20px;
+}
+
+.schedule-calendar :deep(.el-calendar__header) {
+  border-bottom: 1px solid #f0f0f0;
+  padding-bottom: 20px;
+  margin-bottom: 20px;
+}
+
+.schedule-calendar :deep(.el-calendar__title) {
+  font-size: 20px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.calendar-cell {
+  height: 120px;
+  padding: 10px;
+  border-radius: 10px;
+  background-color: #f9fafc;
+  transition: all 0.3s ease;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.calendar-cell:hover {
+  background-color: #f0f7ff;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.calendar-cell.is-weekend {
+  background-color: #f0f7ff;
+}
+
+.date-display {
+  font-size: 14px;
+  font-weight: 600;
+  margin: 0 0 10px 0;
+  color: #303133;
+}
+
+.shift-select :deep(.el-input__wrapper) {
+  border-radius: 8px;
+}
+
+.schedule-legend {
+  display: flex;
+  justify-content: center;
+  gap: 20px;
+  padding: 20px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.legend-item {
+  display: flex;
   align-items: center;
+  gap: 5px;
+}
+
+.legend-color {
+  width: 16px;
+  height: 16px;
+  border-radius: 4px;
+}
+
+.legend-color.morning {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+.legend-color.afternoon {
+  background: linear-gradient(135deg, #e67e22, #d35400);
+}
+
+.legend-color.night {
+  background: linear-gradient(135deg, #9b59b6, #8e44ad);
+}
+
+.legend-color.rest {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+}
+
+.legend-label {
+  font-size: 13px;
+  color: #606266;
+}
+
+@media (max-width: 768px) {
+  .staff-container {
+    padding: 16px;
+  }
+  
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
+  }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .add-button, .invite-button {
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-form .el-form-item {
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .table-actions {
+    flex-wrap: wrap;
+  }
+  
+  .schedule-header {
+    flex-direction: column;
+    gap: 16px;
+  }
+  
+  .schedule-actions {
+    width: 100%;
+  }
+  
+  .schedule-actions button {
+    flex: 1;
+  }
 }
 
 .qr-code {
