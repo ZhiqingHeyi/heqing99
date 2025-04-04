@@ -136,10 +136,6 @@
                     <el-radio-button label="satellite">卫星</el-radio-button>
                   </el-radio-group>
                 </div>
-                <div class="map-control-item">
-                  <el-checkbox v-model="showRoads" @change="toggleMapLayers">显示道路</el-checkbox>
-                  <el-checkbox v-model="showBuildings" @change="toggleMapLayers">显示建筑</el-checkbox>
-                </div>
               </div>
               
               <div class="transportation-info">
@@ -204,8 +200,6 @@ const form = ref({
 })
 
 const mapType = ref('standard')
-const showRoads = ref(true)
-const showBuildings = ref(true)
 let mapInstance = null
 
 const submitForm = () => {
@@ -235,14 +229,6 @@ const setMapType = (type) => {
   }
 }
 
-const toggleMapLayers = () => {
-  if (!mapInstance) return
-  
-  const features = ['bg', 'point']
-  if (showRoads.value) features.push('road')
-  if (showBuildings.value) features.push('building')
-  mapInstance.setFeatures(features)
-}
 
 onMounted(() => {
   // 初始化高德地图
@@ -258,7 +244,7 @@ onMounted(() => {
       pitch: 45,
       defaultLayer: new AMap.TileLayer(),
       layers: [new AMap.TileLayer()],
-      features: ['bg', 'building', 'point', 'road']
+      features: ['bg', 'point']
     })
     
     const marker = new AMap.Marker({

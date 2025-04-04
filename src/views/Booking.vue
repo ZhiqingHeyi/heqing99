@@ -256,7 +256,7 @@ if (isLoggedIn.value) {
 const roomTypes = [
   { id: 1, name: '豪华大床房', price: 688 },
   { id: 2, name: '行政套房', price: 888 },
-  { id: 3, name: '总统套房', price: 1688 }
+  { id: 3, name: '家庭套房', price: 1288 }
 ]
 
 const rules = {
