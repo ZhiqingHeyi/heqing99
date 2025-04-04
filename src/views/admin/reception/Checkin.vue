@@ -626,70 +626,75 @@ const resetForm = () => {
 .checkin-container {
   padding: 20px;
   min-height: 100vh;
-  background-color: #f5f7fa;
+  background-color: #f8fafc;
 }
 
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   background: #fff;
-  padding: 20px 24px;
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  padding: 24px 30px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(220, 225, 235, 0.5);
 }
 
 .header-content h2 {
   margin: 0;
-  font-size: 24px;
+  font-size: 26px;
   font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .gradient-text {
-  background: linear-gradient(to right, #3498db, #2c3e50);
+  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
   -webkit-background-clip: text;
   -webkit-text-fill-color: transparent;
 }
 
 .header-description {
-  margin: 5px 0 0;
-  color: #606266;
+  margin: 6px 0 0;
+  color: #6c757d;
   font-size: 14px;
 }
 
 .room-status-row {
-  margin-bottom: 20px;
+  margin-bottom: 24px;
 }
 
 .status-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
   transition: all 0.3s ease;
   cursor: pointer;
   height: 100%;
   overflow: hidden;
+  border: 1px solid rgba(220, 225, 235, 0.5);
 }
 
 .status-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
 }
 
 .status-content {
   display: flex;
   align-items: center;
-  padding: 15px;
+  padding: 20px;
 }
 
 .status-icon {
-  width: 60px;
-  height: 60px;
+  width: 64px;
+  height: 64px;
   border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 15px;
+  margin-right: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
 }
 
 .status-icon .el-icon {
@@ -698,19 +703,23 @@ const resetForm = () => {
 }
 
 .status-card-available .status-icon {
-  background: linear-gradient(135deg, #2ecc71, #27ae60);
+  background: linear-gradient(135deg, #10b981, #059669);
 }
 
 .status-card-occupied .status-icon {
-  background: linear-gradient(135deg, #e74c3c, #c0392b);
+  background: linear-gradient(135deg, #f97316, #ea580c);
 }
 
 .status-card-cleaning .status-icon {
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
 }
 
 .status-card-booked .status-icon {
-  background: linear-gradient(135deg, #f39c12, #d35400);
+  background: linear-gradient(135deg, #8b5cf6, #7c3aed);
+}
+
+.status-card:hover .status-icon {
+  transform: scale(1.1);
 }
 
 .status-info {
@@ -718,88 +727,167 @@ const resetForm = () => {
 }
 
 .status-count {
-  font-size: 28px;
+  font-size: 30px;
   font-weight: 600;
-  color: #303133;
-  margin-bottom: 5px;
+  color: #1e293b;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
+}
+
+.status-card:hover .status-count {
+  transform: scale(1.05);
 }
 
 .status-title {
   font-size: 14px;
-  color: #606266;
+  color: #64748b;
+  font-weight: 500;
 }
 
 .checkin-form-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
-  margin-bottom: 20px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(220, 225, 235, 0.5);
 }
 
 .card-header {
   display: flex;
   align-items: center;
-  gap: 8px;
-  font-size: 16px;
+  gap: 10px;
+  font-size: 18px;
   font-weight: 600;
-  color: #303133;
+  color: #1e293b;
+  padding: 5px 0;
+}
+
+.card-header .el-icon {
+  color: #0d6efd;
 }
 
 .checkin-form {
-  padding: 20px 0 0;
+  padding: 24px 0 0;
+}
+
+.checkin-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #475569;
+}
+
+.checkin-form :deep(.el-input__wrapper),
+.checkin-form :deep(.el-textarea__inner) {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.checkin-form :deep(.el-input__wrapper:hover),
+.checkin-form :deep(.el-textarea__inner:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
 }
 
 .custom-radio-group {
   padding: 8px 0;
 }
 
+.custom-radio-group :deep(.el-radio__input.is-checked + .el-radio__label) {
+  color: #0d6efd;
+}
+
+.custom-radio-group :deep(.el-radio__input.is-checked .el-radio__inner) {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+}
+
 .search-booking-btn {
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
   border: none;
   color: white;
+  transition: all 0.3s ease;
 }
 
 .search-booking-btn:hover {
-  background: linear-gradient(135deg, #2980b9, #2c3e50);
+  background: linear-gradient(135deg, #0b5ed7, #153576);
+  box-shadow: 0 4px 10px rgba(13, 110, 253, 0.25);
 }
 
 .form-buttons {
-  margin-top: 20px;
+  margin-top: 30px;
   display: flex;
   justify-content: center;
   gap: 20px;
 }
 
 .submit-btn {
-  min-width: 120px;
-  background: linear-gradient(135deg, #3498db, #2980b9);
+  min-width: 140px;
+  height: 44px;
+  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
   border: none;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  transition: all 0.3s ease;
 }
 
 .submit-btn:hover {
-  background: linear-gradient(135deg, #2980b9, #2c3e50);
+  background: linear-gradient(135deg, #0b5ed7, #153576);
   transform: translateY(-2px);
-  box-shadow: 0 4px 8px rgba(41, 128, 185, 0.3);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.35);
 }
 
 .reset-btn {
-  min-width: 100px;
+  min-width: 120px;
+  height: 44px;
   display: flex;
   align-items: center;
+  justify-content: center;
   gap: 8px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+  background-color: #f8f9fa;
+  color: #343a40;
+  border-color: #ced4da;
 }
 
 .room-table {
-  border-radius: 4px;
+  border-radius: 8px;
   margin-bottom: 10px;
+  overflow: hidden;
+}
+
+.room-table :deep(.el-table__header-wrapper) {
+  background: #f8fafc;
+}
+
+.room-table :deep(.el-table__header) {
+  font-weight: 600;
+  color: #1e293b;
+}
+
+.room-table :deep(.el-table__row) {
+  transition: all 0.2s ease;
+}
+
+.room-table :deep(.el-table__row:hover) {
+  background-color: #f0f5ff !important;
 }
 
 .status-tag {
-  padding: 6px 12px;
-  border-radius: 4px;
+  padding: 6px 14px;
+  border-radius: 6px;
   font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.3px;
 }
 
 .action-buttons {
@@ -811,10 +899,75 @@ const resetForm = () => {
   display: flex;
   align-items: center;
   gap: 4px;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
 }
 
-.custom-dialog .el-dialog__header {
-  padding: 20px;
-  border-bottom: 1px solid #f0f0f0;
+.action-btn:hover {
+  transform: translateY(-2px);
+}
+
+.custom-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px;
+  background: #f8fafc;
+  border-bottom: 1px solid #eaedf3;
+}
+
+.custom-dialog :deep(.el-dialog__title) {
+  font-weight: 600;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.custom-dialog :deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+/* 响应式设计优化 */
+@media (max-width: 768px) {
+  .room-status-row .el-col {
+    width: 50%;
+    margin-bottom: 16px;
+  }
+  
+  .status-content {
+    padding: 16px;
+  }
+  
+  .status-icon {
+    width: 50px;
+    height: 50px;
+    margin-right: 16px;
+  }
+  
+  .status-count {
+    font-size: 24px;
+  }
+  
+  .form-buttons {
+    flex-direction: column;
+    gap: 15px;
+  }
+  
+  .submit-btn, .reset-btn {
+    width: 100%;
+  }
+}
+
+@media (max-width: 576px) {
+  .room-status-row .el-col {
+    width: 100%;
+  }
+  
+  .status-content {
+    padding: 12px;
+  }
 }
 </style>
