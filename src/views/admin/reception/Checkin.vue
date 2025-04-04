@@ -1,20 +1,24 @@
 <template>
   <div class="checkin-container">
     <div class="page-header">
-      <h2>入住登记</h2>
+      <div class="header-content">
+        <h2><span class="gradient-text">入住登记</span></h2>
+        <p class="header-description">管理客人入住信息、房间分配和预订转入住</p>
+      </div>
     </div>
 
     <!-- 房间状态概览 -->
-    <el-row :gutter="20" class="room-status-row">
+    <el-row :gutter="24" class="room-status-row">
       <el-col :span="6" v-for="status in roomStatusList" :key="status.type">
-        <el-card class="status-card" :body-style="{ padding: '20px' }" @click="showRoomsByType(status.type)">
+        <el-card class="status-card" shadow="hover" @click="showRoomsByType(status.type)"
+          :class="`status-card-${status.type}`">
           <div class="status-content">
-            <div class="status-icon" :class="status.type">
+            <div class="status-icon">
               <el-icon><component :is="status.icon" /></el-icon>
             </div>
             <div class="status-info">
-              <div class="status-title">{{ status.title }}</div>
               <div class="status-count">{{ status.count }}</div>
+              <div class="status-title">{{ status.title }}</div>
             </div>
           </div>
         </el-card>
@@ -537,10 +541,37 @@ const resetForm = () => {
 <style scoped>
 .checkin-container {
   padding: 20px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 20px;
+  background: #fff;
+  padding: 20px 24px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+}
+
+.header-content h2 {
+  margin: 0;
+  font-size: 24px;
+  font-weight: 600;
+}
+
+.gradient-text {
+  background: linear-gradient(to right, #3498db, #2c3e50);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.header-description {
+  margin: 5px 0 0;
+  color: #606266;
+  font-size: 14px;
 }
 
 .room-status-row {
@@ -548,70 +579,84 @@ const resetForm = () => {
 }
 
 .status-card {
-  background-color: #fff;
-  transition: all 0.3s;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
   cursor: pointer;
+  height: 100%;
+  overflow: hidden;
 }
 
 .status-card:hover {
   transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.1);
 }
 
 .status-content {
   display: flex;
   align-items: center;
+  padding: 15px;
 }
 
 .status-icon {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
   display: flex;
   align-items: center;
   justify-content: center;
-  margin-right: 16px;
+  margin-right: 15px;
 }
 
 .status-icon .el-icon {
-  font-size: 24px;
-  color: #fff;
+  font-size: 28px;
+  color: white;
 }
 
-.status-icon.available {
-  background-color: #67c23a;
+.status-card-available .status-icon {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
 }
 
-.status-icon.occupied {
-  background-color: #409eff;
+.status-card-occupied .status-icon {
+  background: linear-gradient(135deg, #e74c3c, #c0392b);
 }
 
-.status-icon.cleaning {
-  background-color: #e6a23c;
+.status-card-cleaning .status-icon {
+  background: linear-gradient(135deg, #3498db, #2980b9);
 }
 
-.status-icon.booked {
-  background-color: #909399;
+.status-card-maintenance .status-icon {
+  background: linear-gradient(135deg, #f39c12, #d35400);
+}
+
+.status-info {
+  flex: 1;
+}
+
+.status-count {
+  font-size: 28px;
+  font-weight: 600;
+  color: #303133;
+  margin-bottom: 5px;
 }
 
 .status-title {
   font-size: 14px;
-  color: #909399;
-  margin-bottom: 8px;
-}
-
-.status-count {
-  font-size: 24px;
-  font-weight: bold;
+  color: #606266;
 }
 
 .checkin-form-card {
-  margin-top: 20px;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  margin-bottom: 20px;
 }
 
 .card-header {
   display: flex;
-  justify-content: space-between;
   align-items: center;
+  padding-bottom: 15px;
+  font-size: 16px;
+  font-weight: 600;
+  color: #303133;
 }
 </style>

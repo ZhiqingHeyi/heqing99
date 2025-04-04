@@ -2,7 +2,13 @@
   <div class="register-container">
     <div class="register-content">
       <el-card class="register-card">
-        <h2 class="register-title">员工注册</h2>
+        <div class="register-header">
+          <div class="logo-container">
+            <div class="logo">HQ</div>
+          </div>
+          <h2 class="register-title">员工注册</h2>
+          <p class="register-subtitle">加入我们的酒店管理团队，创造卓越的客户体验</p>
+        </div>
         
         <!-- 员工注册表单 -->
         <el-form 
@@ -15,7 +21,7 @@
           <el-form-item label="邀请码" prop="inviteCode" class="invite-code-item">
             <el-input v-model="staffForm.inviteCode" placeholder="请输入邀请码">
               <template #append>
-                <el-button @click="verifyInviteCode" :loading="verifyingCode">验证</el-button>
+                <el-button @click="verifyInviteCode" :loading="verifyingCode" class="verify-btn">验证</el-button>
               </template>
             </el-input>
           </el-form-item>
@@ -70,7 +76,7 @@
           </el-form-item>
           
           <el-form-item>
-            <el-checkbox v-model="staffForm.agreement" :disabled="!inviteCodeVerified">我已阅读并同意<a href="#">《员工协议》</a>和<a href="#">《隐私政策》</a></el-checkbox>
+            <el-checkbox v-model="staffForm.agreement" :disabled="!inviteCodeVerified">我已阅读并同意<a href="#" class="agreement-link">《员工协议》</a>和<a href="#" class="agreement-link">《隐私政策》</a></el-checkbox>
           </el-form-item>
           
           <el-form-item>
@@ -97,6 +103,14 @@
           </ul>
         </div>
       </el-card>
+      
+      <div class="register-decoration">
+        <div class="decoration-circle circle-1"></div>
+        <div class="decoration-circle circle-2"></div>
+        <div class="decoration-circle circle-3"></div>
+        <div class="decoration-line line-1"></div>
+        <div class="decoration-line line-2"></div>
+      </div>
     </div>
   </div>
 </template>
@@ -290,44 +304,113 @@ const goToLogin = () => {
   display: flex;
   justify-content: center;
   align-items: center;
-  background-color: #f5f7fa;
+  background: linear-gradient(135deg, #1a2a6c, #b21f1f, #fdbb2d);
+  background-size: 600% 600%;
+  animation: gradientBG 15s ease infinite;
   padding: 30px 0;
+  position: relative;
+  overflow: hidden;
+}
+
+@keyframes gradientBG {
+  0% { background-position: 0% 50% }
+  50% { background-position: 100% 50% }
+  100% { background-position: 0% 50% }
 }
 
 .register-content {
   width: 100%;
   max-width: 600px;
   margin: 0 auto;
+  position: relative;
+  z-index: 10;
 }
 
 .register-card {
-  border-radius: 8px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-  background-color: #fff;
+  border-radius: 12px;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+  background-color: rgba(255, 255, 255, 0.95);
+  backdrop-filter: blur(10px);
+  overflow: hidden;
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.register-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 15px 35px rgba(0, 0, 0, 0.2);
+}
+
+.register-header {
+  text-align: center;
+  margin-bottom: 30px;
+  padding-top: 10px;
+}
+
+.logo-container {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 15px;
+}
+
+.logo {
+  width: 60px;
+  height: 60px;
+  background: linear-gradient(135deg, #3498db, #1a5276);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: white;
+  font-size: 24px;
+  font-weight: bold;
+  box-shadow: 0 4px 10px rgba(0, 0, 0, 0.1);
 }
 
 .register-title {
-  text-align: center;
-  margin-bottom: 20px;
   color: #303133;
-  font-size: 24px;
+  font-size: 28px;
+  font-weight: 600;
+  margin-bottom: 10px;
+  background: linear-gradient(to right, #3498db, #1a5276);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+.register-subtitle {
+  font-size: 14px;
+  color: #606266;
+  margin-bottom: 0;
 }
 
 .register-form {
   margin-bottom: 20px;
 }
 
-.register-btn {
-  width: 100%;
-  margin-bottom: 15px;
+.register-form :deep(.el-input__inner) {
+  border-radius: 6px;
+  border: 1px solid #dcdfe6;
+  transition: all 0.3s;
 }
 
-.login-btn {
-  width: 100%;
+.register-form :deep(.el-input__inner:focus) {
+  border-color: #409eff;
+  box-shadow: 0 0 0 2px rgba(64, 158, 255, 0.2);
 }
 
 .invite-code-item {
   margin-bottom: 25px;
+}
+
+.verify-btn {
+  background: linear-gradient(to right, #3498db, #2980b9);
+  border: none;
+  color: white;
+  transition: all 0.3s ease;
+}
+
+.verify-btn:hover {
+  background: linear-gradient(to right, #2980b9, #1a5276);
+  transform: translateY(-1px);
 }
 
 .invite-code-info {
@@ -339,17 +422,55 @@ const goToLogin = () => {
   font-weight: 500;
 }
 
+.register-btn {
+  width: 100%;
+  margin-bottom: 15px;
+  background: linear-gradient(to right, #3498db, #2980b9);
+  border: none;
+  height: 44px;
+  border-radius: 6px;
+  transition: all 0.3s ease;
+}
+
+.register-btn:hover:not(:disabled) {
+  background: linear-gradient(to right, #2980b9, #1a5276);
+  transform: translateY(-2px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.login-btn {
+  width: 100%;
+  border-radius: 6px;
+  height: 44px;
+  border: 1px solid #dcdfe6;
+  color: #606266;
+  transition: all 0.3s ease;
+}
+
+.login-btn:hover {
+  border-color: #3498db;
+  color: #3498db;
+}
+
 .register-benefits {
-  background-color: #f5f7fa;
-  padding: 15px;
-  border-radius: 4px;
+  background-color: rgba(240, 249, 235, 0.7);
+  padding: 20px;
+  border-radius: 8px;
   margin-top: 20px;
+  border-left: 4px solid #67c23a;
+  transition: all 0.3s ease;
+}
+
+.register-benefits:hover {
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
 }
 
 .register-benefits h4 {
   margin-top: 0;
-  margin-bottom: 10px;
+  margin-bottom: 15px;
   color: #303133;
+  font-size: 16px;
 }
 
 .register-benefits ul {
@@ -360,9 +481,98 @@ const goToLogin = () => {
 .register-benefits li {
   margin-bottom: 8px;
   color: #606266;
+  position: relative;
+}
+
+.register-benefits li::before {
+  content: '✓';
+  color: #67c23a;
+  position: absolute;
+  left: -20px;
 }
 
 .staff-benefits {
-  background-color: #f0f9eb;
+  background-color: rgba(240, 249, 235, 0.7);
+}
+
+.agreement-link {
+  color: #3498db;
+  text-decoration: none;
+  transition: color 0.3s ease;
+}
+
+.agreement-link:hover {
+  color: #1a5276;
+  text-decoration: underline;
+}
+
+.register-decoration {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  pointer-events: none;
+  z-index: -1;
+}
+
+.decoration-circle {
+  position: absolute;
+  border-radius: 50%;
+  opacity: 0.3;
+}
+
+.circle-1 {
+  width: 200px;
+  height: 200px;
+  background: linear-gradient(to right, #3498db, #2980b9);
+  top: -100px;
+  right: -50px;
+  animation: float 8s infinite ease-in-out;
+}
+
+.circle-2 {
+  width: 150px;
+  height: 150px;
+  background: linear-gradient(to right, #2ecc71, #27ae60);
+  bottom: -70px;
+  left: -70px;
+  animation: float 6s infinite ease-in-out reverse;
+}
+
+.circle-3 {
+  width: 100px;
+  height: 100px;
+  background: linear-gradient(to right, #e74c3c, #c0392b);
+  bottom: 20%;
+  right: -30px;
+  animation: float 10s infinite ease-in-out;
+}
+
+.decoration-line {
+  position: absolute;
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.line-1 {
+  width: 200px;
+  height: 3px;
+  transform: rotate(45deg);
+  top: 20%;
+  left: -100px;
+}
+
+.line-2 {
+  width: 300px;
+  height: 3px;
+  transform: rotate(-30deg);
+  bottom: 30%;
+  right: -150px;
+}
+
+@keyframes float {
+  0% { transform: translateY(0) rotate(0deg); }
+  50% { transform: translateY(-20px) rotate(5deg); }
+  100% { transform: translateY(0) rotate(0deg); }
 }
 </style> 
