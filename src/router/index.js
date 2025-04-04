@@ -3,6 +3,7 @@ import Home from '../views/Home.vue'
 import AdminLayout from '../views/admin/Layout.vue'
 import AdminLogin from '../views/admin/Login.vue'
 import InviteCodes from '../views/admin/InviteCodes.vue'
+import AdminRegister from '../views/admin/Register.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -80,6 +81,12 @@ const router = createRouter({
       meta: { public: true }
     },
     {
+      path: '/admin/register',
+      name: 'admin-register',
+      component: AdminRegister,
+      meta: { public: true }
+    },
+    {
       path: '/admin',
       component: AdminLayout,
       children: [
@@ -132,6 +139,13 @@ const router = createRouter({
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
   console.log('路由守卫检查:', to.path)
+  
+  // 如果访问员工注册页面，允许直接访问
+  if (to.path === '/admin/register') {
+    console.log('访问员工注册页面')
+    next()
+    return
+  }
   
   // 如果直接访问邀请码管理页面，特殊处理
   if (to.path === '/admin/invite-codes') {

@@ -116,7 +116,7 @@
           <li>注册成功后，系统自动分配相应的角色权限</li>
         </ol>
         <div class="register-link">
-          <p>员工注册链接：<el-link type="primary" href="/register" target="_blank">{{ baseUrl }}/register</el-link></p>
+          <p>员工注册链接：<el-link type="primary" href="/admin/register" target="_blank">{{ baseUrl }}/admin/register</el-link></p>
         </div>
       </div>
     </el-card>
