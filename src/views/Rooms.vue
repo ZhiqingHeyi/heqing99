@@ -6,18 +6,6 @@
       <p>鹤清酒店为您呈现东方美学与奢华体验的完美融合</p>
     </div>
     
-    <div class="room-filter">
-      <div class="filter-wrapper">
-        <span class="filter-label">筛选：</span>
-        <el-radio-group v-model="currentFilter" size="large" @change="filterRooms">
-          <el-radio-button label="all">全部房型</el-radio-button>
-          <el-radio-button label="business">商务房型</el-radio-button>
-          <el-radio-button label="family">家庭房型</el-radio-button>
-          <el-radio-button label="luxury">奢华套房</el-radio-button>
-        </el-radio-group>
-      </div>
-    </div>
-    
     <div class="rooms-container">
       <el-row :gutter="30">
         <el-col :xs="24" :sm="12" :md="8" v-for="room in displayRooms" :key="room.id">
@@ -127,50 +115,10 @@ const allRooms = ref([
     capacity: 4,
     category: 'family',
     features: ['双床', '儿童设施', '观景阳台', '加床服务']
-  },
-  {
-    id: 4,
-    name: '总统套房',
-    image: '/src/assets/room1.jpg',
-    description: '奢华顶级套房，尽享尊贵典雅的入住体验',
-    price: 2888,
-    size: 120,
-    capacity: 4,
-    tag: '尊享',
-    category: 'luxury',
-    features: ['会客厅', '观景露台', '24小时管家', '私人用餐区']
-  },
-  {
-    id: 5,
-    name: '豪华双床房',
-    image: '/src/assets/room2.jpg',
-    description: '两张1.2米舒适双人床，适合商务伙伴同住',
-    price: 788,
-    size: 40,
-    capacity: 2,
-    category: 'business',
-    features: ['双人床', '工作区域', '高速WiFi', '独立卫浴']
-  },
-  {
-    id: 6,
-    name: '景观套房',
-    image: '/src/assets/room3.jpg',
-    description: '特别设计的套房，拥有绝佳的城市景观',
-    price: 1688,
-    size: 75,
-    capacity: 2,
-    category: 'luxury',
-    features: ['全景落地窗', '观景阳台', '豪华浴缸', '早餐服务']
   }
 ])
 
-const displayRooms = computed(() => {
-  if (currentFilter.value === 'all') {
-    return allRooms.value
-  } else {
-    return allRooms.value.filter(room => room.category === currentFilter.value)
-  }
-})
+const displayRooms = computed(() => allRooms.value)
 
 const filterRooms = (value) => {
   currentFilter.value = value
