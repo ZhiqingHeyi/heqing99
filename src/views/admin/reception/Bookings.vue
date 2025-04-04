@@ -127,9 +127,9 @@
         </el-form-item>
         <el-form-item label="房间类型" prop="roomType">
           <el-select v-model="bookingForm.roomType" placeholder="请选择房间类型" style="width: 100%">
-            <el-option label="标准单人间" value="single" />
-            <el-option label="标准双人间" value="double" />
-            <el-option label="豪华套房" value="suite" />
+            <el-option label="豪华大床房" value="deluxe" />
+            <el-option label="行政套房" value="executive" />
+            <el-option label="家庭套房" value="family" />
           </el-select>
         </el-form-item>
         <el-form-item label="入住日期" prop="dateRange">

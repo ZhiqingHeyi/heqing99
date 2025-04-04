@@ -95,7 +95,7 @@ const handleLogin = async () => {
 
     // 发送登录请求
     // 根据当前环境确定API请求路径
-    const baseUrl = window.location.port === '3000' ? '/api' : '';
+    const baseUrl = window.location.port === '3000' ? '' : '';
     
     // 添加额外调试信息
     console.log('当前环境:', {

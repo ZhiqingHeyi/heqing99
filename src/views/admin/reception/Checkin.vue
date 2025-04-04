@@ -7,7 +7,7 @@
     <!-- 房间状态概览 -->
     <el-row :gutter="20" class="room-status-row">
       <el-col :span="6" v-for="status in roomStatusList" :key="status.type">
-        <el-card class="status-card" :body-style="{ padding: '20px' }">
+        <el-card class="status-card" :body-style="{ padding: '20px' }" @click="showRoomsByType(status.type)">
           <div class="status-content">
             <div class="status-icon" :class="status.type">
               <el-icon><component :is="status.icon" /></el-icon>
@@ -89,9 +89,9 @@
           <el-col :span="12">
             <el-form-item label="房间类型" prop="roomType">
               <el-select v-model="checkinForm.roomType" placeholder="请选择房间类型" style="width: 100%">
-                <el-option label="标准单人间" value="single" />
-                <el-option label="标准双人间" value="double" />
-                <el-option label="豪华套房" value="suite" />
+                <el-option label="豪华大床房" value="deluxe" />
+                <el-option label="行政套房" value="executive" />
+                <el-option label="家庭套房" value="family" />
               </el-select>
             </el-form-item>
           </el-col>
@@ -155,12 +155,63 @@
         </el-form-item>
       </el-form>
     </el-card>
+
+    <!-- 房间列表对话框 -->
+    <el-dialog
+      v-model="roomListDialogVisible"
+      :title="roomListDialogTitle"
+      width="70%"
+      destroy-on-close
+    >
+      <el-table :data="filteredRooms" style="width: 100%" border>
+        <el-table-column prop="number" label="房间号" width="100" />
+        <el-table-column prop="typeName" label="房间类型" width="120" />
+        <el-table-column prop="status" label="状态">
+          <template #default="scope">
+            <el-tag :type="getRoomStatusType(scope.row.status)">
+              {{ getRoomStatusText(scope.row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column prop="price" label="价格(元/晚)" width="120" />
+        <el-table-column prop="guestName" label="客人姓名" width="120" />
+        <el-table-column prop="checkoutDate" label="预计退房时间" width="180" />
+        <el-table-column label="操作" width="180">
+          <template #default="scope">
+            <el-button 
+              type="primary" 
+              size="small" 
+              v-if="currentRoomType === 'available'"
+              @click="selectRoomForCheckin(scope.row)"
+            >
+              选择入住
+            </el-button>
+            <el-button 
+              type="warning" 
+              size="small" 
+              v-if="currentRoomType === 'occupied'"
+              @click="showCheckoutDialog(scope.row)"
+            >
+              办理退房
+            </el-button>
+            <el-button 
+              type="success" 
+              size="small" 
+              v-if="currentRoomType === 'cleaning'"
+              @click="markRoomAsClean(scope.row)"
+            >
+              标记清洁完成
+            </el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-dialog>
   </div>
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
-import { ElMessage } from 'element-plus'
+import { ref, reactive, computed } from 'vue'
+import { ElMessage, ElMessageBox } from 'element-plus'
 import { House, Key, Tools, Check } from '@element-plus/icons-vue'
 
 // 房间状态数据
@@ -199,6 +250,183 @@ const availableRooms = ref([
   { number: '302', type: 'double' },
   { number: '501', type: 'suite' }
 ])
+
+// 房间列表对话框相关
+const roomListDialogVisible = ref(false)
+const roomListDialogTitle = ref('')
+const currentRoomType = ref('')
+
+// 模拟所有房间数据
+const allRooms = reactive([
+  { 
+    number: '201', 
+    typeName: '标准单人间', 
+    type: 'single', 
+    status: 'available', 
+    price: 198, 
+    guestName: '', 
+    checkoutDate: '' 
+  },
+  { 
+    number: '202', 
+    typeName: '标准单人间', 
+    type: 'single', 
+    status: 'available', 
+    price: 198, 
+    guestName: '', 
+    checkoutDate: '' 
+  },
+  { 
+    number: '203', 
+    typeName: '标准单人间', 
+    type: 'single', 
+    status: 'occupied', 
+    price: 198, 
+    guestName: '李四', 
+    checkoutDate: '2023-07-15 12:00' 
+  },
+  { 
+    number: '301', 
+    typeName: '标准双人间', 
+    type: 'double', 
+    status: 'occupied', 
+    price: 298, 
+    guestName: '王五', 
+    checkoutDate: '2023-07-14 12:00' 
+  },
+  { 
+    number: '302', 
+    typeName: '标准双人间', 
+    type: 'double', 
+    status: 'cleaning', 
+    price: 298, 
+    guestName: '', 
+    checkoutDate: '' 
+  },
+  { 
+    number: '303', 
+    typeName: '标准双人间', 
+    type: 'double', 
+    status: 'cleaning', 
+    price: 298, 
+    guestName: '', 
+    checkoutDate: '' 
+  },
+  { 
+    number: '401', 
+    typeName: '豪华套房', 
+    type: 'suite', 
+    status: 'booked', 
+    price: 598, 
+    guestName: '赵六', 
+    checkoutDate: '2023-07-18 12:00' 
+  },
+  { 
+    number: '402', 
+    typeName: '豪华套房', 
+    type: 'suite', 
+    status: 'booked', 
+    price: 598, 
+    guestName: '钱七', 
+    checkoutDate: '2023-07-17 12:00' 
+  }
+])
+
+// 根据房间类型过滤房间列表
+const filteredRooms = computed(() => {
+  if (!currentRoomType.value) return []
+  return allRooms.filter(room => room.status === currentRoomType.value)
+})
+
+// 显示指定类型的房间列表
+const showRoomsByType = (type) => {
+  currentRoomType.value = type
+  switch (type) {
+    case 'available':
+      roomListDialogTitle.value = '空闲房间列表'
+      break
+    case 'occupied':
+      roomListDialogTitle.value = '已入住房间列表'
+      break
+    case 'cleaning':
+      roomListDialogTitle.value = '待清洁房间列表'
+      break
+    case 'booked':
+      roomListDialogTitle.value = '今日预订房间列表'
+      break
+  }
+  roomListDialogVisible.value = true
+}
+
+// 获取房间状态标签类型
+const getRoomStatusType = (status) => {
+  switch (status) {
+    case 'available': return 'success'
+    case 'occupied': return 'primary'
+    case 'cleaning': return 'warning'
+    case 'booked': return 'info'
+    default: return ''
+  }
+}
+
+// 获取房间状态文本
+const getRoomStatusText = (status) => {
+  switch (status) {
+    case 'available': return '空闲'
+    case 'occupied': return '已入住'
+    case 'cleaning': return '待清洁'
+    case 'booked': return '已预订'
+    default: return ''
+  }
+}
+
+// 选择房间进行入住
+const selectRoomForCheckin = (room) => {
+  checkinForm.roomType = room.type
+  checkinForm.roomNumber = room.number
+  roomListDialogVisible.value = false
+  ElMessage.success(`已选择房间${room.number}，请填写入住信息`)
+}
+
+// 显示退房对话框
+const showCheckoutDialog = (room) => {
+  ElMessageBox.confirm(
+    `确认为房间${room.number}的客人${room.guestName}办理退房吗？`,
+    '退房确认',
+    {
+      confirmButtonText: '确认退房',
+      cancelButtonText: '取消',
+      type: 'warning'
+    }
+  ).then(() => {
+    // 模拟退房操作
+    const index = allRooms.findIndex(r => r.number === room.number)
+    if (index !== -1) {
+      allRooms[index].status = 'cleaning'
+      allRooms[index].guestName = ''
+      allRooms[index].checkoutDate = ''
+    }
+    // 更新房间状态数量
+    roomStatusList[1].count--
+    roomStatusList[2].count++
+    ElMessage.success(`房间${room.number}退房成功，已标记为待清洁状态`)
+    roomListDialogVisible.value = false
+  }).catch(() => {})
+}
+
+// 标记房间清洁完成
+const markRoomAsClean = (room) => {
+  // 模拟标记清洁完成操作
+  const index = allRooms.findIndex(r => r.number === room.number)
+  if (index !== -1) {
+    allRooms[index].status = 'available'
+  }
+  // 更新房间状态数量
+  roomStatusList[0].count++
+  roomStatusList[2].count--
+  ElMessage.success(`房间${room.number}已清洁完成，标记为空闲状态`)
+  roomListDialogVisible.value = false
+}
 
 // 入住登记表单
 const checkinFormRef = ref(null)
@@ -321,6 +549,13 @@ const resetForm = () => {
 
 .status-card {
   background-color: #fff;
+  transition: all 0.3s;
+  cursor: pointer;
+}
+
+.status-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .status-content {
