@@ -21,7 +21,7 @@
               <div class="contact-details">
                 <div class="contact-item">
                   <div class="icon-container">
-                    <i class="el-icon-location"></i>
+                    <i class="elegant-icon location-icon"></i>
                   </div>
                   <div class="contact-text">
                     <h4>酒店地址</h4>
@@ -31,7 +31,7 @@
                 
                 <div class="contact-item">
                   <div class="icon-container">
-                    <i class="el-icon-phone"></i>
+                    <i class="elegant-icon phone-icon"></i>
                   </div>
                   <div class="contact-text">
                     <h4>预订电话</h4>
@@ -41,7 +41,7 @@
                 
                 <div class="contact-item">
                   <div class="icon-container">
-                    <i class="el-icon-message"></i>
+                    <i class="elegant-icon email-icon"></i>
                   </div>
                   <div class="contact-text">
                     <h4>电子邮箱</h4>
@@ -71,13 +71,13 @@
                   <h3>关注我们</h3>
                   <div class="social-icons">
                     <a href="#" class="social-icon wechat">
-                      <img src="@/assets/wechat.svg" alt="微信" />
+                      <i class="elegant-icon wechat-icon"></i>
                     </a>
                     <a href="#" class="social-icon weibo">
-                      <img src="@/assets/weibo.svg" alt="微博" />
+                      <i class="elegant-icon weibo-icon"></i>
                     </a>
                     <a href="#" class="social-icon douyin">
-                      <img src="@/assets/douyin.svg" alt="抖音" />
+                      <i class="elegant-icon douyin-icon"></i>
                     </a>
                   </div>
                 </div>
@@ -147,7 +147,7 @@
                 <div class="transport-options">
                   <div class="transport-option">
                     <div class="transport-icon car">
-                      <i class="el-icon-car"></i>
+                      <i class="elegant-icon car-icon"></i>
                     </div>
                     <div class="transport-details">
                       <h4>自驾路线</h4>
@@ -156,7 +156,7 @@
                   </div>
                   <div class="transport-option">
                     <div class="transport-icon subway">
-                      <i class="el-icon-truck"></i>
+                      <i class="elegant-icon subway-icon"></i>
                     </div>
                     <div class="transport-details">
                       <h4>地铁路线</h4>
@@ -165,7 +165,7 @@
                   </div>
                   <div class="transport-option">
                     <div class="transport-icon airport">
-                      <i class="el-icon-airplane"></i>
+                      <i class="elegant-icon plane-icon"></i>
                     </div>
                     <div class="transport-details">
                       <h4>机场专线</h4>
@@ -174,7 +174,7 @@
                   </div>
                   <div class="transport-option">
                     <div class="transport-icon taxi">
-                      <i class="el-icon-cherry"></i>
+                      <i class="elegant-icon taxi-icon"></i>
                     </div>
                     <div class="transport-details">
                       <h4>出租车服务</h4>
@@ -552,8 +552,8 @@ onMounted(() => {
 }
 
 .social-icon {
-  width: 50px;
-  height: 50px;
+  width: 60px;
+  height: 60px;
   border-radius: 50%;
   display: flex;
   align-items: center;
@@ -569,10 +569,9 @@ onMounted(() => {
   box-shadow: 0 10px 20px rgba(197, 157, 95, 0.2);
 }
 
-.social-icon img {
-  width: 26px;
-  height: 26px;
-  object-fit: contain;
+.social-icon i {
+  width: 36px;
+  height: 36px;
 }
 
 .luxury-form {
@@ -695,8 +694,8 @@ onMounted(() => {
 }
 
 .transport-icon {
-  width: 40px;
-  height: 40px;
+  width: 50px;
+  height: 50px;
   background: linear-gradient(135deg, #f0e6d2, #fffcf5);
   border-radius: 50%;
   display: flex;
@@ -709,8 +708,8 @@ onMounted(() => {
 }
 
 .transport-icon i {
-  font-size: 20px;
-  color: #c59d5f;
+  width: 30px;
+  height: 30px;
 }
 
 .transport-details h4 {
@@ -764,5 +763,57 @@ onMounted(() => {
   .map-control-item {
     margin-bottom: 10px;
   }
+}
+
+/* 优雅金色简笔画图标样式 */
+.elegant-icon {
+  display: inline-block;
+  width: 24px;
+  height: 24px;
+  background-position: center;
+  background-repeat: no-repeat;
+  background-size: contain;
+  opacity: 0.95;
+  filter: drop-shadow(0 1px 2px rgba(197, 157, 95, 0.3));
+}
+
+.location-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M12 2C8.13 2 5 5.13 5 9c0 5.25 7 13 7 13s7-7.75 7-13c0-3.87-3.13-7-7-7zm0 9.5c-1.38 0-2.5-1.12-2.5-2.5s1.12-2.5 2.5-2.5 2.5 1.12 2.5 2.5-1.12 2.5-2.5 2.5z'/%3E%3C/svg%3E");
+}
+
+.phone-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z'/%3E%3C/svg%3E");
+}
+
+.email-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M4 4h16c1.1 0 2 .9 2 2v12c0 1.1-.9 2-2 2H4c-1.1 0-2-.9-2-2V6c0-1.1.9-2 2-2z'/%3E%3Cpolyline points='22,6 12,13 2,6'/%3E%3C/svg%3E");
+}
+
+.wechat-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c59d5f'%3E%3Cpath d='M9.5,7.5c-1,0-1.8,0.8-1.8,1.8s0.8,1.8,1.8,1.8c1,0,1.8-0.8,1.8-1.8S10.5,7.5,9.5,7.5z M14.5,7.5c-1,0-1.8,0.8-1.8,1.8 s0.8,1.8,1.8,1.8c1,0,1.8-0.8,1.8-1.8S15.5,7.5,14.5,7.5z M18,12c0-3.31-3.13-6-7-6S4,8.69,4,12c0,2.97,2.16,5.44,5,5.92V20l2.71-2.71 c0.42,0.08,0.86,0.13,1.29,0.13C14.87,18,18,15.31,18,12z M10,13.5c-0.83,0-1.5-0.67-1.5-1.5s0.67-1.5,1.5-1.5s1.5,0.67,1.5,1.5 S10.83,13.5,10,13.5z M14,13.5c-0.83,0-1.5-0.67-1.5-1.5s0.67-1.5,1.5-1.5s1.5,0.67,1.5,1.5S14.83,13.5,14,13.5z'/%3E%3C/svg%3E");
+}
+
+.weibo-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c59d5f'%3E%3Cpath d='M9.82,14.76c0,1.19,1.6,2.16,3.57,2.16s3.57-0.97,3.57-2.16c0-1.19-1.6-2.16-3.57-2.16S9.82,13.56,9.82,14.76z M12.36,14.19 c-0.58,0-1.05,0.47-1.05,1.05c0,0.58,0.47,1.05,1.05,1.05c0.58,0,1.05-0.47,1.05-1.05C13.41,14.66,12.94,14.19,12.36,14.19z M13.71,15.05c-0.22,0-0.4-0.18-0.4-0.4s0.18-0.4,0.4-0.4c0.22,0,0.4,0.18,0.4,0.4S13.93,15.05,13.71,15.05z M9.37,10.54 c-0.75-1.77-0.09-2.93,0.65-3.25c1.53-0.66,3.12,1.08,3.12,1.08s0.75-0.24,0.65-0.89c-0.09-0.66-0.56-0.89,0-1.21 c0.56-0.32,2.15,0.57,2.4,1.35c0.25,0.78-0.4,1.21-0.4,1.21s0.09,0.32,0.65,0.24c0.56-0.08,2.43,0.89,1.87,2.51 c-0.56,1.62-1.65,1.62-1.87,1.62s0.09,0.89-0.75,0.89c-0.83,0-2.71-1.21-2.71-1.21s-0.09,0.73-0.94,0.73 c-0.84,0-3.03-1.7-3.03-1.7S10.12,12.31,9.37,10.54z M8.06,14.6c-0.24,0-0.44-0.2-0.44-0.44s0.2-0.44,0.44-0.44 c0.24,0,0.44,0.2,0.44,0.44S8.31,14.6,8.06,14.6z M6.82,15.05c-0.22,0-0.4-0.18-0.4-0.4s0.18-0.4,0.4-0.4c0.22,0,0.4,0.18,0.4,0.4 S7.04,15.05,6.82,15.05z'/%3E%3C/svg%3E");
+}
+
+.douyin-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='%23c59d5f'%3E%3Cpath d='M16.6,5.82c-0.9-0.95-1.23-2.42-1.23-3.82h-3.25v13.4c0,1.8-1.46,3.25-3.25,3.25c-1.8,0-3.25-1.46-3.25-3.25 c0-1.8,1.46-3.25,3.25-3.25c0.32,0,0.63,0.05,0.92,0.14v-3.31c-0.31-0.04-0.61-0.06-0.92-0.06c-3.63,0-6.57,2.94-6.57,6.57 c0,3.63,2.94,6.57,6.57,6.57c3.63,0,6.57-2.94,6.57-6.57V8.17c1.4,1.08,3.16,1.73,5.07,1.73V6.64 C19.11,6.64,17.59,6.35,16.6,5.82z'/%3E%3C/svg%3E");
+}
+
+.car-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M14 16H9m10 0h3v-3.15a1 1 0 0 0-.84-.99L16 11l-2.7-3.6a1 1 0 0 0-.8-.4H5.24a2 2 0 0 0-1.8 1.1l-.8 1.63A6 6 0 0 0 2 12.42V16h2'/%3E%3Ccircle cx='6.5' cy='16.5' r='2.5'/%3E%3Ccircle cx='16.5' cy='16.5' r='2.5'/%3E%3C/svg%3E");
+}
+
+.subway-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Crect x='4' y='3' width='16' height='16' rx='2'/%3E%3Cpath d='M4 11h16'/%3E%3Cpath d='M12 3v16'/%3E%3Ccircle cx='8' cy='16' r='1'/%3E%3Ccircle cx='16' cy='16' r='1'/%3E%3Cpath d='M9 6.5h1.5'/%3E%3Cpath d='M13.5 6.5H15'/%3E%3C/svg%3E");
+}
+
+.plane-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M17.8 19.2L16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-.5-.1-.9.1-1.1.5l-.3.5c-.2.5-.1 1 .3 1.3L9 12l-2 3H4l-1 1 3 2 2 3 1-1v-3l3-2 3.5 5.3c.3.4.8.5 1.3.3l.5-.2c.4-.3.6-.7.5-1.2z'/%3E%3C/svg%3E");
+}
+
+.taxi-icon {
+  background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23c59d5f' stroke-width='1.5' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M7,18m10,0H3c-.6,0-1-.4-1-1V8c0-.6,.4-1,1-1H7l2-3h6l2,3h4c.6,0,1,.4,1,1v9c0,.6-.4,1-1,1h-4'/%3E%3Cpath d='M5 18v2'/%3E%3Cpath d='M19 18v2'/%3E%3Crect x='5' y='10' width='3' height='2'/%3E%3Crect x='16' y='10' width='3' height='2'/%3E%3Cpath d='M5 14h14'/%3E%3C/svg%3E");
 }
 </style>
