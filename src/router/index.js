@@ -234,17 +234,22 @@ router.beforeEach((to, from, next) => {
 
     // 根据角色验证访问权限
     const adminPaths = ['/admin/dashboard', '/admin/users', '/admin/staff', '/admin/invite-codes']
-    const receptionistPaths = ['/admin/reception/bookings', '/admin/reception/checkin', '/admin/reception/visitors']
+    const receptionistPaths = ['/admin/reception/bookings', '/admin/reception/checkin', '/admin/reception/visitors', '/admin/reception/visitor-records']
     const cleanerPaths = ['/admin/cleaning/tasks', '/admin/cleaning/records']
 
     // 检查用户是否有权限访问该路径
     let hasPermission = false
     
-    if (userRole === 'admin' && adminPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
+    if (userRole === 'admin' && (adminPaths.some(path => to.path === path || to.path.startsWith(path + '/')) || 
+        receptionistPaths.some(path => to.path === path || to.path.startsWith(path + '/')) || 
+        cleanerPaths.some(path => to.path === path || to.path.startsWith(path + '/')))) {
+      // 管理员可以访问任何后台页面
       hasPermission = true
     } else if (userRole === 'receptionist' && receptionistPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
+      // 前台只能访问前台相关页面
       hasPermission = true
     } else if (userRole === 'cleaner' && cleanerPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
+      // 保洁只能访问保洁相关页面
       hasPermission = true
     }
     

@@ -1,211 +1,224 @@
 <template>
   <div class="dashboard-container">
-    <el-row :gutter="20">
-      <!-- 数据概览卡片 -->
-      <el-col :span="6" v-for="card in dataCards" :key="card.title">
-        <el-card class="data-card premium-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover>
-          <div class="card-content">
-            <div class="card-icon-wrapper" :class="card.type">
-              <el-icon class="card-icon">
-                <component :is="card.icon" />
-              </el-icon>
-            </div>
-            <div class="card-info">
-              <div class="card-title">{{ card.title }}</div>
-              <div class="card-value">{{ card.value }}</div>
-              <div class="card-change" :class="card.trend">
-                {{ card.change }}
+    <!-- 管理员才能看到的内容 -->
+    <div v-if="userRole === 'admin'">
+      <el-row :gutter="20">
+        <!-- 数据概览卡片 -->
+        <el-col :span="6" v-for="card in dataCards" :key="card.title">
+          <el-card class="data-card premium-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover>
+            <div class="card-content">
+              <div class="card-icon-wrapper" :class="card.type">
+                <el-icon class="card-icon">
+                  <component :is="card.icon" />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ card.title }}</div>
+                <div class="card-value">{{ card.value }}</div>
+                <div class="card-change" :class="card.trend">
+                  {{ card.change }}
+                </div>
               </div>
             </div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
 
-    <el-row :gutter="20" class="chart-row">
-      <!-- 入住率趋势图 -->
-      <el-col :span="12">
-        <el-card class="premium-chart-card">
-          <template #header>
-            <div class="card-header">
-              <div class="header-left">
-                <span class="header-title">入住率趋势</span>
-                <span class="header-subtitle">实时动态监控，优化房间配置</span>
+      <el-row :gutter="20" class="chart-row">
+        <!-- 入住率趋势图 -->
+        <el-col :span="12">
+          <el-card class="premium-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">入住率趋势</span>
+                  <span class="header-subtitle">实时动态监控，优化房间配置</span>
+                </div>
+                <el-radio-group v-model="occupancyTimeRange" size="small" class="time-filter">
+                  <el-radio-button label="week">周</el-radio-button>
+                  <el-radio-button label="month">月</el-radio-button>
+                </el-radio-group>
               </div>
-              <el-radio-group v-model="occupancyTimeRange" size="small" class="time-filter">
-                <el-radio-button label="week">周</el-radio-button>
-                <el-radio-button label="month">月</el-radio-button>
-              </el-radio-group>
+            </template>
+            <div class="chart-container">
+              <!-- 这里将使用echarts绘制图表 -->
+              <div ref="occupancyChart" style="height: 320px;"></div>
             </div>
-          </template>
-          <div class="chart-container">
-            <!-- 这里将使用echarts绘制图表 -->
-            <div ref="occupancyChart" style="height: 320px;"></div>
-          </div>
-        </el-card>
-      </el-col>
+          </el-card>
+        </el-col>
 
-      <!-- 收入统计图 -->
-      <el-col :span="12">
-        <el-card class="premium-chart-card">
-          <template #header>
-            <div class="card-header">
-              <div class="header-left">
-                <span class="header-title">收入统计</span>
-                <span class="header-subtitle">财务分析与预测</span>
+        <!-- 收入统计图 -->
+        <el-col :span="12">
+          <el-card class="premium-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">收入统计</span>
+                  <span class="header-subtitle">财务分析与预测</span>
+                </div>
+                <el-radio-group v-model="revenueTimeRange" size="small" class="time-filter">
+                  <el-radio-button label="week">周</el-radio-button>
+                  <el-radio-button label="month">月</el-radio-button>
+                </el-radio-group>
               </div>
-              <el-radio-group v-model="revenueTimeRange" size="small" class="time-filter">
-                <el-radio-button label="week">周</el-radio-button>
-                <el-radio-button label="month">月</el-radio-button>
-              </el-radio-group>
+            </template>
+            <div class="chart-container">
+              <!-- 这里将使用echarts绘制图表 -->
+              <div ref="revenueChart" style="height: 320px;"></div>
             </div>
-          </template>
-          <div class="chart-container">
-            <!-- 这里将使用echarts绘制图表 -->
-            <div ref="revenueChart" style="height: 320px;"></div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
 
-    <el-row :gutter="20" class="chart-row">
-      <!-- 房间状态统计 -->
-      <el-col :span="12">
-        <el-card class="premium-chart-card">
-          <template #header>
-            <div class="card-header">
-              <div class="header-left">
-                <span class="header-title">房间状态统计</span>
-                <span class="header-subtitle">实时房态管理</span>
+      <el-row :gutter="20" class="chart-row">
+        <!-- 房间状态统计 -->
+        <el-col :span="12">
+          <el-card class="premium-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">房间状态统计</span>
+                  <span class="header-subtitle">实时房态管理</span>
+                </div>
               </div>
+            </template>
+            <div class="chart-container">
+              <div ref="roomStatusChart" style="height: 320px;"></div>
             </div>
-          </template>
-          <div class="chart-container">
-            <div ref="roomStatusChart" style="height: 320px;"></div>
-          </div>
-        </el-card>
-      </el-col>
+          </el-card>
+        </el-col>
 
-      <!-- 清洁任务完成情况 -->
-      <el-col :span="12">
-        <el-card class="premium-chart-card">
-          <template #header>
-            <div class="card-header">
-              <div class="header-left">
-                <span class="header-title">清洁任务完成情况</span>
-                <span class="header-subtitle">服务质量监控</span>
+        <!-- 清洁任务完成情况 -->
+        <el-col :span="12">
+          <el-card class="premium-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">清洁任务完成情况</span>
+                  <span class="header-subtitle">服务质量监控</span>
+                </div>
               </div>
+            </template>
+            <div class="chart-container">
+              <div ref="cleaningTaskChart" style="height: 320px;"></div>
             </div>
-          </template>
-          <div class="chart-container">
-            <div ref="cleaningTaskChart" style="height: 320px;"></div>
-          </div>
-        </el-card>
-      </el-col>
-    </el-row>
+          </el-card>
+        </el-col>
+      </el-row>
 
-    <!-- 详细数据对话框 -->
-    <el-dialog 
-      v-model="detailsVisible" 
-      :title="currentCard?.title + '详细数据'" 
-      width="70%"
-      destroy-on-close
-      class="premium-dialog"
-    >
-      <div v-if="currentCard?.type === 'success'" class="details-content">
-        <el-descriptions title="入住率详情" :column="2" border>
-          <el-descriptions-item label="今日入住率">{{ currentCard?.value }}</el-descriptions-item>
-          <el-descriptions-item label="昨日入住率">78%</el-descriptions-item>
-          <el-descriptions-item label="本周平均">82%</el-descriptions-item>
-          <el-descriptions-item label="上周平均">75%</el-descriptions-item>
-          <el-descriptions-item label="本月平均">80%</el-descriptions-item>
-          <el-descriptions-item label="同比变化">{{ currentCard?.change }}</el-descriptions-item>
-        </el-descriptions>
-        
-        <div class="room-details">
-          <h3>房间入住详情</h3>
-          <el-table :data="occupancyDetails" border stripe>
-            <el-table-column prop="roomType" label="房型" />
-            <el-table-column prop="total" label="总数" />
-            <el-table-column prop="occupied" label="已入住" />
-            <el-table-column prop="available" label="可用" />
-            <el-table-column prop="rate" label="入住率" />
-          </el-table>
+      <!-- 详细数据对话框 -->
+      <el-dialog 
+        v-model="detailsVisible" 
+        :title="currentCard?.title + '详细数据'" 
+        width="70%"
+        destroy-on-close
+        class="premium-dialog"
+      >
+        <div v-if="currentCard?.type === 'success'" class="details-content">
+          <el-descriptions title="入住率详情" :column="2" border>
+            <el-descriptions-item label="今日入住率">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="昨日入住率">78%</el-descriptions-item>
+            <el-descriptions-item label="本周平均">82%</el-descriptions-item>
+            <el-descriptions-item label="上周平均">75%</el-descriptions-item>
+            <el-descriptions-item label="本月平均">80%</el-descriptions-item>
+            <el-descriptions-item label="同比变化">{{ currentCard?.change }}</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="room-details">
+            <h3>房间入住详情</h3>
+            <el-table :data="occupancyDetails" border stripe>
+              <el-table-column prop="roomType" label="房型" />
+              <el-table-column prop="total" label="总数" />
+              <el-table-column prop="occupied" label="已入住" />
+              <el-table-column prop="available" label="可用" />
+              <el-table-column prop="rate" label="入住率" />
+            </el-table>
+          </div>
         </div>
-      </div>
-      
-      <div v-if="currentCard?.type === 'primary'" class="details-content">
-        <el-descriptions title="收入详情" :column="2" border>
-          <el-descriptions-item label="本月收入">{{ currentCard?.value }}</el-descriptions-item>
-          <el-descriptions-item label="上月收入">¥115,200</el-descriptions-item>
-          <el-descriptions-item label="同比增长">{{ currentCard?.change }}</el-descriptions-item>
-          <el-descriptions-item label="去年同期">¥98,500</el-descriptions-item>
-          <el-descriptions-item label="本年累计">¥458,700</el-descriptions-item>
-          <el-descriptions-item label="年度目标完成率">48%</el-descriptions-item>
-        </el-descriptions>
         
-        <div class="revenue-details">
-          <h3>收入来源分析</h3>
-          <el-table :data="revenueDetails" border stripe>
-            <el-table-column prop="source" label="收入来源" />
-            <el-table-column prop="amount" label="金额" />
-            <el-table-column prop="percentage" label="占比" />
-            <el-table-column prop="change" label="同比变化" />
-          </el-table>
+        <div v-if="currentCard?.type === 'primary'" class="details-content">
+          <el-descriptions title="收入详情" :column="2" border>
+            <el-descriptions-item label="本月收入">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="上月收入">¥115,200</el-descriptions-item>
+            <el-descriptions-item label="同比增长">{{ currentCard?.change }}</el-descriptions-item>
+            <el-descriptions-item label="去年同期">¥98,500</el-descriptions-item>
+            <el-descriptions-item label="本年累计">¥458,700</el-descriptions-item>
+            <el-descriptions-item label="年度目标完成率">48%</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="revenue-details">
+            <h3>收入来源分析</h3>
+            <el-table :data="revenueDetails" border stripe>
+              <el-table-column prop="source" label="收入来源" />
+              <el-table-column prop="amount" label="金额" />
+              <el-table-column prop="percentage" label="占比" />
+              <el-table-column prop="change" label="同比变化" />
+            </el-table>
+          </div>
         </div>
-      </div>
-      
-      <div v-if="currentCard?.type === 'warning'" class="details-content">
-        <el-descriptions title="访客详情" :column="2" border>
-          <el-descriptions-item label="今日访客">{{ currentCard?.value }}</el-descriptions-item>
-          <el-descriptions-item label="昨日访客">230</el-descriptions-item>
-          <el-descriptions-item label="本周累计">1,250</el-descriptions-item>
-          <el-descriptions-item label="上周累计">1,180</el-descriptions-item>
-          <el-descriptions-item label="同比变化">{{ currentCard?.change }}</el-descriptions-item>
-          <el-descriptions-item label="平均停留时间">2.5小时</el-descriptions-item>
-        </el-descriptions>
         
-        <div class="visitor-details">
-          <h3>访客来源分析</h3>
-          <el-table :data="visitorDetails" border stripe>
-            <el-table-column prop="source" label="来源渠道" />
-            <el-table-column prop="count" label="访客数" />
-            <el-table-column prop="percentage" label="占比" />
-            <el-table-column prop="conversion" label="转化率" />
-          </el-table>
+        <div v-if="currentCard?.type === 'warning'" class="details-content">
+          <el-descriptions title="访客详情" :column="2" border>
+            <el-descriptions-item label="今日访客">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="昨日访客">230</el-descriptions-item>
+            <el-descriptions-item label="本周累计">1,250</el-descriptions-item>
+            <el-descriptions-item label="上周累计">1,180</el-descriptions-item>
+            <el-descriptions-item label="同比变化">{{ currentCard?.change }}</el-descriptions-item>
+            <el-descriptions-item label="平均停留时间">2.5小时</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="visitor-details">
+            <h3>访客来源分析</h3>
+            <el-table :data="visitorDetails" border stripe>
+              <el-table-column prop="source" label="来源渠道" />
+              <el-table-column prop="count" label="访客数" />
+              <el-table-column prop="percentage" label="占比" />
+              <el-table-column prop="conversion" label="转化率" />
+            </el-table>
+          </div>
         </div>
-      </div>
-      
-      <div v-if="currentCard?.type === 'info'" class="details-content">
-        <el-descriptions title="预订详情" :column="2" border>
-          <el-descriptions-item label="总预订数">{{ currentCard?.value }}</el-descriptions-item>
-          <el-descriptions-item label="昨日预订">12</el-descriptions-item>
-          <el-descriptions-item label="本周累计">35</el-descriptions-item>
-          <el-descriptions-item label="上周累计">48</el-descriptions-item>
-          <el-descriptions-item label="同比变化">{{ currentCard?.change }}</el-descriptions-item>
-          <el-descriptions-item label="预订完成率">92%</el-descriptions-item>
-        </el-descriptions>
         
-        <div class="booking-details">
-          <h3>预订详情列表</h3>
-          <el-table :data="bookingDetails" border stripe>
-            <el-table-column prop="id" label="预订号" width="100" />
-            <el-table-column prop="customer" label="客户" />
-            <el-table-column prop="roomType" label="房型" />
-            <el-table-column prop="checkIn" label="入住日期" />
-            <el-table-column prop="nights" label="入住天数" />
-            <el-table-column prop="amount" label="金额" />
-            <el-table-column prop="status" label="状态">
-              <template #default="{ row }">
-                <el-tag :type="row.status === '已确认' ? 'success' : row.status === '待付款' ? 'warning' : 'info'">
-                  {{ row.status }}
-                </el-tag>
-              </template>
-            </el-table-column>
-          </el-table>
+        <div v-if="currentCard?.type === 'info'" class="details-content">
+          <el-descriptions title="预订详情" :column="2" border>
+            <el-descriptions-item label="总预订数">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="昨日预订">12</el-descriptions-item>
+            <el-descriptions-item label="本周累计">35</el-descriptions-item>
+            <el-descriptions-item label="上周累计">48</el-descriptions-item>
+            <el-descriptions-item label="同比变化">{{ currentCard?.change }}</el-descriptions-item>
+            <el-descriptions-item label="预订完成率">92%</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="booking-details">
+            <h3>预订详情列表</h3>
+            <el-table :data="bookingDetails" border stripe>
+              <el-table-column prop="id" label="预订号" width="100" />
+              <el-table-column prop="customer" label="客户" />
+              <el-table-column prop="roomType" label="房型" />
+              <el-table-column prop="checkIn" label="入住日期" />
+              <el-table-column prop="nights" label="入住天数" />
+              <el-table-column prop="amount" label="金额" />
+              <el-table-column prop="status" label="状态">
+                <template #default="{ row }">
+                  <el-tag :type="row.status === '已确认' ? 'success' : row.status === '待付款' ? 'warning' : 'info'">
+                    {{ row.status }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
         </div>
-      </div>
-    </el-dialog>
+      </el-dialog>
+    </div>
+    
+    <!-- 前台接待人员的默认看板 -->
+    <div v-else-if="userRole === 'receptionist'" class="role-dashboard">
+      <el-empty description="前台接待人员请使用左侧菜单访问预订管理、入住登记和访客登记功能"></el-empty>
+    </div>
+    
+    <!-- 保洁人员的默认看板 -->
+    <div v-else-if="userRole === 'cleaner'" class="role-dashboard">
+      <el-empty description="保洁人员请使用左侧菜单访问清洁任务和清洁记录功能"></el-empty>
+    </div>
   </div>
 </template>
 
@@ -213,6 +226,9 @@
 import { ref, onMounted, reactive } from 'vue'
 import { House, Money, User, Calendar } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+
+// 获取用户角色
+const userRole = ref(localStorage.getItem('userRole') || 'admin')
 
 // 数据概览卡片数据
 const dataCards = reactive([
@@ -301,112 +317,115 @@ const cleaningTaskChart = ref(null)
 
 // 初始化图表
 onMounted(() => {
-  // 入住率趋势图
-  const occupancyChartInstance = echarts.init(occupancyChart.value)
-  occupancyChartInstance.setOption({
-    tooltip: {
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-    },
-    yAxis: {
-      type: 'value',
-      min: 0,
-      max: 100,
-      axisLabel: {
-        formatter: '{value}%'
-      }
-    },
-    series: [{
-      data: [80, 85, 75, 90, 95, 88, 85],
-      type: 'line',
-      smooth: true
-    }]
-  })
-
-  // 收入统计图
-  const revenueChartInstance = echarts.init(revenueChart.value)
-  revenueChartInstance.setOption({
-    tooltip: {
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
-    },
-    yAxis: {
-      type: 'value',
-      axisLabel: {
-        formatter: '¥{value}'
-      }
-    },
-    series: [{
-      data: [15000, 18000, 16000, 20000, 25000, 28000, 22000],
-      type: 'bar'
-    }]
-  })
-
-  // 房间状态统计图
-  const roomStatusChartInstance = echarts.init(roomStatusChart.value)
-  roomStatusChartInstance.setOption({
-    tooltip: {
-      trigger: 'item'
-    },
-    legend: {
-      orient: 'vertical',
-      left: 'left'
-    },
-    series: [{
-      type: 'pie',
-      radius: '50%',
-      data: [
-        { value: 60, name: '已入住' },
-        { value: 20, name: '待清洁' },
-        { value: 15, name: '空闲' },
-        { value: 5, name: '维护中' }
-      ],
-      emphasis: {
-        itemStyle: {
-          shadowBlur: 10,
-          shadowOffsetX: 0,
-          shadowColor: 'rgba(0, 0, 0, 0.5)'
+  // 只有管理员角色才初始化图表
+  if (userRole.value === 'admin') {
+    // 入住率趋势图
+    const occupancyChartInstance = echarts.init(occupancyChart.value)
+    occupancyChartInstance.setOption({
+      tooltip: {
+        trigger: 'axis'
+      },
+      xAxis: {
+        type: 'category',
+        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 100,
+        axisLabel: {
+          formatter: '{value}%'
         }
-      }
-    }]
-  })
+      },
+      series: [{
+        data: [80, 85, 75, 90, 95, 88, 85],
+        type: 'line',
+        smooth: true
+      }]
+    })
 
-  // 清洁任务完成情况图
-  const cleaningTaskChartInstance = echarts.init(cleaningTaskChart.value)
-  cleaningTaskChartInstance.setOption({
-    tooltip: {
-      trigger: 'axis'
-    },
-    xAxis: {
-      type: 'category',
-      data: ['已完成', '进行中', '待处理']
-    },
-    yAxis: {
-      type: 'value'
-    },
-    series: [{
-      data: [25, 8, 5],
-      type: 'bar',
-      showBackground: true,
-      backgroundStyle: {
-        color: 'rgba(180, 180, 180, 0.2)'
-      }
-    }]
-  })
+    // 收入统计图
+    const revenueChartInstance = echarts.init(revenueChart.value)
+    revenueChartInstance.setOption({
+      tooltip: {
+        trigger: 'axis'
+      },
+      xAxis: {
+        type: 'category',
+        data: ['周一', '周二', '周三', '周四', '周五', '周六', '周日']
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: {
+          formatter: '¥{value}'
+        }
+      },
+      series: [{
+        data: [15000, 18000, 16000, 20000, 25000, 28000, 22000],
+        type: 'bar'
+      }]
+    })
 
-  // 监听窗口大小变化，调整图表大小
-  window.addEventListener('resize', () => {
-    occupancyChartInstance.resize()
-    revenueChartInstance.resize()
-    roomStatusChartInstance.resize()
-    cleaningTaskChartInstance.resize()
-  })
+    // 房间状态统计图
+    const roomStatusChartInstance = echarts.init(roomStatusChart.value)
+    roomStatusChartInstance.setOption({
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left'
+      },
+      series: [{
+        type: 'pie',
+        radius: '50%',
+        data: [
+          { value: 60, name: '已入住' },
+          { value: 20, name: '待清洁' },
+          { value: 15, name: '空闲' },
+          { value: 5, name: '维护中' }
+        ],
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        }
+      }]
+    })
+
+    // 清洁任务完成情况图
+    const cleaningTaskChartInstance = echarts.init(cleaningTaskChart.value)
+    cleaningTaskChartInstance.setOption({
+      tooltip: {
+        trigger: 'axis'
+      },
+      xAxis: {
+        type: 'category',
+        data: ['已完成', '进行中', '待处理']
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [{
+        data: [25, 8, 5],
+        type: 'bar',
+        showBackground: true,
+        backgroundStyle: {
+          color: 'rgba(180, 180, 180, 0.2)'
+        }
+      }]
+    })
+
+    // 监听窗口大小变化，调整图表大小
+    window.addEventListener('resize', () => {
+      occupancyChartInstance.resize()
+      revenueChartInstance.resize()
+      roomStatusChartInstance.resize()
+      cleaningTaskChartInstance.resize()
+    })
+  }
 })
 </script>
 
@@ -603,5 +622,29 @@ onMounted(() => {
   .premium-card {
     margin-bottom: 15px;
   }
+}
+
+/* 角色专用页面样式 */
+.role-dashboard {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+}
+
+.role-dashboard .el-empty {
+  padding: 40px;
+  background-color: #fff;
+  border-radius: 10px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  text-align: center;
+}
+
+.role-dashboard .el-empty__description {
+  font-size: 16px;
+  color: #606266;
+  max-width: 500px;
+  line-height: 1.8;
+  margin-top: 20px;
 }
 </style>

@@ -33,26 +33,26 @@
           </template>
 
           <template v-if="userRole === 'receptionist'">
-            <el-menu-item index="/admin/reception/bookings" class="tech-menu-item">
+            <el-menu-item index="/admin/reception/bookings" @click="switchComponent('bookings')" class="tech-menu-item">
               <el-icon><Calendar /></el-icon>
               <span>预订管理</span>
             </el-menu-item>
-            <el-menu-item index="/admin/reception/checkin" class="tech-menu-item">
+            <el-menu-item index="/admin/reception/checkin" @click="switchComponent('checkin')" class="tech-menu-item">
               <el-icon><House /></el-icon>
               <span>入住登记</span>
             </el-menu-item>
-            <el-menu-item index="/admin/reception/visitors" class="tech-menu-item">
+            <el-menu-item index="/admin/reception/visitors" @click="switchComponent('visitors')" class="tech-menu-item">
               <el-icon><List /></el-icon>
               <span>访客登记</span>
             </el-menu-item>
           </template>
 
           <template v-if="userRole === 'cleaner'">
-            <el-menu-item index="/admin/cleaning/tasks" class="tech-menu-item">
+            <el-menu-item index="/admin/cleaning/tasks" @click="switchComponent('tasks')" class="tech-menu-item">
               <el-icon><List /></el-icon>
               <span>清洁任务</span>
             </el-menu-item>
-            <el-menu-item index="/admin/cleaning/records" class="tech-menu-item">
+            <el-menu-item index="/admin/cleaning/records" @click="switchComponent('records')" class="tech-menu-item">
               <el-icon><Document /></el-icon>
               <span>清洁记录</span>
             </el-menu-item>
@@ -127,6 +127,13 @@ import Dashboard from './Dashboard.vue'
 import InviteCodes from './InviteCodes.vue'
 import Staff from './Staff.vue'
 import Users from './Users.vue'
+// 导入前台接待组件
+import Bookings from './reception/Bookings.vue'
+import Checkin from './reception/Checkin.vue'
+import Visitors from './reception/Visitors.vue'
+// 导入保洁组件
+import CleaningTasks from './cleaning/Tasks.vue'
+import CleaningRecords from './cleaning/Records.vue'
 
 const router = useRouter()
 
@@ -167,7 +174,14 @@ const pageTitles = {
   'dashboard': '数据看板',
   'users': '用户管理',
   'staff': '员工管理',
-  'inviteCodes': '邀请码管理'
+  'inviteCodes': '邀请码管理',
+  // 前台相关页面
+  'bookings': '预订管理',
+  'checkin': '入住登记',
+  'visitors': '访客登记',
+  // 保洁相关页面
+  'tasks': '清洁任务',
+  'records': '清洁记录'
 }
 
 // 组件映射
@@ -175,7 +189,14 @@ const componentMap = {
   'dashboard': markRaw(Dashboard),
   'users': markRaw(Users),
   'staff': markRaw(Staff),
-  'inviteCodes': markRaw(InviteCodes)
+  'inviteCodes': markRaw(InviteCodes),
+  // 前台相关组件
+  'bookings': markRaw(Bookings),
+  'checkin': markRaw(Checkin),
+  'visitors': markRaw(Visitors),
+  // 保洁相关组件
+  'tasks': markRaw(CleaningTasks),
+  'records': markRaw(CleaningRecords)
 }
 
 // 切换组件
@@ -189,7 +210,14 @@ const switchComponent = (componentName) => {
     'dashboard': '/admin/dashboard',
     'users': '/admin/users',
     'staff': '/admin/staff',
-    'inviteCodes': '/admin/invite-codes'
+    'inviteCodes': '/admin/invite-codes',
+    // 前台相关路径
+    'bookings': '/admin/reception/bookings',
+    'checkin': '/admin/reception/checkin',
+    'visitors': '/admin/reception/visitors',
+    // 保洁相关路径
+    'tasks': '/admin/cleaning/tasks',
+    'records': '/admin/cleaning/records'
   }
   activeMenu.value = pathMap[componentName]
 
@@ -224,9 +252,26 @@ onMounted(() => {
     switchComponent('users')
   } else if (path.includes('/admin/staff')) {
     switchComponent('staff')
+  } else if (path.includes('/admin/reception/bookings')) {
+    switchComponent('bookings')
+  } else if (path.includes('/admin/reception/checkin')) {
+    switchComponent('checkin')
+  } else if (path.includes('/admin/reception/visitors')) {
+    switchComponent('visitors')
+  } else if (path.includes('/admin/cleaning/tasks')) {
+    switchComponent('tasks')
+  } else if (path.includes('/admin/cleaning/records')) {
+    switchComponent('records')
   } else {
-    // 默认显示数据看板
-    switchComponent('dashboard')
+    // 默认显示对应角色的首页
+    if (userRole.value === 'receptionist') {
+      switchComponent('bookings')
+    } else if (userRole.value === 'cleaner') {
+      switchComponent('tasks')
+    } else {
+      // 管理员默认显示数据看板
+      switchComponent('dashboard')
+    }
   }
 })
 
