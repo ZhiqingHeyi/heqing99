@@ -1,0 +1,450 @@
+0 verbose cli E:\developer_tools\nodejs\node.exe E:\developer_tools\nodejs\node_modules\npm\bin\npm-cli.js
+1 info using npm@10.9.2
+2 info using node@v22.14.0
+3 silly config load:file:E:\developer_tools\nodejs\node_modules\npm\npmrc
+4 silly config load:file:E:\桌面\javahotel\heqing99\.npmrc
+5 silly config load:file:C:\Users\上善若水\.npmrc
+6 silly config load:file:E:\桌面\javahotel\heqing99\developer_toolsnodejsnode_global\etc\npmrc
+7 verbose title npm install axios
+8 verbose argv "install" "axios" "--save"
+9 verbose logfile logs-max:10 dir:E:\桌面\javahotel\heqing99\developer_toolsnodejsnode_cache\_logs\2025-04-05T11_05_00_185Z-
+10 verbose logfile E:\桌面\javahotel\heqing99\developer_toolsnodejsnode_cache\_logs\2025-04-05T11_05_00_185Z-debug-0.log
+11 silly logfile start cleaning logs, removing 1 files
+12 silly packumentCache heap:4345298944 maxSize:1086324736 maxEntrySize:543162368
+13 silly logfile done cleaning log files
+14 silly idealTree buildDeps
+15 silly fetch manifest axios@*
+16 silly packumentCache full:https://registry.npmmirror.com/axios cache-miss
+17 http fetch GET 200 https://registry.npmmirror.com/axios 615ms (cache miss)
+18 silly packumentCache full:https://registry.npmmirror.com/axios set size:104357 disposed:false
+19 silly placeDep ROOT axios@1.8.4 OK for: hotel-frontend@0.0.1 want: *
+20 silly fetch manifest follow-redirects@^1.15.6
+21 silly packumentCache full:https://registry.npmmirror.com/follow-redirects cache-miss
+22 silly fetch manifest form-data@^4.0.0
+23 silly packumentCache full:https://registry.npmmirror.com/form-data cache-miss
+24 silly fetch manifest proxy-from-env@^1.1.0
+25 silly packumentCache full:https://registry.npmmirror.com/proxy-from-env cache-miss
+26 http fetch GET 200 https://registry.npmmirror.com/follow-redirects 131ms (cache miss)
+27 silly packumentCache full:https://registry.npmmirror.com/follow-redirects set size:28829 disposed:false
+28 http fetch GET 200 https://registry.npmmirror.com/proxy-from-env 199ms (cache miss)
+29 silly packumentCache full:https://registry.npmmirror.com/proxy-from-env set size:4747 disposed:false
+30 http fetch GET 200 https://registry.npmmirror.com/form-data 446ms (cache miss)
+31 silly packumentCache full:https://registry.npmmirror.com/form-data set size:22112 disposed:false
+32 silly placeDep ROOT follow-redirects@1.15.9 OK for: axios@1.8.4 want: ^1.15.6
+33 silly placeDep ROOT form-data@4.0.2 OK for: axios@1.8.4 want: ^4.0.0
+34 silly placeDep ROOT proxy-from-env@1.1.0 OK for: axios@1.8.4 want: ^1.1.0
+35 silly fetch manifest asynckit@^0.4.0
+36 silly packumentCache full:https://registry.npmmirror.com/asynckit cache-miss
+37 silly fetch manifest combined-stream@^1.0.8
+38 silly packumentCache full:https://registry.npmmirror.com/combined-stream cache-miss
+39 silly fetch manifest es-set-tostringtag@^2.1.0
+40 silly packumentCache full:https://registry.npmmirror.com/es-set-tostringtag cache-miss
+41 silly fetch manifest mime-types@^2.1.12
+42 silly packumentCache full:https://registry.npmmirror.com/mime-types cache-miss
+43 http fetch GET 200 https://registry.npmmirror.com/asynckit 81ms (cache miss)
+44 silly packumentCache full:https://registry.npmmirror.com/asynckit set size:4567 disposed:false
+45 http fetch GET 200 https://registry.npmmirror.com/combined-stream 351ms (cache miss)
+46 silly packumentCache full:https://registry.npmmirror.com/combined-stream set size:7154 disposed:false
+47 http fetch GET 200 https://registry.npmmirror.com/es-set-tostringtag 550ms (cache miss)
+48 silly packumentCache full:https://registry.npmmirror.com/es-set-tostringtag set size:6558 disposed:false
+49 http fetch GET 200 https://registry.npmmirror.com/mime-types 551ms (cache miss)
+50 silly packumentCache full:https://registry.npmmirror.com/mime-types set size:20913 disposed:false
+51 silly placeDep ROOT asynckit@0.4.0 OK for: form-data@4.0.2 want: ^0.4.0
+52 silly placeDep ROOT combined-stream@1.0.8 OK for: form-data@4.0.2 want: ^1.0.8
+53 silly placeDep ROOT es-set-tostringtag@2.1.0 OK for: form-data@4.0.2 want: ^2.1.0
+54 silly placeDep ROOT mime-types@2.1.35 OK for: form-data@4.0.2 want: ^2.1.12
+55 silly fetch manifest delayed-stream@~1.0.0
+56 silly packumentCache full:https://registry.npmmirror.com/delayed-stream cache-miss
+57 silly fetch manifest es-errors@^1.3.0
+58 silly packumentCache full:https://registry.npmmirror.com/es-errors cache-miss
+59 silly fetch manifest get-intrinsic@^1.2.6
+60 silly packumentCache full:https://registry.npmmirror.com/get-intrinsic cache-miss
+61 silly fetch manifest has-tostringtag@^1.0.2
+62 silly packumentCache full:https://registry.npmmirror.com/has-tostringtag cache-miss
+63 silly fetch manifest hasown@^2.0.2
+64 silly packumentCache full:https://registry.npmmirror.com/hasown cache-miss
+65 silly fetch manifest mime-db@1.52.0
+66 silly packumentCache full:https://registry.npmmirror.com/mime-db cache-miss
+67 http fetch GET 200 https://registry.npmmirror.com/es-errors 100ms (cache miss)
+68 silly packumentCache full:https://registry.npmmirror.com/es-errors set size:4030 disposed:false
+69 http fetch GET 200 https://registry.npmmirror.com/delayed-stream 116ms (cache miss)
+70 silly packumentCache full:https://registry.npmmirror.com/delayed-stream set size:4333 disposed:false
+71 http fetch GET 200 https://registry.npmmirror.com/has-tostringtag 116ms (cache miss)
+72 silly packumentCache full:https://registry.npmmirror.com/has-tostringtag set size:3448 disposed:false
+73 http fetch GET 200 https://registry.npmmirror.com/get-intrinsic 141ms (cache miss)
+74 silly packumentCache full:https://registry.npmmirror.com/get-intrinsic set size:11108 disposed:false
+75 http fetch GET 200 https://registry.npmmirror.com/hasown 228ms (cache miss)
+76 silly packumentCache full:https://registry.npmmirror.com/hasown set size:3832 disposed:false
+77 http fetch GET 200 https://registry.npmmirror.com/mime-db 251ms (cache miss)
+78 silly packumentCache full:https://registry.npmmirror.com/mime-db set size:24186 disposed:false
+79 silly placeDep ROOT delayed-stream@1.0.0 OK for: combined-stream@1.0.8 want: ~1.0.0
+80 silly placeDep ROOT es-errors@1.3.0 OK for: es-set-tostringtag@2.1.0 want: ^1.3.0
+81 silly placeDep ROOT get-intrinsic@1.3.0 OK for: es-set-tostringtag@2.1.0 want: ^1.2.6
+82 silly placeDep ROOT has-tostringtag@1.0.2 OK for: es-set-tostringtag@2.1.0 want: ^1.0.2
+83 silly placeDep ROOT hasown@2.0.2 OK for: es-set-tostringtag@2.1.0 want: ^2.0.2
+84 silly fetch manifest call-bind-apply-helpers@^1.0.2
+85 silly packumentCache full:https://registry.npmmirror.com/call-bind-apply-helpers cache-miss
+86 silly fetch manifest es-define-property@^1.0.1
+87 silly packumentCache full:https://registry.npmmirror.com/es-define-property cache-miss
+88 silly fetch manifest es-object-atoms@^1.1.1
+89 silly packumentCache full:https://registry.npmmirror.com/es-object-atoms cache-miss
+90 silly fetch manifest function-bind@^1.1.2
+91 silly packumentCache full:https://registry.npmmirror.com/function-bind cache-miss
+92 silly fetch manifest get-proto@^1.0.1
+93 silly packumentCache full:https://registry.npmmirror.com/get-proto cache-miss
+94 silly fetch manifest gopd@^1.2.0
+95 silly packumentCache full:https://registry.npmmirror.com/gopd cache-miss
+96 silly fetch manifest has-symbols@^1.1.0
+97 silly packumentCache full:https://registry.npmmirror.com/has-symbols cache-miss
+98 silly fetch manifest math-intrinsics@^1.1.0
+99 silly packumentCache full:https://registry.npmmirror.com/math-intrinsics cache-miss
+100 silly fetch manifest has-symbols@^1.0.3
+101 silly packumentCache full:https://registry.npmmirror.com/has-symbols cache-miss
+102 silly fetch manifest function-bind@^1.1.2
+103 silly packumentCache full:https://registry.npmmirror.com/function-bind cache-miss
+104 http fetch GET 200 https://registry.npmmirror.com/call-bind-apply-helpers 266ms (cache miss)
+105 silly packumentCache full:https://registry.npmmirror.com/call-bind-apply-helpers set size:3532 disposed:false
+106 http fetch GET 200 https://registry.npmmirror.com/gopd 264ms (cache miss)
+107 silly packumentCache full:https://registry.npmmirror.com/gopd set size:3962 disposed:false
+108 http fetch GET 200 https://registry.npmmirror.com/es-object-atoms 268ms (cache miss)
+109 silly packumentCache full:https://registry.npmmirror.com/es-object-atoms set size:3862 disposed:false
+110 http fetch GET 200 https://registry.npmmirror.com/es-define-property 271ms (cache miss)
+111 silly packumentCache full:https://registry.npmmirror.com/es-define-property set size:2896 disposed:false
+112 http fetch GET 200 https://registry.npmmirror.com/get-proto 271ms (cache miss)
+113 silly packumentCache full:https://registry.npmmirror.com/get-proto set size:2799 disposed:false
+114 http fetch GET 200 https://registry.npmmirror.com/function-bind 286ms (cache miss)
+115 silly packumentCache full:https://registry.npmmirror.com/function-bind set size:4376 disposed:false
+116 http fetch GET 200 https://registry.npmmirror.com/function-bind 338ms (cache miss)
+117 silly packumentCache full:https://registry.npmmirror.com/function-bind set size:4376 disposed:false
+118 silly packumentCache full:https://registry.npmmirror.com/function-bind dispose
+119 http fetch GET 200 https://registry.npmmirror.com/has-symbols 347ms (cache miss)
+120 silly packumentCache full:https://registry.npmmirror.com/has-symbols set size:5325 disposed:false
+121 http fetch GET 200 https://registry.npmmirror.com/has-symbols 350ms (cache miss)
+122 silly packumentCache full:https://registry.npmmirror.com/has-symbols set size:5325 disposed:false
+123 silly packumentCache full:https://registry.npmmirror.com/has-symbols dispose
+124 http fetch GET 200 https://registry.npmmirror.com/math-intrinsics 354ms (cache miss)
+125 silly packumentCache full:https://registry.npmmirror.com/math-intrinsics set size:3012 disposed:false
+126 silly placeDep ROOT call-bind-apply-helpers@1.0.2 OK for: get-intrinsic@1.3.0 want: ^1.0.2
+127 silly placeDep ROOT es-define-property@1.0.1 OK for: get-intrinsic@1.3.0 want: ^1.0.1
+128 silly placeDep ROOT es-object-atoms@1.1.1 OK for: get-intrinsic@1.3.0 want: ^1.1.1
+129 silly placeDep ROOT function-bind@1.1.2 OK for: get-intrinsic@1.3.0 want: ^1.1.2
+130 silly placeDep ROOT get-proto@1.0.1 OK for: get-intrinsic@1.3.0 want: ^1.0.1
+131 silly placeDep ROOT gopd@1.2.0 OK for: get-intrinsic@1.3.0 want: ^1.2.0
+132 silly placeDep ROOT has-symbols@1.1.0 OK for: get-intrinsic@1.3.0 want: ^1.1.0
+133 silly placeDep ROOT math-intrinsics@1.1.0 OK for: get-intrinsic@1.3.0 want: ^1.1.0
+134 silly fetch manifest dunder-proto@^1.0.1
+135 silly packumentCache full:https://registry.npmmirror.com/dunder-proto cache-miss
+136 http fetch GET 200 https://registry.npmmirror.com/dunder-proto 95ms (cache miss)
+137 silly packumentCache full:https://registry.npmmirror.com/dunder-proto set size:2798 disposed:false
+138 silly placeDep ROOT dunder-proto@1.0.1 OK for: get-proto@1.0.1 want: ^1.0.1
+139 silly placeDep ROOT mime-db@1.52.0 OK for: mime-types@2.1.35 want: 1.52.0
+140 silly reify moves {}
+141 silly audit bulk request {
+141 silly audit   '@amap/amap-jsapi-loader': [ '1.0.1' ],
+141 silly audit   '@babel/helper-string-parser': [ '7.25.9' ],
+141 silly audit   '@babel/helper-validator-identifier': [ '7.25.9' ],
+141 silly audit   '@babel/parser': [ '7.27.0' ],
+141 silly audit   '@babel/types': [ '7.27.0' ],
+141 silly audit   '@ctrl/tinycolor': [ '3.6.1' ],
+141 silly audit   '@element-plus/icons-vue': [ '2.3.1' ],
+141 silly audit   '@esbuild/android-arm': [ '0.18.20' ],
+141 silly audit   '@esbuild/android-arm64': [ '0.18.20' ],
+141 silly audit   '@esbuild/android-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/darwin-arm64': [ '0.18.20' ],
+141 silly audit   '@esbuild/darwin-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/freebsd-arm64': [ '0.18.20' ],
+141 silly audit   '@esbuild/freebsd-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-arm': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-arm64': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-ia32': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-loong64': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-mips64el': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-ppc64': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-riscv64': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-s390x': [ '0.18.20' ],
+141 silly audit   '@esbuild/linux-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/netbsd-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/openbsd-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/sunos-x64': [ '0.18.20' ],
+141 silly audit   '@esbuild/win32-arm64': [ '0.18.20' ],
+141 silly audit   '@esbuild/win32-ia32': [ '0.18.20' ],
+141 silly audit   '@esbuild/win32-x64': [ '0.18.20' ],
+141 silly audit   '@floating-ui/core': [ '1.6.9' ],
+141 silly audit   '@floating-ui/dom': [ '1.6.13' ],
+141 silly audit   '@floating-ui/utils': [ '0.2.9' ],
+141 silly audit   '@jridgewell/sourcemap-codec': [ '1.5.0' ],
+141 silly audit   '@sxzz/popperjs-es': [ '2.11.7' ],
+141 silly audit   '@types/lodash': [ '4.17.16' ],
+141 silly audit   '@types/lodash-es': [ '4.17.12' ],
+141 silly audit   '@types/web-bluetooth': [ '0.0.16' ],
+141 silly audit   '@vitejs/plugin-vue': [ '4.6.2' ],
+141 silly audit   '@vue/compiler-core': [ '3.5.13' ],
+141 silly audit   '@vue/compiler-dom': [ '3.5.13' ],
+141 silly audit   '@vue/compiler-sfc': [ '3.5.13' ],
+141 silly audit   '@vue/compiler-ssr': [ '3.5.13' ],
+141 silly audit   '@vue/devtools-api': [ '6.6.4' ],
+141 silly audit   '@vue/reactivity': [ '3.5.13' ],
+141 silly audit   '@vue/runtime-core': [ '3.5.13' ],
+141 silly audit   '@vue/runtime-dom': [ '3.5.13' ],
+141 silly audit   '@vue/server-renderer': [ '3.5.13' ],
+141 silly audit   '@vue/shared': [ '3.5.13' ],
+141 silly audit   '@vueuse/core': [ '9.13.0' ],
+141 silly audit   'vue-demi': [ '0.14.10' ],
+141 silly audit   '@vueuse/metadata': [ '9.13.0' ],
+141 silly audit   '@vueuse/shared': [ '9.13.0' ],
+141 silly audit   'async-validator': [ '4.2.5' ],
+141 silly audit   csstype: [ '3.1.3' ],
+141 silly audit   dayjs: [ '1.11.13' ],
+141 silly audit   echarts: [ '5.6.0' ],
+141 silly audit   'element-plus': [ '2.9.7' ],
+141 silly audit   entities: [ '4.5.0' ],
+141 silly audit   esbuild: [ '0.18.20' ],
+141 silly audit   'escape-html': [ '1.0.3' ],
+141 silly audit   'estree-walker': [ '2.0.2' ],
+141 silly audit   fsevents: [ '2.3.3' ],
+141 silly audit   lodash: [ '4.17.21' ],
+141 silly audit   'lodash-es': [ '4.17.21' ],
+141 silly audit   'lodash-unified': [ '1.0.3' ],
+141 silly audit   'magic-string': [ '0.30.17' ],
+141 silly audit   'memoize-one': [ '6.0.0' ],
+141 silly audit   nanoid: [ '3.3.11' ],
+141 silly audit   'normalize-wheel-es': [ '1.2.0' ],
+141 silly audit   picocolors: [ '1.1.1' ],
+141 silly audit   postcss: [ '8.5.3' ],
+141 silly audit   'qrcodejs2-fix': [ '0.0.1' ],
+141 silly audit   rollup: [ '3.29.5' ],
+141 silly audit   'source-map-js': [ '1.2.1' ],
+141 silly audit   tslib: [ '2.3.0' ],
+141 silly audit   vite: [ '4.5.11' ],
+141 silly audit   vue: [ '3.5.13' ],
+141 silly audit   'vue-router': [ '4.5.0' ],
+141 silly audit   zrender: [ '5.6.1' ],
+141 silly audit   axios: [ '1.8.4' ],
+141 silly audit   'follow-redirects': [ '1.15.9' ],
+141 silly audit   'form-data': [ '4.0.2' ],
+141 silly audit   'proxy-from-env': [ '1.1.0' ],
+141 silly audit   asynckit: [ '0.4.0' ],
+141 silly audit   'combined-stream': [ '1.0.8' ],
+141 silly audit   'es-set-tostringtag': [ '2.1.0' ],
+141 silly audit   'mime-types': [ '2.1.35' ],
+141 silly audit   'delayed-stream': [ '1.0.0' ],
+141 silly audit   'es-errors': [ '1.3.0' ],
+141 silly audit   'get-intrinsic': [ '1.3.0' ],
+141 silly audit   'has-tostringtag': [ '1.0.2' ],
+141 silly audit   hasown: [ '2.0.2' ],
+141 silly audit   'call-bind-apply-helpers': [ '1.0.2' ],
+141 silly audit   'es-define-property': [ '1.0.1' ],
+141 silly audit   'es-object-atoms': [ '1.1.1' ],
+141 silly audit   'function-bind': [ '1.1.2' ],
+141 silly audit   'get-proto': [ '1.0.1' ],
+141 silly audit   gopd: [ '1.2.0' ],
+141 silly audit   'has-symbols': [ '1.1.0' ],
+141 silly audit   'math-intrinsics': [ '1.1.0' ],
+141 silly audit   'dunder-proto': [ '1.0.1' ],
+141 silly audit   'mime-db': [ '1.52.0' ]
+141 silly audit }
+142 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\fsevents
+143 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\fsevents' ]
+144 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\win32-ia32
+145 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\win32-ia32' ]
+146 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\win32-arm64
+147 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\win32-arm64' ]
+148 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\sunos-x64
+149 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\sunos-x64' ]
+150 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\openbsd-x64
+151 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\openbsd-x64' ]
+152 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\netbsd-x64
+153 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\netbsd-x64' ]
+154 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-x64
+155 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-x64' ]
+156 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-s390x
+157 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-s390x' ]
+158 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-riscv64
+159 silly reify mark deleted [
+159 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-riscv64'
+159 silly reify ]
+160 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-ppc64
+161 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-ppc64' ]
+162 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-mips64el
+163 silly reify mark deleted [
+163 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-mips64el'
+163 silly reify ]
+164 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-loong64
+165 silly reify mark deleted [
+165 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-loong64'
+165 silly reify ]
+166 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-ia32
+167 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-ia32' ]
+168 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-arm64
+169 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-arm64' ]
+170 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\linux-arm
+171 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\linux-arm' ]
+172 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\freebsd-x64
+173 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\freebsd-x64' ]
+174 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\freebsd-arm64
+175 silly reify mark deleted [
+175 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\freebsd-arm64'
+175 silly reify ]
+176 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\darwin-x64
+177 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\darwin-x64' ]
+178 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\darwin-arm64
+179 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\darwin-arm64' ]
+180 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\android-x64
+181 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\android-x64' ]
+182 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\android-arm64
+183 silly reify mark deleted [
+183 silly reify   'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\android-arm64'
+183 silly reify ]
+184 verbose reify failed optional dependency E:\桌面\javahotel\heqing99\node_modules\@esbuild\android-arm
+185 silly reify mark deleted [ 'E:\\桌面\\javahotel\\heqing99\\node_modules\\@esbuild\\android-arm' ]
+186 http cache mime-db@https://registry.npmmirror.com/mime-db/-/mime-db-1.52.0.tgz 0ms (cache hit)
+187 http cache dunder-proto@https://registry.npmmirror.com/dunder-proto/-/dunder-proto-1.0.1.tgz 0ms (cache hit)
+188 http cache math-intrinsics@https://registry.npmmirror.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz 0ms (cache hit)
+189 http cache gopd@https://registry.npmmirror.com/gopd/-/gopd-1.2.0.tgz 0ms (cache hit)
+190 http cache get-proto@https://registry.npmmirror.com/get-proto/-/get-proto-1.0.1.tgz 0ms (cache hit)
+191 http cache es-object-atoms@https://registry.npmmirror.com/es-object-atoms/-/es-object-atoms-1.1.1.tgz 0ms (cache hit)
+192 http cache has-symbols@https://registry.npmmirror.com/has-symbols/-/has-symbols-1.1.0.tgz 0ms (cache hit)
+193 http cache function-bind@https://registry.npmmirror.com/function-bind/-/function-bind-1.1.2.tgz 0ms (cache hit)
+194 http cache get-intrinsic@https://registry.npmmirror.com/get-intrinsic/-/get-intrinsic-1.3.0.tgz 0ms (cache hit)
+195 http cache hasown@https://registry.npmmirror.com/hasown/-/hasown-2.0.2.tgz 0ms (cache hit)
+196 http cache call-bind-apply-helpers@https://registry.npmmirror.com/call-bind-apply-helpers/-/call-bind-apply-helpers-1.0.2.tgz 0ms (cache hit)
+197 http cache has-tostringtag@https://registry.npmmirror.com/has-tostringtag/-/has-tostringtag-1.0.2.tgz 0ms (cache hit)
+198 http cache mime-types@https://registry.npmmirror.com/mime-types/-/mime-types-2.1.35.tgz 0ms (cache hit)
+199 http cache es-define-property@https://registry.npmmirror.com/es-define-property/-/es-define-property-1.0.1.tgz 0ms (cache hit)
+200 http cache delayed-stream@https://registry.npmmirror.com/delayed-stream/-/delayed-stream-1.0.0.tgz 0ms (cache hit)
+201 http cache es-errors@https://registry.npmmirror.com/es-errors/-/es-errors-1.3.0.tgz 0ms (cache hit)
+202 http cache asynckit@https://registry.npmmirror.com/asynckit/-/asynckit-0.4.0.tgz 0ms (cache hit)
+203 http cache combined-stream@https://registry.npmmirror.com/combined-stream/-/combined-stream-1.0.8.tgz 1ms (cache hit)
+204 http cache es-set-tostringtag@https://registry.npmmirror.com/es-set-tostringtag/-/es-set-tostringtag-2.1.0.tgz 0ms (cache hit)
+205 http cache form-data@https://registry.npmmirror.com/form-data/-/form-data-4.0.2.tgz 0ms (cache hit)
+206 silly tarball no local data for mime-db@https://registry.npmmirror.com/mime-db/-/mime-db-1.52.0.tgz. Extracting by manifest.
+207 http cache proxy-from-env@https://registry.npmmirror.com/proxy-from-env/-/proxy-from-env-1.1.0.tgz 0ms (cache hit)
+208 http cache follow-redirects@https://registry.npmmirror.com/follow-redirects/-/follow-redirects-1.15.9.tgz 0ms (cache hit)
+209 silly tarball no local data for dunder-proto@https://registry.npmmirror.com/dunder-proto/-/dunder-proto-1.0.1.tgz. Extracting by manifest.
+210 http cache axios@https://registry.npmmirror.com/axios/-/axios-1.8.4.tgz 0ms (cache hit)
+211 silly tarball no local data for math-intrinsics@https://registry.npmmirror.com/math-intrinsics/-/math-intrinsics-1.1.0.tgz. Extracting by manifest.
+212 silly tarball no local data for gopd@https://registry.npmmirror.com/gopd/-/gopd-1.2.0.tgz. Extracting by manifest.
+213 silly tarball no local data for get-proto@https://registry.npmmirror.com/get-proto/-/get-proto-1.0.1.tgz. Extracting by manifest.
+214 silly tarball no local data for es-object-atoms@https://registry.npmmirror.com/es-object-atoms/-/es-object-atoms-1.1.1.tgz. Extracting by manifest.
+215 silly tarball no local data for has-symbols@https://registry.npmmirror.com/has-symbols/-/has-symbols-1.1.0.tgz. Extracting by manifest.
+216 silly tarball no local data for function-bind@https://registry.npmmirror.com/function-bind/-/function-bind-1.1.2.tgz. Extracting by manifest.
+217 silly tarball no local data for get-intrinsic@https://registry.npmmirror.com/get-intrinsic/-/get-intrinsic-1.3.0.tgz. Extracting by manifest.
+218 silly tarball no local data for hasown@https://registry.npmmirror.com/hasown/-/hasown-2.0.2.tgz. Extracting by manifest.
+219 silly tarball no local data for call-bind-apply-helpers@https://registry.npmmirror.com/call-bind-apply-helpers/-/call-bind-apply-helpers-1.0.2.tgz. Extracting by manifest.
+220 silly tarball no local data for has-tostringtag@https://registry.npmmirror.com/has-tostringtag/-/has-tostringtag-1.0.2.tgz. Extracting by manifest.
+221 silly tarball no local data for mime-types@https://registry.npmmirror.com/mime-types/-/mime-types-2.1.35.tgz. Extracting by manifest.
+222 silly tarball no local data for es-define-property@https://registry.npmmirror.com/es-define-property/-/es-define-property-1.0.1.tgz. Extracting by manifest.
+223 silly tarball no local data for delayed-stream@https://registry.npmmirror.com/delayed-stream/-/delayed-stream-1.0.0.tgz. Extracting by manifest.
+224 silly tarball no local data for es-errors@https://registry.npmmirror.com/es-errors/-/es-errors-1.3.0.tgz. Extracting by manifest.
+225 silly tarball no local data for asynckit@https://registry.npmmirror.com/asynckit/-/asynckit-0.4.0.tgz. Extracting by manifest.
+226 silly tarball no local data for combined-stream@https://registry.npmmirror.com/combined-stream/-/combined-stream-1.0.8.tgz. Extracting by manifest.
+227 silly tarball no local data for es-set-tostringtag@https://registry.npmmirror.com/es-set-tostringtag/-/es-set-tostringtag-2.1.0.tgz. Extracting by manifest.
+228 silly tarball no local data for form-data@https://registry.npmmirror.com/form-data/-/form-data-4.0.2.tgz. Extracting by manifest.
+229 silly tarball no local data for proxy-from-env@https://registry.npmmirror.com/proxy-from-env/-/proxy-from-env-1.1.0.tgz. Extracting by manifest.
+230 silly tarball no local data for follow-redirects@https://registry.npmmirror.com/follow-redirects/-/follow-redirects-1.15.9.tgz. Extracting by manifest.
+231 silly tarball no local data for axios@https://registry.npmmirror.com/axios/-/axios-1.8.4.tgz. Extracting by manifest.
+232 http fetch POST 404 https://registry.npmmirror.com/-/npm/v1/security/advisories/bulk 155ms
+233 silly audit bulk request failed [object Object]
+234 http fetch POST 404 https://registry.npmmirror.com/-/npm/v1/security/audits/quick 123ms
+235 verbose audit error HttpErrorGeneral: 404 Not Found - POST https://registry.npmmirror.com/-/npm/v1/security/audits/quick - [NOT_IMPLEMENTED] /-/npm/v1/security/* not implemented yet
+235 verbose audit error     at E:\developer_tools\nodejs\node_modules\npm\node_modules\npm-registry-fetch\lib\check-response.js:103:15
+235 verbose audit error     at process.processTicksAndRejections (node:internal/process/task_queues:105:5)
+235 verbose audit error     at async [getReport] (E:\developer_tools\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\audit-report.js:336:21)
+235 verbose audit error     at async AuditReport.run (E:\developer_tools\nodejs\node_modules\npm\node_modules\@npmcli\arborist\lib\audit-report.js:106:19) {
+235 verbose audit error   headers: [Object: null prototype] {
+235 verbose audit error     server: [ 'Tengine' ],
+235 verbose audit error     date: [ 'Sat, 05 Apr 2025 11:05:07 GMT' ],
+235 verbose audit error     'content-type': [ 'application/json' ],
+235 verbose audit error     'transfer-encoding': [ 'chunked' ],
+235 verbose audit error     connection: [ 'keep-alive' ],
+235 verbose audit error     'strict-transport-security': [ 'max-age=5184000' ],
+235 verbose audit error     via: [ 'kunlun9.cn5323[,404666]' ],
+235 verbose audit error     'timing-allow-origin': [ '*' ],
+235 verbose audit error     eagleid: [ '700f252717438511079391952e' ],
+235 verbose audit error     'x-fetch-attempts': [ '1' ]
+235 verbose audit error   },
+235 verbose audit error   statusCode: 404,
+235 verbose audit error   code: 'E404',
+235 verbose audit error   method: 'POST',
+235 verbose audit error   uri: 'https://registry.npmmirror.com/-/npm/v1/security/audits/quick',
+235 verbose audit error   body: {
+235 verbose audit error     error: '[NOT_IMPLEMENTED] /-/npm/v1/security/* not implemented yet'
+235 verbose audit error   },
+235 verbose audit error   pkgid: undefined
+235 verbose audit error }
+236 silly audit error [object Object]
+237 silly audit report null
+238 http fetch GET 200 https://cdn.npmmirror.com/packages/gopd/1.2.0/gopd-1.2.0.tgz 11452ms (cache miss)
+239 http fetch GET 200 https://cdn.npmmirror.com/packages/has-symbols/1.1.0/has-symbols-1.1.0.tgz 11707ms (cache miss)
+240 http fetch GET 200 https://cdn.npmmirror.com/packages/es-errors/1.3.0/es-errors-1.3.0.tgz 11698ms (cache miss)
+241 http fetch GET 200 https://cdn.npmmirror.com/packages/es-set-tostringtag/2.1.0/es-set-tostringtag-2.1.0.tgz 11711ms (cache miss)
+242 http fetch GET 200 https://cdn.npmmirror.com/packages/combined-stream/1.0.8/combined-stream-1.0.8.tgz 11715ms (cache miss)
+243 http fetch GET 200 https://cdn.npmmirror.com/packages/follow-redirects/1.15.9/follow-redirects-1.15.9.tgz 11707ms (cache miss)
+244 http fetch GET 200 https://cdn.npmmirror.com/packages/asynckit/0.4.0/asynckit-0.4.0.tgz 11720ms (cache miss)
+245 http fetch GET 200 https://cdn.npmmirror.com/packages/es-define-property/1.0.1/es-define-property-1.0.1.tgz 11728ms (cache miss)
+246 http fetch GET 200 https://cdn.npmmirror.com/packages/has-tostringtag/1.0.2/has-tostringtag-1.0.2.tgz 11734ms (cache miss)
+247 http fetch GET 200 https://cdn.npmmirror.com/packages/mime-types/2.1.35/mime-types-2.1.35.tgz 11761ms (cache miss)
+248 http fetch GET 200 https://cdn.npmmirror.com/packages/delayed-stream/1.0.0/delayed-stream-1.0.0.tgz 11763ms (cache miss)
+249 http fetch GET 200 https://cdn.npmmirror.com/packages/form-data/4.0.2/form-data-4.0.2.tgz 11786ms (cache miss)
+250 http fetch GET 200 https://cdn.npmmirror.com/packages/mime-db/1.52.0/mime-db-1.52.0.tgz 11843ms (cache miss)
+251 http fetch GET 200 https://cdn.npmmirror.com/packages/proxy-from-env/1.1.0/proxy-from-env-1.1.0.tgz 11805ms (cache miss)
+252 http fetch GET 200 https://cdn.npmmirror.com/packages/get-intrinsic/1.3.0/get-intrinsic-1.3.0.tgz 11843ms (cache miss)
+253 http fetch GET 200 https://cdn.npmmirror.com/packages/hasown/2.0.2/hasown-2.0.2.tgz 11846ms (cache miss)
+254 http fetch GET 200 https://cdn.npmmirror.com/packages/function-bind/1.1.2/function-bind-1.1.2.tgz 11868ms (cache miss)
+255 http fetch GET 200 https://cdn.npmmirror.com/packages/get-proto/1.0.1/get-proto-1.0.1.tgz 11895ms (cache miss)
+256 http fetch GET 200 https://cdn.npmmirror.com/packages/dunder-proto/1.0.1/dunder-proto-1.0.1.tgz 11908ms (cache miss)
+257 http fetch GET 200 https://cdn.npmmirror.com/packages/es-object-atoms/1.1.1/es-object-atoms-1.1.1.tgz 11919ms (cache miss)
+258 http fetch GET 200 https://cdn.npmmirror.com/packages/call-bind-apply-helpers/1.0.2/call-bind-apply-helpers-1.0.2.tgz 11986ms (cache miss)
+259 http fetch GET 200 https://cdn.npmmirror.com/packages/math-intrinsics/1.1.0/math-intrinsics-1.1.0.tgz 12080ms (cache miss)
+260 http fetch GET 200 https://cdn.npmmirror.com/packages/axios/1.8.4/axios-1.8.4.tgz 12436ms (cache miss)
+261 silly ADD node_modules/mime-db
+262 silly ADD node_modules/dunder-proto
+263 silly ADD node_modules/math-intrinsics
+264 silly ADD node_modules/has-symbols
+265 silly ADD node_modules/gopd
+266 silly ADD node_modules/get-proto
+267 silly ADD node_modules/function-bind
+268 silly ADD node_modules/es-object-atoms
+269 silly ADD node_modules/es-define-property
+270 silly ADD node_modules/call-bind-apply-helpers
+271 silly ADD node_modules/hasown
+272 silly ADD node_modules/has-tostringtag
+273 silly ADD node_modules/get-intrinsic
+274 silly ADD node_modules/es-errors
+275 silly ADD node_modules/delayed-stream
+276 silly ADD node_modules/mime-types
+277 silly ADD node_modules/es-set-tostringtag
+278 silly ADD node_modules/combined-stream
+279 silly ADD node_modules/asynckit
+280 silly ADD node_modules/proxy-from-env
+281 silly ADD node_modules/form-data
+282 silly ADD node_modules/follow-redirects
+283 silly ADD node_modules/axios
+284 silly ADD
+285 silly ADD
+286 silly ADD
+287 silly ADD
+288 silly ADD
+289 silly ADD
+290 silly ADD
+291 silly ADD
+292 silly ADD
+293 silly ADD
+294 silly ADD
+295 silly ADD
+296 silly ADD
+297 silly ADD
+298 silly ADD
+299 silly ADD
+300 silly ADD
+301 silly ADD
+302 silly ADD
+303 silly ADD
+304 silly ADD
+305 silly ADD
+306 verbose cwd E:\桌面\javahotel\heqing99
+307 verbose os Windows_NT 10.0.22000
+308 verbose node v22.14.0
+309 verbose npm  v10.9.2
+310 verbose exit 0
+311 info ok

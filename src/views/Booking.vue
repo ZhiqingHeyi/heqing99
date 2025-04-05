@@ -212,9 +212,10 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
+import { reservationApi, membershipApi, roomApi } from '@/api'
 
 const router = useRouter()
 const bookingFormRef = ref(null)
@@ -253,11 +254,7 @@ if (isLoggedIn.value) {
   bookingForm.phone = '13812345678' // 实际应用中应该从用户资料获取
 }
 
-const roomTypes = [
-  { id: 1, name: '豪华大床房', price: 688 },
-  { id: 2, name: '行政套房', price: 888 },
-  { id: 3, name: '家庭套房', price: 1288 }
-]
+const roomTypes = ref([])
 
 const rules = {
   checkIn: [{ required: true, message: '请选择入住日期', trigger: 'change' }],
@@ -276,7 +273,7 @@ const rules = {
 // 获取房间单价
 const roomPrice = computed(() => {
   if (!bookingForm.roomType) return 0
-  const selectedRoom = roomTypes.find(room => room.id === bookingForm.roomType)
+  const selectedRoom = roomTypes.value.find(room => room.id === bookingForm.roomType)
   return selectedRoom ? selectedRoom.price : 0
 })
 
@@ -398,215 +395,121 @@ const validateDates = () => {
   }
 }
 
+// 提交预订表单
 const submitBooking = async () => {
-  if (!bookingFormRef.value) return
+  // 验证表单
+  if (!isFormValid.value) {
+    ElMessage.warning('请完成所有必填信息')
+    return
+  }
   
-  await bookingFormRef.value.validate(async (valid) => {
-    if (valid) {
-      try {
-        loading.value = true
-
-        // 首先检查用户登录状态
-        const userToken = localStorage.getItem('userToken')
-        const userId = localStorage.getItem('userId')
-        
-        // 验证token的有效性
+  // 如果用户未登录，提示登录
+  if (!isLoggedIn.value) {
+    ElMessageBox.confirm('预订需要登录，是否前往登录页面？', '提示', {
+      confirmButtonText: '去登录',
+      cancelButtonText: '取消',
+      type: 'info'
+    }).then(() => {
+      // 保存当前填写的信息到localStorage
+      localStorage.setItem('tempBookingData', JSON.stringify({
+        checkIn: bookingForm.checkIn,
+        checkOut: bookingForm.checkOut,
+        roomType: bookingForm.roomType,
+        roomCount: bookingForm.roomCount,
+        contactName: bookingForm.contactName,
+        phone: bookingForm.phone,
+        email: bookingForm.email,
+        remarks: bookingForm.remarks
+      }))
+      
+      // 跳转到登录页面
+      router.push({
+        path: '/login',
+        query: { redirect: '/booking' }
+      })
+    }).catch(() => {
+      // 用户取消了登录
+    })
+    return
+  }
+  
+  try {
+    // 获取用户ID
+    const userId = localStorage.getItem('userId')
+    const userToken = localStorage.getItem('userToken')
+    
+    if (!userId || !userToken) {
+      ElMessage.error('登录信息无效，请重新登录')
+      return
+    }
+    
+    submitting.value = true
+    
+    // 准备预订数据
+    const reservationData = {
+      userId: parseInt(userId),
+      roomType: bookingForm.roomType,
+      checkIn: bookingForm.checkIn,
+      checkOut: bookingForm.checkOut,
+      roomCount: bookingForm.roomCount,
+      contactName: bookingForm.contactName,
+      phone: bookingForm.phone,
+      email: bookingForm.email,
+      remarks: bookingForm.remarks,
+      totalAmount: totalAmount.value
+    }
+    
+    // 使用API服务提交预订
+    const result = await reservationApi.createReservation(reservationData)
+    
+    if (result.success) {
+      console.log('预订已成功提交到后端，预订ID:', result.reservationId)
+      
+      // 如果用户已登录，更新会员信息
+      if (isLoggedIn.value) {
         try {
-          const validateResponse = await fetch('http://localhost:8080/api/auth/validate', {
-            headers: {
-              'Authorization': `Bearer ${userToken}`
-            }
-          })
+          // 使用API获取最新会员信息
+          const memberInfo = await membershipApi.getMemberInfo(userId)
           
-          if (!validateResponse.ok) {
-            throw new Error('Token invalid')
+          // 更新本地存储的会员信息
+          if (memberInfo) {
+            localStorage.setItem('userLevel', memberInfo.memberLevel || '普通用户')
+            localStorage.setItem('userPoints', String(memberInfo.points || 0))
+            localStorage.setItem('userTotalSpent', String(memberInfo.totalSpent || 0))
           }
           
-          // 验证成功，继续处理预订
-          const validationData = await validateResponse.json()
-          if (!validationData.valid) {
-            throw new Error('Token invalid')
+          // 显示会员升级提示
+          if (memberInfo && memberInfo.memberLevel !== localStorage.getItem('userLevel')) {
+            ElMessage({
+              type: 'success',
+              message: `恭喜您！会员等级已升级为${memberInfo.memberLevel}！`,
+              duration: 5000
+            })
           }
         } catch (error) {
-          console.error('Token validation failed:', error)
-          // token无效或验证失败，清除本地存储的token
-          localStorage.removeItem('userToken')
-          localStorage.removeItem('userId')
-          localStorage.removeItem('userName')
-          localStorage.removeItem('userLevel')
-          ElMessage.error('登录已过期，请重新登录')
-          router.push('/login')
-          loading.value = false
-          return
+          console.error('更新会员信息失败:', error)
         }
-        
-        if (!userToken || !userId) {
-          // 保存当前表单数据到localStorage
-          const formData = {
-            checkIn: bookingForm.checkIn,
-            checkOut: bookingForm.checkOut,
-            roomType: bookingForm.roomType,
-            roomCount: bookingForm.roomCount,
-            contactName: bookingForm.contactName,
-            phone: bookingForm.phone,
-            remarks: bookingForm.remarks
-          }
-          localStorage.setItem('tempBookingData', JSON.stringify(formData))
-          localStorage.setItem('redirectAfterLogin', '/booking')
-          ElMessage.warning('请先登录后再进行预订')
-          router.push('/login')
-          loading.value = false
-          return
-        }
-        
-        // 对于非会员选择"到店支付"的情况进行限制
-        if (bookingForm.paymentMethod === 2 && !canPayAtHotel.value) {
-          ElMessage.warning('非铜牌会员及以上用户必须选择在线支付')
-          loading.value = false
-          return
-        }
-        
-        // 检查免预付金权限
-        if (bookingForm.paymentMethod === 1 && bookingForm.depositType === 3 && !canSkipPrepay.value) {
-          ElMessage.warning('非银牌会员及以上用户不可选择免预付金')
-          loading.value = false
-          return
-        }
-        
-        // 准备预订数据
-        const reservationData = {
-          userId: parseInt(userId),
-          roomType: bookingForm.roomType,
-          checkIn: bookingForm.checkIn instanceof Date 
-            ? bookingForm.checkIn.toISOString() 
-            : new Date(bookingForm.checkIn).toISOString(),
-          checkOut: bookingForm.checkOut instanceof Date 
-            ? bookingForm.checkOut.toISOString() 
-            : new Date(bookingForm.checkOut).toISOString(),
-          roomCount: bookingForm.roomCount,
-          contactName: bookingForm.contactName,
-          phone: bookingForm.phone,
-          remarks: bookingForm.remarks,
-          totalAmount: totalAmount.value
-        }
-
-        // 对于在线支付方式，跳转到支付页面
-        if (bookingForm.paymentMethod === 1 && depositAmount.value > 0) {
-          await ElMessageBox.confirm(
-            `您即将支付预订金额: ¥${depositAmount.value.toFixed(2)}，是否继续?`,
-            '确认支付',
-            {
-              confirmButtonText: '确认支付',
-              cancelButtonText: '取消',
-              type: 'warning'
-            }
-          )
-          
-          // 模拟支付过程
-          await new Promise(resolve => setTimeout(resolve, 1500))
-          
-          ElMessage.success('支付成功！预订已提交')
-        } else {
-          // 免押金预订或到店支付
-          await new Promise(resolve => setTimeout(resolve, 1000))
-          ElMessage.success('预订提交成功！')
-        }
-
-        // 调用后端API提交预订
-        try {
-          const response = await fetch('/api/reservations', {
-            method: 'POST',
-            headers: {
-              'Content-Type': 'application/json',
-              'Authorization': `Bearer ${userToken}`
-            },
-            body: JSON.stringify(reservationData)
-          })
-          
-          const result = await response.json()
-          
-          if (result.success) {
-            console.log('预订已成功提交到后端，预订ID:', result.reservationId)
-            
-            // 如果用户已登录，更新会员信息
-            if (isLoggedIn.value) {
-              // 更新累计消费金额
-              const currentTotalSpent = parseInt(localStorage.getItem('userTotalSpent') || '0')
-              const newTotalSpent = currentTotalSpent + totalAmount.value
-              localStorage.setItem('userTotalSpent', newTotalSpent.toString())
-              
-              // 更新积分
-              const currentPoints = parseInt(localStorage.getItem('userPoints') || '0')
-              const earnedPoints = estimatedPoints.value
-              const newPoints = currentPoints + earnedPoints
-              localStorage.setItem('userPoints', newPoints.toString())
-              
-              // 检查是否可以升级会员等级
-              const currentLevel = localStorage.getItem('userLevel')
-              let newLevel = currentLevel
-              
-              if (newTotalSpent >= 30000 && currentLevel !== '钻石会员') {
-                newLevel = '钻石会员'
-                ElMessage({
-                  type: 'success',
-                  message: '恭喜您！累计消费已满30000元，会员等级已升级为钻石会员！',
-                  duration: 5000
-                })
-              } else if (newTotalSpent >= 10000 && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
-                newLevel = '金牌会员'
-                ElMessage({
-                  type: 'success',
-                  message: '恭喜您！累计消费已满10000元，会员等级已升级为金牌会员！',
-                  duration: 5000
-                })
-              } else if (newTotalSpent >= 5000 && currentLevel !== '银牌会员' && currentLevel !== '金牌会员' && currentLevel !== '钻石会员') {
-                newLevel = '银牌会员'
-                ElMessage({
-                  type: 'success',
-                  message: '恭喜您！累计消费已满5000元，会员等级已升级为银牌会员！',
-                  duration: 5000
-                })
-              } else if (newTotalSpent >= 1500 && currentLevel === '普通用户') {
-                newLevel = '铜牌会员'
-                ElMessage({
-                  type: 'success',
-                  message: '恭喜您！累计消费已满1500元，会员等级已升级为铜牌会员！',
-                  duration: 5000
-                })
-              }
-              
-              // 更新会员等级
-              localStorage.setItem('userLevel', newLevel)
-            }
-            
-            // 预订成功后跳转到我的预订页面
-            router.push('/user/bookings')
-          } else {
-            // 如果是token过期或无效
-            if (result.message?.includes('token') || result.message?.includes('认证')) {
-              localStorage.setItem('tempBookingData', JSON.stringify(reservationData))
-              localStorage.setItem('redirectAfterLogin', '/user/bookings')
-              ElMessage.warning('登录状态已过期，请重新登录')
-              router.push('/login')
-              return
-            }
-            ElMessage.error('预订提交失败: ' + result.message)
-          }
-        } catch (apiError) {
-          console.error('调用预订API时出错:', apiError)
-          ElMessage.error('预订提交失败，请稍后重试')
-        }
-        
-      } catch (error) {
-        console.error('预订失败:', error)
-        if (error !== 'cancel') {
-          ElMessage.error('预订失败，请稍后重试')
-        }
-      } finally {
-        loading.value = false
       }
+      
+      // 预订成功
+      ElMessageBox.alert(`预订已成功提交！预订单号：${result.reservationId}`, '预订成功', {
+        confirmButtonText: '确定',
+        callback: () => {
+          // 重置表单
+          resetForm()
+          // 跳转到个人中心预订列表
+          router.push('/user/bookings')
+        }
+      })
+    } else {
+      ElMessage.error(result.message || '预订提交失败，请稍后重试')
     }
-  })
+  } catch (error) {
+    console.error('预订失败:', error)
+    ElMessage.error(error.message || '预订提交失败，请稍后重试')
+  } finally {
+    submitting.value = false
+  }
 }
 
 // 跳转到登录页
@@ -628,6 +531,86 @@ const goToRegister = () => {
 const resetForm = () => {
   if (!bookingFormRef.value) return
   bookingFormRef.value.resetFields()
+}
+
+// 加载房间类型数据
+const loadRoomTypes = async () => {
+  try {
+    loading.value = true
+    
+    // 使用API服务获取房间类型
+    const roomTypesData = await roomApi.getAllRoomTypes().catch(err => {
+      console.error('获取房间类型失败:', err)
+      // 如果API调用失败，使用模拟数据
+      return null
+    })
+    
+    if (roomTypesData && roomTypesData.length > 0) {
+      roomTypes.value = roomTypesData
+    } else {
+      // 使用模拟数据
+      roomTypes.value = [
+        { id: 1, name: '标准大床房', price: 399, description: '25㎡ 大床' },
+        { id: 2, name: '豪华大床房', price: 499, description: '30㎡ 大床' },
+        { id: 3, name: '行政大床房', price: 599, description: '35㎡ 大床' },
+        { id: 4, name: '标准双床房', price: 429, description: '25㎡ 双床' },
+        { id: 5, name: '豪华双床房', price: 529, description: '30㎡ 双床' },
+        { id: 6, name: '家庭套房', price: 699, description: '45㎡ 大床+单床' }
+      ]
+    }
+    
+    // 默认选择第一个房型
+    if (roomTypes.value.length > 0 && !bookingForm.roomType) {
+      bookingForm.roomType = roomTypes.value[0].id
+    }
+  } catch (error) {
+    console.error('加载房间类型失败:', error)
+    ElMessage.error('加载房间类型失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 计算折扣价格
+const calculateDiscount = async () => {
+  if (!isLoggedIn.value) return
+  
+  try {
+    const userId = localStorage.getItem('userId')
+    if (!userId) return
+    
+    // 使用API计算折扣
+    const discountResult = await reservationApi.calculateDiscount(userId, originalPrice.value)
+    
+    if (discountResult && discountResult.success) {
+      totalAmount.value = discountResult.discountedAmount
+      discountRate.value = discountResult.discountRate
+      
+      // 计算积分
+      if (discountResult.memberLevel) {
+        let pointsRate = 0
+        switch (discountResult.memberLevel) {
+          case '铜牌会员':
+            pointsRate = 100
+            break
+          case '银牌会员':
+            pointsRate = 120
+            break
+          case '金牌会员':
+            pointsRate = 150
+            break
+          case '钻石会员':
+            pointsRate = 200
+            break
+        }
+        estimatedPoints.value = Math.floor(totalAmount.value * pointsRate / 100)
+      }
+    }
+  } catch (error) {
+    console.error('计算折扣失败:', error)
+    // 如果折扣计算失败，使用原价
+    totalAmount.value = originalPrice.value
+  }
 }
 </script>
 

@@ -67,6 +67,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { userApi, membershipApi } from '@/api' // 导入API服务
 
 const router = useRouter()
 const route = useRoute()
@@ -105,50 +106,61 @@ const handleLogin = async () => {
       try {
         loading.value = true
         
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // 使用API服务进行登录
+        const response = await userApi.login({
+          username: loginForm.username,
+          password: loginForm.password
+        }).catch(error => {
+          console.error('登录请求失败:', error);
+          throw error;
+        });
         
-        // 保存登录状态到localStorage
-        localStorage.setItem('userToken', 'user-token-' + Date.now())
-        
-        // 保存用户信息
-        localStorage.setItem('userName', loginForm.username)
-        
-        // 如果有临时用户数据，就使用它
-        if (localStorage.getItem('tempUserLevel')) {
-          localStorage.setItem('userLevel', localStorage.getItem('tempUserLevel'))
-          localStorage.removeItem('tempUserLevel')
-        } else if (!localStorage.getItem('userLevel')) {
-          localStorage.setItem('userLevel', '普通用户')
-        }
-        
-        if (localStorage.getItem('tempUserPoints')) {
-          localStorage.setItem('userPoints', localStorage.getItem('tempUserPoints'))
-          localStorage.removeItem('tempUserPoints')
-        } else if (!localStorage.getItem('userPoints')) {
-          localStorage.setItem('userPoints', '0')
-        }
-        
-        if (localStorage.getItem('tempUserTotalSpent')) {
-          localStorage.setItem('userTotalSpent', localStorage.getItem('tempUserTotalSpent'))
-          localStorage.removeItem('tempUserTotalSpent')
-        } else if (!localStorage.getItem('userTotalSpent')) {
-          localStorage.setItem('userTotalSpent', '0')
-        }
-        
-        ElMessage.success('登录成功')
-        
-        // 如果有重定向参数，跳转到指定页面
-        if (route.query.redirect) {
-          router.push(route.query.redirect)
+        // 如果登录成功
+        if (response && response.token) {
+          // 保存登录状态到localStorage
+          localStorage.setItem('userToken', response.token);
+          localStorage.setItem('userName', loginForm.username);
+          localStorage.setItem('userId', response.userId || '');
+          
+          // 获取会员信息
+          try {
+            if (response.userId) {
+              const memberInfo = await membershipApi.getMemberInfo(response.userId);
+              
+              // 保存会员信息
+              localStorage.setItem('userLevel', memberInfo.memberLevel || '普通用户');
+              localStorage.setItem('userPoints', String(memberInfo.points || 0));
+              localStorage.setItem('userTotalSpent', String(memberInfo.totalSpent || 0));
+            } else {
+              // 设置默认值
+              localStorage.setItem('userLevel', '普通用户');
+              localStorage.setItem('userPoints', '0');
+              localStorage.setItem('userTotalSpent', '0');
+            }
+          } catch (memberError) {
+            console.error('获取会员信息失败:', memberError);
+            // 如果获取会员信息失败，设置默认值
+            localStorage.setItem('userLevel', '普通用户');
+            localStorage.setItem('userPoints', '0');
+            localStorage.setItem('userTotalSpent', '0');
+          }
+          
+          ElMessage.success('登录成功');
+          
+          // 如果有重定向参数，跳转到指定页面
+          if (route.query.redirect) {
+            router.push(route.query.redirect);
+          } else {
+            router.push('/');
+          }
         } else {
-          router.push('/')
+          ElMessage.error(response?.message || '登录失败，请检查用户名和密码');
         }
       } catch (error) {
-        console.error('登录失败:', error)
-        ElMessage.error('登录失败，请检查用户名和密码')
+        console.error('登录失败:', error);
+        ElMessage.error(error.message || '登录失败，请检查用户名和密码');
       } finally {
-        loading.value = false
+        loading.value = false;
       }
     }
   })

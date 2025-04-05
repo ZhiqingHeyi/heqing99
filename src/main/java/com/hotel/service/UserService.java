@@ -2,6 +2,7 @@ package com.hotel.service;
 
 import com.hotel.entity.User;
 
+import java.math.BigDecimal;
 import java.util.List;
 
 public interface UserService {
@@ -43,7 +44,7 @@ public interface UserService {
     /**
      * 修改用户密码
      */
-    void changePassword(Long userId, String oldPassword, String newPassword);
+    void changePassword(Long id, String oldPassword, String newPassword);
 
     /**
      * 获取所有用户列表
@@ -58,7 +59,7 @@ public interface UserService {
     /**
      * 启用/禁用用户
      */
-    void toggleUserStatus(Long userId, boolean enabled);
+    void toggleUserStatus(Long id, boolean enabled);
 
     /**
      * 获取所有在职的保洁人员
@@ -73,10 +74,19 @@ public interface UserService {
     /**
      * 统计特定角色的用户数量
      */
-    long countUsersByRole(User.UserRole role);
+    Long countUsersByRole(User.UserRole role);
     
     /**
      * 统计所有用户数量
      */
     long countAllUsers();
+
+    // 会员相关方法
+    User updateMemberLevel(Long userId);
+    User addPoints(Long userId, int points);
+    User addSpending(Long userId, BigDecimal amount);
+    User redeemPoints(Long userId, int points);
+    String getMemberLevelByUserId(Long userId);
+    BigDecimal getDiscountByUserId(Long userId);
+    int getPointsRateByUserId(Long userId);
 }

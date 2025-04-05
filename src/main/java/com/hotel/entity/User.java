@@ -9,6 +9,7 @@ import org.springframework.data.annotation.LastModifiedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 
 import javax.persistence.*;
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.util.List;
 
@@ -46,6 +47,15 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonIgnoreProperties("user")
     private List<Reservation> reservations;
+    
+    @Column(nullable = false)
+    private String memberLevel = "普通用户";
+    
+    @Column(nullable = false)
+    private Integer points = 0;
+    
+    @Column(nullable = false)
+    private BigDecimal totalSpent = BigDecimal.ZERO;
 
     @CreatedDate
     private LocalDateTime createTime;
@@ -62,5 +72,41 @@ public class User {
         receptionist,      // 前台
         cleaner,    // 清洁人员
         CUSTOMER    // 普通用户
+    }
+    
+    /**
+     * 获取会员折扣率
+     */
+    public double getDiscountRate() {
+        switch (memberLevel) {
+            case "铜牌会员":
+                return 0.98;
+            case "银牌会员":
+                return 0.95;
+            case "金牌会员":
+                return 0.9;
+            case "钻石会员":
+                return 0.85;
+            default:
+                return 1.0;
+        }
+    }
+    
+    /**
+     * 根据累计消费更新会员等级
+     */
+    public void updateMemberLevel() {
+        int amount = totalSpent.intValue();
+        if (amount >= 30000) {
+            this.memberLevel = "钻石会员";
+        } else if (amount >= 10000) {
+            this.memberLevel = "金牌会员";
+        } else if (amount >= 5000) {
+            this.memberLevel = "银牌会员";
+        } else if (amount >= 1500) {
+            this.memberLevel = "铜牌会员";
+        } else {
+            this.memberLevel = "普通用户";
+        }
     }
 }

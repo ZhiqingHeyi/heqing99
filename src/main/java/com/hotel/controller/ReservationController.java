@@ -10,6 +10,7 @@ import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -89,6 +90,11 @@ public class ReservationController {
                 return ResponseEntity.badRequest().body(response);
             }
             
+            // 应用会员折扣
+            BigDecimal discount = userService.getDiscountByUserId(userId);
+            BigDecimal originalAmount = BigDecimal.valueOf(totalAmount);
+            BigDecimal finalAmount = originalAmount.multiply(discount);
+            
             // 创建预订
             Reservation reservation = new Reservation();
             reservation.setUser(user);
@@ -98,18 +104,25 @@ public class ReservationController {
             reservation.setGuestName(contactName);
             reservation.setGuestPhone(phone);
             reservation.setSpecialRequests(remarks);
-            reservation.setTotalPrice(java.math.BigDecimal.valueOf(totalAmount));
+            reservation.setTotalPrice(finalAmount); // 使用折扣后的价格
             reservation.setRoomCount(roomCount);
             reservation.setStatus(Reservation.ReservationStatus.PENDING);
             
             // 保存预订
             Reservation createdReservation = reservationService.createReservation(reservation);
             
+            // 记录用户消费并更新会员信息
+            userService.addSpending(userId, finalAmount);
+            
             // 返回响应
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "预订创建成功");
             response.put("reservationId", createdReservation.getId());
+            response.put("originalAmount", originalAmount);
+            response.put("discountRate", discount);
+            response.put("finalAmount", finalAmount);
+            response.put("memberLevel", user.getMemberLevel());
             
             System.out.println("预订创建成功，ID: " + createdReservation.getId());
             return ResponseEntity.ok(response);
@@ -141,6 +154,7 @@ public class ReservationController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", reservations);
+            response.put("memberLevel", user.getMemberLevel());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("获取用户预订失败: " + e.getMessage());
@@ -194,6 +208,12 @@ public class ReservationController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", reservation);
+            // 添加会员信息
+            User user = reservation.getUser();
+            if (user != null) {
+                response.put("memberLevel", user.getMemberLevel());
+                response.put("memberDiscount", user.getDiscountRate());
+            }
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("获取预订详情失败: " + e.getMessage());
@@ -229,6 +249,36 @@ public class ReservationController {
             return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
                 put("success", false);
                 put("message", "确认预订失败: " + e.getMessage());
+            }});
+        }
+    }
+    
+    // 计算订单折扣价格
+    @PostMapping("/calculate-discount")
+    public ResponseEntity<?> calculateDiscount(
+            @RequestParam Long userId,
+            @RequestParam BigDecimal amount) {
+        try {
+            User user = userService.getUserById(userId);
+            BigDecimal discount = BigDecimal.valueOf(user.getDiscountRate());
+            BigDecimal discountedAmount = amount.multiply(discount).setScale(2, BigDecimal.ROUND_HALF_UP);
+            BigDecimal savedAmount = amount.subtract(discountedAmount);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("originalAmount", amount);
+            response.put("discountRate", discount);
+            response.put("discountedAmount", discountedAmount);
+            response.put("savedAmount", savedAmount);
+            response.put("memberLevel", user.getMemberLevel());
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("计算折扣失败: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
+                put("success", false);
+                put("message", "计算折扣失败: " + e.getMessage());
             }});
         }
     }

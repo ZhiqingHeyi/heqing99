@@ -10,6 +10,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -47,6 +48,18 @@ public class UserServiceImpl implements UserService {
 
         // 加密密码
         user.setPassword(passwordEncoder.encode(user.getPassword()));
+        
+        // 设置默认会员级别和积分
+        if (user.getMemberLevel() == null) {
+            user.setMemberLevel("普通用户");
+        }
+        if (user.getPoints() == null) {
+            user.setPoints(0);
+        }
+        if (user.getTotalSpent() == null) {
+            user.setTotalSpent(BigDecimal.ZERO);
+        }
+        
         return userRepository.save(user);
     }
 
@@ -140,7 +153,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public long countUsersByRole(User.UserRole role) {
+    public Long countUsersByRole(User.UserRole role) {
         return userRepository.countByRole(role);
     }
 
@@ -165,5 +178,131 @@ public class UserServiceImpl implements UserService {
         }
         
         return userRepository.save(user);
+    }
+    
+    // 会员相关方法实现
+    
+    @Override
+    public User updateMemberLevel(Long userId) {
+        User user = getUserById(userId);
+        
+        // 调用User实体类中的方法更新会员等级
+        user.updateMemberLevel();
+        
+        // 保存更新后的用户信息
+        return userRepository.save(user);
+    }
+    
+    @Override
+    public User addPoints(Long userId, int points) {
+        if (points <= 0) {
+            throw new IllegalArgumentException("积分必须为正数");
+        }
+        
+        User user = getUserById(userId);
+        user.setPoints(user.getPoints() + points);
+        return userRepository.save(user);
+    }
+    
+    @Override
+    public User addSpending(Long userId, BigDecimal amount) {
+        if (amount.compareTo(BigDecimal.ZERO) <= 0) {
+            throw new IllegalArgumentException("消费金额必须为正数");
+        }
+        
+        User user = getUserById(userId);
+        
+        // 计算获得的积分
+        int pointsToAdd = calculatePointsForSpending(user.getMemberLevel(), amount);
+        
+        // 更新累计消费
+        user.setTotalSpent(user.getTotalSpent().add(amount));
+        
+        // 添加积分
+        user.setPoints(user.getPoints() + pointsToAdd);
+        
+        // 保存用户
+        userRepository.save(user);
+        
+        // 更新会员等级
+        return updateMemberLevel(userId);
+    }
+    
+    @Override
+    public User redeemPoints(Long userId, int points) {
+        if (points <= 0) {
+            throw new IllegalArgumentException("兑换积分必须为正数");
+        }
+        
+        User user = getUserById(userId);
+        
+        if (user.getPoints() < points) {
+            throw new RuntimeException("积分不足");
+        }
+        
+        user.setPoints(user.getPoints() - points);
+        return userRepository.save(user);
+    }
+    
+    @Override
+    public String getMemberLevelByUserId(Long userId) {
+        User user = getUserById(userId);
+        return user.getMemberLevel();
+    }
+    
+    @Override
+    public BigDecimal getDiscountByUserId(Long userId) {
+        User user = getUserById(userId);
+        return BigDecimal.valueOf(user.getDiscountRate());
+    }
+    
+    @Override
+    public int getPointsRateByUserId(Long userId) {
+        String memberLevel = getMemberLevelByUserId(userId);
+        
+        // 根据会员等级返回积分比例
+        switch (memberLevel) {
+            case "普通用户":
+                return 0; // 普通用户不积分
+            case "铜牌会员":
+                return 100; // 1元=1积分
+            case "银牌会员":
+                return 120; // 1元=1.2积分
+            case "金牌会员":
+                return 150; // 1元=1.5积分
+            case "钻石会员":
+                return 200; // 1元=2积分
+            default:
+                return 0;
+        }
+    }
+    
+    // 辅助方法：计算消费对应的积分
+    private int calculatePointsForSpending(String memberLevel, BigDecimal amount) {
+        int pointsRate = 0;
+        
+        // 根据会员等级设置积分比例
+        switch (memberLevel) {
+            case "普通用户":
+                pointsRate = 0; // 普通用户不积分
+                break;
+            case "铜牌会员":
+                pointsRate = 100; // 1元=1积分
+                break;
+            case "银牌会员":
+                pointsRate = 120; // 1元=1.2积分
+                break;
+            case "金牌会员":
+                pointsRate = 150; // 1元=1.5积分
+                break;
+            case "钻石会员":
+                pointsRate = 200; // 1元=2积分
+                break;
+        }
+        
+        // 计算积分：金额 * 积分比例 / 100
+        return amount.multiply(BigDecimal.valueOf(pointsRate))
+                .divide(BigDecimal.valueOf(100), BigDecimal.ROUND_DOWN)
+                .intValue();
     }
 }
