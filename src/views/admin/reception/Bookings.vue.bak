@@ -1066,21 +1066,8 @@ const showRoomStatus = () => {
   }
 }
 
-// 获取房间状态文本
-const getRoomStatusText = (status) => {
-  const statusMap = {
-    'available': '可用',
-    'occupied': '已入住',
-    'reserved': '已预订',
-    'cleaning': '清洁中',
-    'maintenance': '维护中'
-  }
-  return statusMap[status] || status
-}
-
 // 显示待确认预订详情
 const showPendingBookings = () => {
-  // 模拟待确认预订数据
   const pendingBookings = [
     {
       bookingNo: 'BK20240403001',
@@ -1117,12 +1104,12 @@ const showPendingBookings = () => {
             <div class="detail-item-header">
               <span class="booking-no">${booking.bookingNo}</span>
               <span class="booking-date">${booking.checkInDate} ~ ${booking.checkOutDate}</span>
-            </div>
+        </div>
             <div class="detail-item-body">
               <div>客户：${booking.customerName}</div>
               <div>电话：${booking.phone}</div>
               <div>房型：${booking.roomType}</div>
-            </div>
+    </div>
           </div>
         `).join('')}
       </div>
@@ -1177,14 +1164,14 @@ const showTodayCheckins = () => {
             <div class="detail-item-header">
               <span class="booking-no">${booking.bookingNo}</span>
               <span class="booking-time">预计到店：${booking.checkInTime}</span>
-            </div>
+        </div>
             <div class="detail-item-body">
               <div>客户：${booking.customerName}</div>
               <div>电话：${booking.phone}</div>
               <div>房型：${booking.roomType}</div>
               <div>离店：${booking.checkOutDate}</div>
-            </div>
-          </div>
+        </div>
+        </div>
         `).join('')}
       </div>
     </div>`,
@@ -1204,19 +1191,19 @@ const showOccupancyDetails = () => {
       <div class="occupancy-stats">
         <div class="occupancy-item">
           <div class="occupancy-label">当前入住率</div>
-          <div class="occupancy-value">${occupancyRate.value}%</div>
-        </div>
+          <div class="occupancy-value">76%</div>
+            </div>
         <div class="occupancy-item">
           <div class="occupancy-label">总房间数</div>
-          <div class="occupancy-value">${totalRooms.value}</div>
-        </div>
+          <div class="occupancy-value">105</div>
+            </div>
         <div class="occupancy-item">
           <div class="occupancy-label">已入住</div>
-          <div class="occupancy-value">${occupiedRooms.value}</div>
-        </div>
+          <div class="occupancy-value">80</div>
+            </div>
         <div class="occupancy-item">
           <div class="occupancy-label">空闲房间</div>
-          <div class="occupancy-value">${totalRooms.value - occupiedRooms.value}</div>
+          <div class="occupancy-value">25</div>
         </div>
       </div>
       <div class="room-type-stats">
@@ -1231,7 +1218,7 @@ const showOccupancyDetails = () => {
             </tr>
           </thead>
           <tbody>
-            ${roomTypes.map(type => `
+            ${roomTypeDetails.map(type => `
               <tr>
                 <td>${type.name}</td>
                 <td>${type.totalCount}</td>
@@ -1252,8 +1239,42 @@ const showOccupancyDetails = () => {
   )
 }
 
-// 显示今日待办
+// 显示今日待办事项
 const showTodayTasks = () => {
+  // 模拟待办事项数据
+  const todayTasks = [
+    {
+      content: '205房客人退房，需要清洁',
+      type: 'cleaning',
+      status: 'pending',
+      time: '10:00'
+    },
+    {
+      content: 'VIP客人王总下午入住，需准备欢迎水果',
+      type: 'vip',
+      status: 'processing',
+      time: '14:00'
+    },
+    {
+      content: '302房客人反映空调不制冷，需安排维修',
+      type: 'complaint',
+      status: 'pending',
+      time: '09:30'
+    },
+    {
+      content: '401房今日退房',
+      type: 'checkout',
+      status: 'processing',
+      time: '12:00'
+    },
+    {
+      content: '505房需要加床服务',
+      type: 'service',
+      status: 'completed',
+      time: '08:00'
+    }
+  ]
+  
   ElMessageBox.alert(
     `<div class="detail-dialog-content">
       <h3>今日待办事项</h3>
@@ -1261,22 +1282,23 @@ const showTodayTasks = () => {
         ${todayTasks.map(task => `
           <div class="task-item ${task.status}">
             <div class="task-icon ${task.type}">
-              ${task.type === 'vip' ? '<i class="vip-icon"></i>' :
-                task.type === 'checkout' ? '<i class="checkout-icon"></i>' :
-                task.type === 'service' ? '<i class="service-icon"></i>' :
-                task.type === 'complaint' ? '<i class="complaint-icon"></i>' :
-                '<i class="cleaning-icon"></i>'}
-            </div>
+              ${task.type === 'vip' ? '<i class="el-icon-star-on"></i>' :
+                task.type === 'checkout' ? '<i class="el-icon-right"></i>' :
+                task.type === 'service' ? '<i class="el-icon-service"></i>' :
+                task.type === 'complaint' ? '<i class="el-icon-warning"></i>' :
+                '<i class="el-icon-brush"></i>'}
+          </div>
             <div class="task-content">
               <div class="task-text">${task.content}</div>
               <div class="task-status">
                 ${task.status === 'pending' ? '待处理' :
                   task.status === 'processing' ? '处理中' : '已完成'}
-              </div>
-            </div>
+                <span class="task-time">${task.time}</span>
+          </div>
+          </div>
           </div>
         `).join('')}
-      </div>
+          </div>
     </div>`,
     '今日待办事项',
     {
@@ -1284,6 +1306,26 @@ const showTodayTasks = () => {
       confirmButtonText: '关闭'
     }
   )
+}
+
+// 房态预览相关数据
+const viewType = ref('grid')
+const selectedDate = ref(new Date())
+const selectedFloor = ref('all')
+const selectedRoomType = ref('all')
+const selectedStatus = ref('all')
+const roomStatusVisible = ref(false)
+
+// 获取房间状态文本
+const getRoomStatusText = (status) => {
+  const statusMap = {
+    'available': '可用',
+    'occupied': '已入住',
+    'reserved': '已预订',
+    'cleaning': '清洁中',
+    'maintenance': '维护中'
+  }
+  return statusMap[status] || status
 }
 
 // 获取随机房间状态（仅用于简化版房态显示）
@@ -1300,16 +1342,24 @@ const getRandomRoomStatus = () => {
   return statuses[0]
 }
 
-// 初始化
-fetchBookingList()
+// 添加房型数据（用于入住率详情）
+const roomTypeDetails = [
+  { name: '标准单人间', totalCount: 30, availableCount: 8 },
+  { name: '标准双人间', totalCount: 40, availableCount: 10 },
+  { name: '豪华大床房', totalCount: 20, availableCount: 5 },
+  { name: '行政套房', totalCount: 12, availableCount: 3 },
+  { name: '总统套房', totalCount: 3, availableCount: 1 }
+]
 
-// 房态预览相关数据
-const viewType = ref('grid')
-const selectedDate = ref(new Date())
-const selectedFloor = ref('all')
-const selectedRoomType = ref('all')
-const selectedStatus = ref('all')
-const roomStatusVisible = ref(false)
+// 入住率相关数据
+const totalRooms = ref(105)
+const occupiedRooms = ref(80)
+const occupancyRate = ref(76)
+
+// 初始化
+onMounted(() => {
+  fetchBookingList()
+})
 </script>
 
 <style scoped>
@@ -1798,37 +1848,44 @@ const roomStatusVisible = ref(false)
 
 /* 详情弹窗样式 */
 .detail-dialog-content {
-  padding: 20px 0;
+  padding: 5px 0;
 }
 
 .detail-dialog-content h3 {
-  font-size: 20px;
+  margin-top: 0;
+  margin-bottom: 15px;
   font-weight: 600;
-  margin-bottom: 20px;
   color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
+  font-size: 18px;
+  text-align: center;
+}
+
+.detail-dialog-content h4 {
+  margin-top: 20px;
+  margin-bottom: 10px;
+  font-weight: 600;
+  color: #444;
+  font-size: 16px;
 }
 
 .detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .detail-item {
   background: #f8f9fa;
   border-radius: 8px;
-  padding: 15px;
-  border: 1px solid #eee;
+  padding: 12px;
+  margin-bottom: 12px;
+  border-left: 4px solid #0d6efd;
 }
 
 .detail-item-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #eee;
+  margin-bottom: 8px;
+  font-size: 14px;
 }
 
 .booking-no {
@@ -1842,8 +1899,8 @@ const roomStatusVisible = ref(false)
 
 .detail-item-body {
   display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
   font-size: 14px;
 }
 
@@ -1860,7 +1917,6 @@ const roomStatusVisible = ref(false)
   border-radius: 8px;
   padding: 15px;
   text-align: center;
-  border: 1px solid #eee;
 }
 
 .occupancy-label {
@@ -1875,21 +1931,16 @@ const roomStatusVisible = ref(false)
   color: #0d6efd;
 }
 
-.room-type-stats h4 {
-  font-size: 16px;
-  margin-bottom: 15px;
-  color: #333;
-}
-
 .room-type-table {
   width: 100%;
   border-collapse: collapse;
 }
 
-.room-type-table th, .room-type-table td {
+.room-type-table th,
+.room-type-table td {
   padding: 10px;
+  border: 1px solid #dee2e6;
   text-align: center;
-  border: 1px solid #eee;
 }
 
 .room-type-table th {
@@ -1899,18 +1950,31 @@ const roomStatusVisible = ref(false)
 
 /* 今日待办样式 */
 .task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
+  max-height: 400px;
+  overflow-y: auto;
 }
 
 .task-item {
   display: flex;
-  gap: 15px;
-  padding: 15px;
+  align-items: flex-start;
   background: #f8f9fa;
   border-radius: 8px;
-  border: 1px solid #eee;
+  padding: 12px;
+  margin-bottom: 12px;
+  position: relative;
+}
+
+.task-item.pending {
+  border-left: 4px solid #ffc107;
+}
+
+.task-item.processing {
+  border-left: 4px solid #0d6efd;
+}
+
+.task-item.completed {
+  border-left: 4px solid #28a745;
+  opacity: 0.7;
 }
 
 .task-icon {
@@ -1961,10 +2025,6 @@ const roomStatusVisible = ref(false)
 .task-status {
   font-size: 12px;
   color: #6c757d;
-}
-
-.task-status-tag {
-  background-color: #6c757d;
 }
 
 /* 房态一览样式 */
