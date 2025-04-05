@@ -1,5 +1,6 @@
 package com.hotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,25 +23,26 @@ public class PointsExchangeRecord {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"pointsExchangeRecords", "reservations", "consumptionRecords"})
     private User user;
 
     /**
      * 兑换使用的积分数量
      */
-    @Column(nullable = false)
+    @Column(name = "points_used", nullable = false)
     private Integer pointsUsed;
 
     /**
      * 兑换等价值（元）
      */
-    @Column(nullable = false)
+    @Column(name = "cash_value", nullable = false)
     private BigDecimal cashValue;
 
     /**
      * 兑换类型
      */
+    @Column(name = "exchange_type", nullable = false)
     @Enumerated(EnumType.STRING)
-    @Column(nullable = false)
     private ExchangeType exchangeType;
 
     /**
@@ -51,20 +53,22 @@ public class PointsExchangeRecord {
     /**
      * 兑换状态
      */
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private ExchangeStatus status;
-
-    /**
-     * 创建时间
-     */
-    @CreatedDate
-    private LocalDateTime createTime;
 
     /**
      * 兑换时间
      */
+    @Column(name = "exchange_time")
+    @CreatedDate
     private LocalDateTime exchangeTime;
+
+    /**
+     * 记录创建时间
+     */
+    @CreatedDate
+    private LocalDateTime createTime;
 
     /**
      * 操作人ID（管理员）
@@ -75,43 +79,20 @@ public class PointsExchangeRecord {
      * 兑换类型枚举
      */
     public enum ExchangeType {
-        CASH_VOUCHER("现金券"),
-        ROOM_DISCOUNT("房费折扣"),
-        FREE_BREAKFAST("免费早餐"),
-        FREE_MINIBAR("免费迷你吧"),
-        SPA_VOUCHER("SPA券"),
-        GYM_PASS("健身通行证"),
-        GIFT("礼品"),
-        OTHER("其他");
-
-        private final String displayName;
-
-        ExchangeType(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        ROOM_DISCOUNT,  // 房间折扣
+        CASH_VOUCHER,   // 现金券
+        FREE_BREAKFAST, // 免费早餐
+        SPA_VOUCHER,    // 水疗券
+        GYM_PASS        // 健身通行证
     }
 
     /**
      * 兑换状态枚举
      */
     public enum ExchangeStatus {
-        PENDING("待处理"),
-        COMPLETED("已完成"),
-        CANCELLED("已取消"),
-        EXPIRED("已过期");
-
-        private final String displayName;
-
-        ExchangeStatus(String displayName) {
-            this.displayName = displayName;
-        }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        PENDING,    // 待处理
+        COMPLETED,  // 已完成
+        CANCELLED,  // 已取消
+        REFUNDED    // 已退款
     }
 } 

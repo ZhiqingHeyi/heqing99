@@ -1,0 +1,19 @@
+-- 删除现有表并重新创建
+DROP TABLE IF EXISTS users;
+
+CREATE TABLE users (
+    id BIGINT PRIMARY KEY AUTO_INCREMENT,
+    username VARCHAR(50) NOT NULL UNIQUE,
+    password VARCHAR(255) NOT NULL,
+    name VARCHAR(50) NOT NULL,
+    phone VARCHAR(20),
+    email VARCHAR(100),
+    role VARCHAR(20) NOT NULL,
+    enabled BOOLEAN NOT NULL DEFAULT TRUE,
+    member_level VARCHAR(20) DEFAULT 'REGULAR',
+    points INT DEFAULT 0,
+    total_spent DECIMAL(10,2) DEFAULT 0.00,
+    points_validity_days INT DEFAULT 365,
+    create_time DATETIME DEFAULT CURRENT_TIMESTAMP,
+    update_time DATETIME DEFAULT CURRENT_TIMESTAMP ON UPDATE CURRENT_TIMESTAMP
+); 

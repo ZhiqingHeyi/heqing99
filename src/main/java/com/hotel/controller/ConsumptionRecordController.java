@@ -83,7 +83,7 @@ public class ConsumptionRecordController {
     public ResponseEntity<?> createConsumptionRecord(
             @RequestParam Long userId,
             @RequestParam BigDecimal amount,
-            @RequestParam ConsumptionRecord.ConsumptionType type,
+            @RequestParam String type,
             @RequestParam(required = false) String description,
             @RequestParam(required = false) Long reservationId,
             @RequestParam(required = false) Long roomId) {
@@ -138,7 +138,7 @@ public class ConsumptionRecordController {
     @GetMapping("/user/{userId}/type/{type}")
     public ResponseEntity<?> getConsumptionRecordsByType(
             @PathVariable Long userId,
-            @PathVariable ConsumptionRecord.ConsumptionType type) {
+            @PathVariable String type) {
         try {
             User user = userService.getUserById(userId);
             List<ConsumptionRecord> records = consumptionRecordService.getConsumptionRecordsByUserAndType(user, type);

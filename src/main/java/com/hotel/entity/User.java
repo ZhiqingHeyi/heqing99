@@ -48,14 +48,14 @@ public class User {
     @JsonIgnoreProperties("user")
     private List<Reservation> reservations;
     
-    @Column(nullable = false)
+    @Column(name = "member_level", nullable = false)
     @Enumerated(EnumType.STRING)
     private MemberLevel memberLevel = MemberLevel.REGULAR;
     
     @Column(nullable = false)
     private Integer points = 0;
     
-    @Column(nullable = false)
+    @Column(name = "total_spent", nullable = false)
     private BigDecimal totalSpent = BigDecimal.ZERO;
 
     @CreatedDate
@@ -63,6 +63,14 @@ public class User {
 
     @LastModifiedDate
     private LocalDateTime updateTime;
+    
+    /**
+     * 用户注册时间，与createTime相同
+     */
+    @Transient
+    public LocalDateTime getRegistrationTime() {
+        return this.createTime;
+    }
 
     @Transient
     private String invitationCode;
@@ -78,6 +86,16 @@ public class User {
     @OneToMany(mappedBy = "user")
     @JsonIgnoreProperties("user")
     private List<PointsExchangeRecord> pointsExchangeRecords;
+    
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    private List<PointsExpiryRecord> pointsExpiryRecords;
+    
+    /**
+     * 积分有效期（天数）
+     */
+    @Column
+    private Integer pointsValidityDays = 365;
 
     public enum UserRole {
         SUPER_ADMIN, // 超级管理员
@@ -99,5 +117,12 @@ public class User {
      */
     public void updateMemberLevel() {
         this.memberLevel = MemberLevel.getByTotalSpent(totalSpent.intValue());
+    }
+    
+    /**
+     * 计算积分到期日期
+     */
+    public LocalDateTime calculatePointsExpiryDate() {
+        return LocalDateTime.now().plusDays(pointsValidityDays);
     }
 }

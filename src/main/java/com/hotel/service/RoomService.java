@@ -3,6 +3,7 @@ package com.hotel.service;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RoomService {
@@ -105,4 +106,19 @@ public interface RoomService {
      * 添加新房间类型
      */
     RoomType addRoomType(RoomType roomType);
+
+    /**
+     * 根据ID获取房间类型
+     */
+    RoomType getRoomTypeById(Long id);
+
+    /**
+     * 统计指定类型的可用房间数量
+     */
+    long countAvailableRoomsByType(Long typeId);
+
+    /**
+     * 获取指定日期范围内、指定类型的可用房间数量
+     */
+    int getAvailableRoomsCountByTypeAndDateRange(Long typeId, LocalDateTime checkIn, LocalDateTime checkOut);
 }

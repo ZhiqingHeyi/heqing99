@@ -27,24 +27,29 @@ public interface ConsumptionRecordRepository extends JpaRepository<ConsumptionRe
     /**
      * 按时间范围查询用户的消费记录
      */
-    List<ConsumptionRecord> findByUserAndCreateTimeBetween(User user, LocalDateTime start, LocalDateTime end);
+    List<ConsumptionRecord> findByUserAndConsumptionTimeBetween(User user, LocalDateTime start, LocalDateTime end);
+    
+    /**
+     * 按时间范围查询所有消费记录
+     */
+    List<ConsumptionRecord> findByConsumptionTimeBetween(LocalDateTime start, LocalDateTime end);
     
     /**
      * 按消费类型查询用户的消费记录
      */
-    List<ConsumptionRecord> findByUserAndType(User user, ConsumptionRecord.ConsumptionType type);
+    List<ConsumptionRecord> findByUserAndType(User user, String type);
     
     /**
      * 统计用户在一段时间内的消费总额
      */
-    @Query("SELECT SUM(c.amount) FROM ConsumptionRecord c WHERE c.user = ?1 AND c.createTime BETWEEN ?2 AND ?3")
-    BigDecimal sumAmountByUserAndCreateTimeBetween(User user, LocalDateTime start, LocalDateTime end);
+    @Query("SELECT SUM(c.amount) FROM ConsumptionRecord c WHERE c.user = ?1 AND c.consumptionTime BETWEEN ?2 AND ?3")
+    BigDecimal sumAmountByUserAndConsumptionTimeBetween(User user, LocalDateTime start, LocalDateTime end);
     
     /**
      * 统计用户在一段时间内获得的积分总额
      */
-    @Query("SELECT SUM(c.pointsEarned) FROM ConsumptionRecord c WHERE c.user = ?1 AND c.createTime BETWEEN ?2 AND ?3")
-    Integer sumPointsEarnedByUserAndCreateTimeBetween(User user, LocalDateTime start, LocalDateTime end);
+    @Query("SELECT SUM(c.pointsEarned) FROM ConsumptionRecord c WHERE c.user = ?1 AND c.consumptionTime BETWEEN ?2 AND ?3")
+    Integer sumPointsEarnedByUserAndConsumptionTimeBetween(User user, LocalDateTime start, LocalDateTime end);
     
     /**
      * 获取消费金额最高的记录
@@ -54,5 +59,5 @@ public interface ConsumptionRecordRepository extends JpaRepository<ConsumptionRe
     /**
      * 查询特定消费类型的记录数量
      */
-    long countByUserAndType(User user, ConsumptionRecord.ConsumptionType type);
+    long countByUserAndType(User user, String type);
 } 

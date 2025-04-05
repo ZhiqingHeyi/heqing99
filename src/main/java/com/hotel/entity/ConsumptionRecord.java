@@ -1,5 +1,6 @@
 package com.hotel.entity;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import lombok.Data;
 import org.springframework.data.annotation.CreatedDate;
 import org.springframework.data.jpa.domain.support.AuditingEntityListener;
@@ -22,6 +23,7 @@ public class ConsumptionRecord {
 
     @ManyToOne
     @JoinColumn(name = "user_id", nullable = false)
+    @JsonIgnoreProperties({"consumptionRecords", "reservations", "pointsExchangeRecords"})
     private User user;
 
     /**
@@ -56,9 +58,8 @@ public class ConsumptionRecord {
     /**
      * 消费类型（住宿、餐饮、会议室等）
      */
-    @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private ConsumptionType type;
+    private String type;
 
     /**
      * 关联的预订ID（如有）
@@ -71,30 +72,51 @@ public class ConsumptionRecord {
     private Long roomId;
 
     /**
-     * 创建时间
+     * 消费时间
      */
+    @Column(name = "consumption_time")
     @CreatedDate
-    private LocalDateTime createTime;
+    private LocalDateTime consumptionTime;
 
     /**
-     * 消费类型枚举
+     * 创建消费记录
+     * 
+     * @param user 用户
+     * @param amount 消费金额
+     * @param type 消费类型
+     * @param description 描述
+     * @return 消费记录对象
      */
-    public enum ConsumptionType {
-        ACCOMMODATION("住宿"),
-        CATERING("餐饮"),
-        MEETING_ROOM("会议室"),
-        SPA("SPA"),
-        GYM("健身"),
-        OTHER("其他");
-
-        private final String displayName;
-
-        ConsumptionType(String displayName) {
-            this.displayName = displayName;
+    public static ConsumptionRecord create(User user, BigDecimal amount, String type, String description) {
+        ConsumptionRecord record = new ConsumptionRecord();
+        record.setUser(user);
+        record.setAmount(amount);
+        record.setType(type);
+        record.setDescription(description);
+        record.setConsumptionTime(LocalDateTime.now());
+        
+        // 计算积分 (根据会员等级计算积分率)
+        double pointsRate = 0;
+        switch (user.getMemberLevel()) {
+            case BRONZE:
+                pointsRate = 1.0;
+                break;
+            case SILVER:
+                pointsRate = 1.2;
+                break;
+            case GOLD:
+                pointsRate = 1.5;
+                break;
+            case DIAMOND:
+                pointsRate = 2.0;
+                break;
+            default:
+                pointsRate = 0;
         }
-
-        public String getDisplayName() {
-            return displayName;
-        }
+        
+        int earnedPoints = (int) (amount.doubleValue() * pointsRate);
+        record.setPointsEarned(earnedPoints);
+        
+        return record;
     }
 } 

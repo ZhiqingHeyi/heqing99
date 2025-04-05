@@ -1,6 +1,7 @@
 package com.hotel.config;
 
 import com.hotel.entity.User;
+import com.hotel.entity.MemberLevel;
 import com.hotel.repository.UserRepository;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.CommandLineRunner;
@@ -26,6 +27,7 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setName("系统管理员");
             adminUser.setRole(User.UserRole.admin);
             adminUser.setEnabled(true);
+            adminUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(adminUser);
             
             System.out.println("已创建默认管理员账号: admin/admin123");
@@ -39,6 +41,7 @@ public class DataInitializer implements CommandLineRunner {
             frontUser.setName("前台接待");
             frontUser.setRole(User.UserRole.receptionist);
             frontUser.setEnabled(true);
+            frontUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(frontUser);
             
             System.out.println("已创建默认前台账号: front/front123");
@@ -52,9 +55,27 @@ public class DataInitializer implements CommandLineRunner {
             cleanerUser.setName("清洁人员");
             cleanerUser.setRole(User.UserRole.cleaner);
             cleanerUser.setEnabled(true);
+            cleanerUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(cleanerUser);
             
             System.out.println("已创建默认清洁人员账号: cleaner/cleaner123");
+        }
+        
+        // 创建一个测试客户账号
+        if (!userRepository.findByUsername("customer").isPresent()) {
+            User customerUser = new User();
+            customerUser.setUsername("customer");
+            customerUser.setPassword(passwordEncoder.encode("customer123"));
+            customerUser.setName("测试客户");
+            customerUser.setPhone("13800138000");
+            customerUser.setEmail("customer@example.com");
+            customerUser.setRole(User.UserRole.CUSTOMER);
+            customerUser.setEnabled(true);
+            customerUser.setMemberLevel(MemberLevel.SILVER); // 设置为银牌会员
+            customerUser.setPoints(200); // 设置初始积分
+            userRepository.save(customerUser);
+            
+            System.out.println("已创建测试客户账号: customer/customer123");
         }
     }
 } 

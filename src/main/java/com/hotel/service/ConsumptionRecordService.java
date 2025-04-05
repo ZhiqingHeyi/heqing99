@@ -41,7 +41,7 @@ public interface ConsumptionRecordService {
     /**
      * 按消费类型查询用户的消费记录
      */
-    List<ConsumptionRecord> getConsumptionRecordsByUserAndType(User user, ConsumptionRecord.ConsumptionType type);
+    List<ConsumptionRecord> getConsumptionRecordsByUserAndType(User user, String type);
     
     /**
      * 统计用户在一段时间内的消费总额
@@ -67,8 +67,43 @@ public interface ConsumptionRecordService {
      * 记录用户消费并更新会员信息（积分、等级等）
      */
     User recordConsumptionAndUpdateMembership(Long userId, BigDecimal amount, 
-                                              ConsumptionRecord.ConsumptionType type, 
+                                              String type, 
                                               String description, 
                                               Long reservationId, 
                                               Long roomId);
+
+    /**
+     * 添加消费记录
+     */
+    ConsumptionRecord addConsumptionRecord(ConsumptionRecord record);
+    
+    /**
+     * 为用户添加消费记录
+     */
+    ConsumptionRecord addConsumptionForUser(User user, BigDecimal amount, String type, String description);
+    
+    /**
+     * 获取用户的所有消费记录
+     */
+    List<ConsumptionRecord> getUserConsumptionRecords(Long userId);
+    
+    /**
+     * 获取指定时间范围内的消费记录
+     */
+    List<ConsumptionRecord> getConsumptionRecordsByDateRange(LocalDateTime startDate, LocalDateTime endDate);
+    
+    /**
+     * 获取用户指定时间范围内的消费记录
+     */
+    List<ConsumptionRecord> getUserConsumptionRecordsByDateRange(Long userId, LocalDateTime startDate, LocalDateTime endDate);
+    
+    /**
+     * 获取消费统计数据
+     */
+    List<Object[]> getConsumptionStatistics();
+    
+    /**
+     * 获取指定类型的消费统计
+     */
+    BigDecimal getTotalAmountByType(String type);
 } 
