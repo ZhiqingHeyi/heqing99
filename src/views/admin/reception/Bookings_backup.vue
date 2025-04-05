@@ -478,172 +478,6 @@
         </span>
       </template>
     </el-dialog>
-
-    <!-- 房态一览对话框 -->
-    <el-dialog
-      title="酒店房态一览"
-      v-model="roomStatusVisible"
-      width="90%"
-      class="custom-dialog room-status-dialog"
-    >
-      <div class="room-status-container">
-        <!-- 顶部控制栏 -->
-        <div class="preview-header">
-          <div class="header-left">
-            <div class="header-title">
-              <el-icon class="title-icon"><House /></el-icon>
-              <h3>房态一览</h3>
-            </div>
-            <div class="header-subtitle">实时监控酒店房间状态，优化资源配置</div>
-          </div>
-          <div class="header-actions">
-            <el-radio-group v-model="viewType" size="small" class="view-type-selector">
-              <el-radio-button label="grid">网格视图</el-radio-button>
-              <el-radio-button label="list">列表视图</el-radio-button>
-            </el-radio-group>
-            <el-date-picker
-              v-model="selectedDate"
-              type="date"
-              placeholder="选择日期"
-              size="small"
-            />
-          </div>
-        </div>
-
-        <!-- 统计卡片 -->
-        <div class="room-stats-cards">
-          <el-row :gutter="20">
-            <el-col :span="6">
-              <el-card class="stat-card available" shadow="hover">
-                <div class="stat-card-content">
-                  <div class="stat-icon-wrapper available">
-                    <el-icon class="stat-icon"><Check /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">42</div>
-                    <div class="stat-title">可用房间</div>
-                  </div>
-                </div>
-              </el-card>
-            </el-col>
-            <el-col :span="6">
-              <el-card class="stat-card occupied" shadow="hover">
-                <div class="stat-card-content">
-                  <div class="stat-icon-wrapper occupied">
-                    <el-icon class="stat-icon"><User /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">35</div>
-                    <div class="stat-title">已入住</div>
-                  </div>
-                </div>
-              </el-card>
-            </el-col>
-            <el-col :span="6">
-              <el-card class="stat-card reserved" shadow="hover">
-                <div class="stat-card-content">
-                  <div class="stat-icon-wrapper reserved">
-                    <el-icon class="stat-icon"><Calendar /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">15</div>
-                    <div class="stat-title">已预订</div>
-                  </div>
-                </div>
-              </el-card>
-            </el-col>
-            <el-col :span="6">
-              <el-card class="stat-card occupancy" shadow="hover">
-                <div class="stat-card-content">
-                  <div class="stat-icon-wrapper occupancy">
-                    <el-icon class="stat-icon"><Histogram /></el-icon>
-                  </div>
-                  <div class="stat-info">
-                    <div class="stat-value">76%</div>
-                    <div class="stat-title">入住率</div>
-                  </div>
-                </div>
-              </el-card>
-            </el-col>
-          </el-row>
-        </div>
-
-        <!-- 筛选器区域 -->
-        <div class="filter-section">
-          <div class="filter-group">
-            <span class="filter-label">楼层：</span>
-            <el-radio-group v-model="selectedFloor" size="small" @change="applyFilters">
-              <el-radio-button label="all">全部</el-radio-button>
-              <el-radio-button label="2">2层</el-radio-button>
-              <el-radio-button label="3">3层</el-radio-button>
-              <el-radio-button label="4">4层</el-radio-button>
-              <el-radio-button label="5">5层</el-radio-button>
-              <el-radio-button label="6">6层</el-radio-button>
-            </el-radio-group>
-          </div>
-          
-          <div class="filter-group">
-            <span class="filter-label">房型：</span>
-            <el-radio-group v-model="selectedRoomType" size="small" @change="applyFilters">
-              <el-radio-button label="all">全部</el-radio-button>
-              <el-radio-button label="STA">标准单人间</el-radio-button>
-              <el-radio-button label="STW">标准双人间</el-radio-button>
-              <el-radio-button label="DEL">豪华大床房</el-radio-button>
-              <el-radio-button label="EXE">行政套房</el-radio-button>
-            </el-radio-group>
-          </div>
-          
-          <div class="filter-group">
-            <span class="filter-label">状态：</span>
-            <el-select v-model="selectedStatus" placeholder="选择状态" clearable size="small" @change="applyFilters">
-              <el-option label="全部" value="all" />
-              <el-option label="可预订" value="available">
-                <div class="status-option">
-                  <span class="status-dot available"></span>
-                  <span>可预订</span>
-                </div>
-              </el-option>
-              <el-option label="已入住" value="occupied">
-                <div class="status-option">
-                  <span class="status-dot occupied"></span>
-                  <span>已入住</span>
-                </div>
-              </el-option>
-              <el-option label="已预订" value="reserved">
-                <div class="status-option">
-                  <span class="status-dot reserved"></span>
-                  <span>已预订</span>
-                </div>
-              </el-option>
-            </el-select>
-          </div>
-        </div>
-
-        <!-- 根据视图类型显示不同内容 -->
-        <div v-if="viewType === 'grid'" class="room-grid-view">
-          ${generateEnhancedRoomStatusHTML()}
-        </div>
-        <div v-else class="room-list-view">
-          <table class="room-table">
-            <thead>
-              <tr>
-                <th>房间号</th>
-                <th>楼层</th>
-                <th>房型</th>
-                <th>价格</th>
-                <th>状态</th>
-                <th>客人信息</th>
-                <th>入住时间</th>
-                <th>操作</th>
-              </tr>
-            </thead>
-            <tbody>
-              ${generateRoomListHTML()}
-            </tbody>
-          </table>
-        </div>
-      </div>
-    </el-dialog>
   </div>
 </template>
 
@@ -652,8 +486,7 @@ import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Search, Refresh, Plus, Edit, Check, Close, View, Key, Money, Picture, Calendar,
-  Clock, User, Download, Right, House, List, Monitor, Connection, Message, Star,
-  Histogram
+  Clock, User, Download, Right, House, List, Monitor, Connection, Message, Star
 } from '@element-plus/icons-vue'
 
 // 搜索表单
@@ -662,14 +495,16 @@ const searchForm = reactive({
   customerName: '',
   phone: '',
   status: '',
-  dateRange: null
+  dateRange: []
 })
 
 // 统计数据
-const pendingCount = ref(8)
-const todayCheckinCount = ref(15)
-const occupancyRate = ref(76)
-const todayTaskCount = ref(12)
+const pendingCount = ref(5)
+const todayCheckinCount = ref(3)
+const occupancyRate = ref(78)
+const totalRooms = ref(100)
+const occupiedRooms = ref(78)
+const todayTaskCount = ref(8)
 
 // 房态数据
 const totalRooms = ref(120)
@@ -677,46 +512,95 @@ const occupiedRooms = ref(91)
 
 // 今日待办
 const todayTasks = [
-  { id: 1, type: 'vip', content: 'VIP客户接待 - 李先生 11:30到店', status: 'pending' },
-  { id: 2, type: 'checkout', content: '302房延迟退房申请处理', status: 'pending' },
-  { id: 3, type: 'service', content: '401房送加床服务', status: 'completed' },
-  { id: 4, type: 'complaint', content: '处理305房噪音投诉', status: 'processing' },
-  { id: 5, type: 'cleaning', content: '安排508房紧急清洁', status: 'completed' }
+  {
+    id: 'T001',
+    time: '09:30',
+    category: 'vip',
+    content: 'VIP客人王总预计今日下午14:00到店，需准备水果篮和欢迎饮品',
+    status: 'pending',
+    priority: 'high',
+    room: '801'
+  },
+  {
+    id: 'T002',
+    time: '10:00',
+    category: 'checkout',
+    content: '605房需延迟退房至14:00，已确认并通知客房部',
+    status: 'processing',
+    priority: 'medium',
+    room: '605'
+  },
+  {
+    id: 'T003',
+    time: '11:30',
+    category: 'service',
+    content: '303房客人需额外毛巾和洗漱用品，请尽快送达',
+    status: 'completed',
+    priority: 'low',
+    room: '303'
+  },
+  {
+    id: 'T004',
+    time: '13:00',
+    category: 'complaint',
+    content: '508房客人投诉房间空调噪音大，需技术部门检查处理',
+    status: 'pending',
+    priority: 'high',
+    room: '508'
+  },
+  {
+    id: 'T005',
+    time: '14:30',
+    category: 'cleaning',
+    content: '302房需进行特殊清洁，客人上午退房，下午有新客人入住',
+    status: 'processing',
+    priority: 'medium',
+    room: '302'
+  },
+  {
+    id: 'T006',
+    time: '15:00',
+    category: 'vip',
+    content: '商务合作客户李总预订晚餐包间，需安排专人接待',
+    status: 'pending',
+    priority: 'medium',
+    room: '餐厅'
+  },
+  {
+    id: 'T007',
+    time: '16:30',
+    category: 'checkout',
+    content: '今日共有12间房需退房，请提前做好安排',
+    status: 'pending',
+    priority: 'low',
+    room: '多间'
+  },
+  {
+    id: 'T008',
+    time: '17:00',
+    category: 'service',
+    content: '明日早餐包房服务确认，共12位客人',
+    status: 'completed',
+    priority: 'low',
+    room: '餐厅'
+  }
 ]
 
-// 房型数据
+// 模拟房型数据
 const roomTypes = [
-  { id: 1, name: '标准单人间', totalCount: 30, availableCount: 8, price: 480 },
-  { id: 2, name: '标准双人间', totalCount: 40, availableCount: 12, price: 580 },
-  { id: 3, name: '豪华大床房', totalCount: 25, availableCount: 5, price: 880 },
-  { id: 4, name: '行政套房', totalCount: 15, availableCount: 3, price: 1280 },
-  { id: 5, name: '总统套房', totalCount: 5, availableCount: 1, price: 3280 }
+  { name: '标准单人间', totalCount: 30, availableCount: 8 },
+  { name: '标准双人间', totalCount: 40, availableCount: 10 },
+  { name: '豪华大床房', totalCount: 20, availableCount: 4 },
+  { name: '行政套房', totalCount: 8, availableCount: 0 },
+  { name: '总统套房', totalCount: 2, availableCount: 0 }
 ]
 
 // 预订列表数据
 const loading = ref(false)
-const bookingList = ref([
-  {
-    bookingNo: 'BK20240331001',
-    customerName: '张三',
-    phone: '13800138000',
-    roomType: '标准双人间',
-    roomNumber: '203',
-    roomPrice: 580,
-    checkInDate: '2024-03-31',
-    checkOutDate: '2024-04-02',
-    status: 'confirmed',
-    paymentStatus: 'deposit',
-    isGroup: false,
-    guestCount: 2
-  },
-  // 更多模拟数据...
-])
-
-// 分页
+const bookingList = ref([])
+const total = ref(100)
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(100)
 
 // 预订表单对话框
 const dialogVisible = ref(false)
@@ -747,11 +631,16 @@ const checkInForm = reactive({
 
 // 可用房间列表
 const availableRooms = ref([
-  { number: '201', type: '标准单人间' },
-  { number: '202', type: '标准单人间' },
-  { number: '301', type: '豪华大床房' },
-  { number: '302', type: '豪华大床房' },
-  { number: '401', type: '行政套房' }
+  { number: '301', type: '标准双人间' },
+  { number: '303', type: '标准双人间' },
+  { number: '305', type: '标准双人间' },
+  { number: '308', type: '豪华大床房' },
+  { number: '310', type: '豪华大床房' },
+  { number: '401', type: '行政套房' },
+  { number: '501', type: '标准双人间' },
+  { number: '505', type: '标准双人间' },
+  { number: '508', type: '豪华大床房' },
+  { number: '510', type: '豪华大床房' }
 ])
 
 // 房型预览对话框
@@ -1127,374 +1016,162 @@ const exportBookings = () => {
 
 // 显示房态一览
 const showRoomStatus = () => {
-  roomStatusVisible.value = true
-}
-
-// 生成房间列表HTML
-const generateRoomListHTML = () => {
-  // 模拟房间数据
-  const allRooms = generateRoomData();
-  let html = '';
-  
-  // 筛选房间
-  const filteredRooms = allRooms.filter(room => {
-    if (selectedFloor.value !== 'all' && room.floor !== selectedFloor.value) return false;
-    if (selectedRoomType.value !== 'all' && room.typeShort !== selectedRoomType.value) return false;
-    if (selectedStatus.value !== 'all' && room.status !== selectedStatus.value) return false;
-    return true;
-  });
-  
-  filteredRooms.forEach(room => {
-    html += `
-      <tr class="room-row ${room.status}" data-room-number="${room.number}">
-        <td>${room.number}</td>
-        <td>${room.floor}层</td>
-        <td>${getRoomTypeName(room.typeShort)}</td>
-        <td class="price-cell">¥${room.price}</td>
-        <td>
-          <span class="status-tag ${room.status}">${getRoomStatusText(room.status)}</span>
-        </td>
-        <td>${room.guest || '-'}</td>
-        <td>${room.checkInTime || '-'}</td>
-        <td class="action-cell">
-          <button class="action-btn view-btn" data-room="${room.number}">查看</button>
-          ${room.status === 'available' ? `<button class="action-btn book-btn" data-room="${room.number}">预订</button>` : ''}
-          ${room.status === 'occupied' ? `<button class="action-btn checkout-btn" data-room="${room.number}">退房</button>` : ''}
-        </td>
-      </tr>
-    `;
-  });
-  
-  return html;
-}
-
-// 处理房间点击
-const handleRoomClick = (event) => {
-  const roomCell = event.currentTarget;
-  const roomNumber = roomCell.querySelector('.room-number').textContent;
-  const roomType = roomCell.querySelector('.room-type').textContent;
-  const roomPrice = roomCell.querySelector('.room-price').textContent;
-  const roomStatus = Array.from(roomCell.classList).find(cls => 
-    ['available', 'occupied', 'reserved', 'cleaning', 'maintenance'].includes(cls)
-  );
-  
-  showRoomDetailDialog(roomNumber, roomType, roomPrice, roomStatus);
-}
-
-// 显示房间详情对话框
-const showRoomDetailDialog = (roomNumber, roomType, roomPrice, roomStatus) => {
-  // 根据房型获取图片
-  const roomImages = getRoomImages(roomType);
-  const roomTypeName = getRoomTypeName(roomType);
-  
-  // 构建客人信息
-  let guestInfo = '';
-  if (roomStatus === 'occupied') {
-    const randomGuest = getRandomGuest();
-    guestInfo = `
-      <div class="room-detail-section">
-        <h4>入住信息</h4>
-        <div class="guest-info">
-          <p><span class="info-label">客人：</span>${randomGuest.name}</p>
-          <p><span class="info-label">手机：</span>${randomGuest.phone}</p>
-          <p><span class="info-label">入住日期：</span>${randomGuest.checkIn}</p>
-          <p><span class="info-label">离店日期：</span>${randomGuest.checkOut}</p>
-          <p><span class="info-label">房价：</span>${roomPrice}/晚</p>
-          <p><span class="info-label">已付押金：</span>¥500</p>
-        </div>
-      </div>
-    `;
-  }
-  
-  const roomDetailContent = `
-    <div class="room-detail-dialog">
-      <div class="room-detail-header">
-        <div class="room-images">
-          <img src="${roomImages[0]}" alt="房间图片" class="room-detail-img">
-        </div>
-        <div class="room-info-side">
-          <div class="room-number-large">${roomNumber}</div>
-          <div class="room-type-name">${roomTypeName}</div>
-          <div class="room-status-large ${roomStatus}">${getRoomStatusText(roomStatus)}</div>
-          <div class="room-price-large">${roomPrice}</div>
-          <div class="room-features">
-            <div class="feature-item"><el-icon><User /></el-icon> 可住2人</div>
-            <div class="feature-item"><el-icon><Connection /></el-icon> 高速WiFi</div>
-            <div class="feature-item"><el-icon><Monitor /></el-icon> 智能电视</div>
-            <div class="feature-item"><el-icon><Sugar /></el-icon> 免费早餐</div>
-          </div>
-        </div>
-      </div>
-      
-      ${guestInfo}
-      
-      <div class="room-detail-section">
-        <h4>房间描述</h4>
-        <p class="room-description">
-          ${getRoomDescription(roomType)}
-        </p>
-      </div>
-      
-      <div class="room-actions">
-        ${roomStatus === 'available' ? 
-          `<button class="room-action-btn book-room">预订房间</button>
-           <button class="room-action-btn checkin-room">直接入住</button>` :
-          roomStatus === 'occupied' ? 
-          `<button class="room-action-btn checkout-room">办理退房</button>
-           <button class="room-action-btn add-service">添加服务</button>` :
-          roomStatus === 'reserved' ?
-          `<button class="room-action-btn checkin-room">办理入住</button>
-           <button class="room-action-btn cancel-room">取消预订</button>` :
-          `<button class="room-action-btn update-status">更新状态</button>`
-        }
-      </div>
-    </div>
-  `;
+  // 设置临时变量，避免与已声明变量冲突
+  const roomTotal = 100
+  const occupiedCount = 78
   
   ElMessageBox.alert(
-    roomDetailContent,
-    `房间详情 - ${roomNumber}`,
+    `<div class="modern-dialog-content room-status-dialog">
+      <div class="dialog-header">
+        <div class="dialog-title">
+          <i class="el-icon-house"></i>
+          <h3>酒店房态一览</h3>
+        </div>
+        <div class="dialog-summary">
+          <span>日期: ${new Date().toLocaleDateString()}</span>
+          <span>|</span>
+          <span>总房间数: ${roomTotal}</span>
+        </div>
+      </div>
+      
+      <div class="room-status-container">
+        <!-- 筛选和图例工具栏 -->
+        <div class="room-status-toolbar">
+          <!-- 视图切换 -->
+          <div class="view-tabs">
+            <div class="view-tab active">楼层视图</div>
+            <div class="view-tab">房型视图</div>
+            <div class="view-tab">列表视图</div>
+          </div>
+          
+          <!-- 图例 -->
+          <div class="status-legend">
+            <div class="legend-item"><span class="status-dot available"></span> 可预订</div>
+            <div class="legend-item"><span class="status-dot occupied"></span> 已入住</div>
+            <div class="legend-item"><span class="status-dot reserved"></span> 已预订</div>
+            <div class="legend-item"><span class="status-dot cleaning"></span> 清洁中</div>
+            <div class="legend-item"><span class="status-dot maintenance"></span> 维护中</div>
+          </div>
+          
+          <!-- 日期选择器 -->
+          <div class="date-selector">
+            <button class="date-nav prev"><i class="el-icon-arrow-left"></i></button>
+            <span class="current-date">${new Date().toLocaleDateString()}</span>
+            <button class="date-nav next"><i class="el-icon-arrow-right"></i></button>
+          </div>
+        </div>
+        
+        <!-- 房态统计卡片 -->
+        <div class="room-status-stats">
+          <div class="status-card available">
+            <div class="status-value">${Math.round(roomTotal * 0.3)}</div>
+            <div class="status-label">可预订</div>
+          </div>
+          <div class="status-card occupied">
+            <div class="status-value">${occupiedCount}</div>
+            <div class="status-label">已入住</div>
+          </div>
+          <div class="status-card reserved">
+            <div class="status-value">${Math.round(roomTotal * 0.1)}</div>
+            <div class="status-label">已预订</div>
+          </div>
+          <div class="status-card cleaning">
+            <div class="status-value">${Math.round(roomTotal * 0.05)}</div>
+            <div class="status-label">清洁中</div>
+          </div>
+          <div class="status-card maintenance">
+            <div class="status-value">${Math.round(roomTotal * 0.05)}</div>
+            <div class="status-label">维护中</div>
+          </div>
+        </div>
+        
+        <!-- 楼层视图 -->
+        <div class="floor-view">
+          ${generateModernRoomStatusHTML()}
+        </div>
+      </div>
+      
+      <div class="dialog-footer">
+        <button class="footer-btn">打印房态表</button>
+        <button class="footer-btn">导出报表</button>
+        <button class="footer-btn">关闭</button>
+      </div>
+    </div>`,
+    ' ',
     {
       dangerouslyUseHTMLString: true,
       confirmButtonText: '关闭',
-      customClass: 'room-detail-dialog-box'
+      showConfirmButton: false,
+      customClass: 'borderless-dialog room-status-dialog large-dialog'
     }
-  );
+  )
 }
 
-// 获取房间图片
-const getRoomImages = (roomType) => {
-  const imageMap = {
-    'STA': ['https://via.placeholder.com/500x300.png?text=标准单人间'],
-    'STW': ['https://via.placeholder.com/500x300.png?text=标准双人间'],
-    'DEL': ['https://via.placeholder.com/500x300.png?text=豪华大床房'],
-    'EXE': ['https://via.placeholder.com/500x300.png?text=行政套房'],
-    'PRE': ['https://via.placeholder.com/500x300.png?text=总统套房']
-  };
-  
-  return imageMap[roomType] || ['https://via.placeholder.com/500x300.png?text=酒店房间'];
-}
-
-// 获取房型名称
-const getRoomTypeName = (shortName) => {
-  const typeMap = {
-    'STA': '标准单人间',
-    'STW': '标准双人间',
-    'DEL': '豪华大床房',
-    'EXE': '行政套房',
-    'PRE': '总统套房'
-  };
-  
-  return typeMap[shortName] || shortName;
-}
-
-// 获取房间描述
-const getRoomDescription = (roomType) => {
-  const descMap = {
-    'STA': '舒适的单人间配备高品质床垫和床品，提供绝佳的睡眠体验。房间设有办公桌、高速WiFi和现代化浴室，满足商务和休闲旅客需求。',
-    'STW': '宽敞的双人间带有两张舒适的单人床，配备高质量床品和枕头。房间提供桌椅、高速WiFi和现代化浴室，适合商务或休闲旅行者。',
-    'DEL': '豪华大床房提供宽敞的空间和特大号床，配备高档床品和枕头，确保极致舒适。配有休息区、迷你吧、高速WiFi和豪华浴室，是放松和工作的理想场所。',
-    'EXE': '行政套房分为客厅和卧室两个区域，提供宽敞的空间和顶级设施。套房配备特大号床、休息区、迷你吧、高速WiFi和豪华浴室，同时提供行政酒廊特权和个性化服务。',
-    'PRE': '总统套房是本酒店最尊贵的住宿选择，提供多个房间的豪华空间，包括客厅、用餐区、卧室和豪华浴室。套房提供高端设施、私人管家服务和行政特权，确保宾客享受无与伦比的奢华体验。'
-  };
-  
-  return descMap[roomType] || '舒适宽敞的客房，配备现代化设施，提供舒适的住宿体验。';
-}
-
-// 生成随机客人信息
-const getRandomGuest = () => {
-  const names = ['张先生', '王女士', '李先生', '赵女士', '陈先生'];
-  const phones = ['139****1234', '138****5678', '137****9012', '136****3456', '135****7890'];
-  
-  const randomIndex = Math.floor(Math.random() * names.length);
-  
-  const today = new Date();
-  const checkIn = new Date(today);
-  checkIn.setDate(checkIn.getDate() - Math.floor(Math.random() * 5));
-  
-  const checkOut = new Date(checkIn);
-  checkOut.setDate(checkOut.getDate() + Math.floor(Math.random() * 5) + 1);
-  
-  const formatDate = (date) => {
-    return `${date.getFullYear()}-${String(date.getMonth() + 1).padStart(2, '0')}-${String(date.getDate()).padStart(2, '0')}`;
-  };
-  
-  return {
-    name: names[randomIndex],
-    phone: phones[randomIndex],
-    checkIn: formatDate(checkIn),
-    checkOut: formatDate(checkOut)
-  };
-}
-
-// 切换视图
-const switchView = (view) => {
-  viewType.value = view;
-  
-  // 找到对应的DOM元素并切换显示
-  const gridView = document.querySelector('.room-grid-view');
-  const listView = document.querySelector('.room-list-view');
-  
-  if (gridView && listView) {
-    if (view === 'grid') {
-      gridView.style.display = 'block';
-      listView.style.display = 'none';
-    } else {
-      gridView.style.display = 'none';
-      listView.style.display = 'block';
-    }
-  }
-}
-
-// 应用筛选器
-const applyFilters = () => {
-  // 这里可以实现筛选逻辑
-  // 在弹窗环境中难以实现完整的响应式，此处为占位函数
-  console.log('应用筛选:', selectedFloor.value, selectedRoomType.value, selectedStatus.value);
-}
-
-// 生成增强的房态HTML
-const generateEnhancedRoomStatusHTML = () => {
+// 生成现代化的房态HTML
+const generateModernRoomStatusHTML = () => {
   // 模拟房间数据
   const floors = [2, 3, 4, 5, 6]
-  const roomsPerFloor = 12
   let html = ''
 
-  // 为每个楼层生成高级视图
   floors.forEach(floor => {
-    // 如果选择了特定楼层且不是当前楼层，则跳过
-    if (selectedFloor.value !== 'all' && selectedFloor.value !== floor.toString()) {
-      return;
-    }
-    
     html += `
-      <div class="floor-container">
+      <div class="floor-section">
         <div class="floor-header">
-          <div class="floor-title">
-            <span class="floor-label">${floor}层</span>
-            <el-tag size="small" type="info" effect="plain" class="floor-tag">${roomsPerFloor}间房</el-tag>
-          </div>
-          <div class="floor-stats">
-            <div class="floor-stat-item">
-              <span class="stat-label">可用：</span>
-              <span class="stat-value available">${Math.floor(roomsPerFloor * 0.4)}</span>
-            </div>
-            <div class="floor-stat-item">
-              <span class="stat-label">入住率：</span>
-              <span class="stat-value">${Math.floor(60 + Math.random() * 20)}%</span>
-            </div>
+          <div class="floor-number">0${floor}层</div>
+          <div class="floor-summary">
+            <span class="floor-stat">共20间</span>
+            <span class="floor-stat available">空闲: ${Math.round(20 * 0.3)}</span>
+            <span class="floor-stat occupied">已住: ${Math.round(20 * 0.55)}</span>
+            <span class="floor-stat reserved">预订: ${Math.round(20 * 0.1)}</span>
+            <span class="floor-stat">其他: ${Math.round(20 * 0.05)}</span>
           </div>
         </div>
-        <div class="floor-rooms">
-    `
-    
-    for (let i = 1; i <= roomsPerFloor; i++) {
-      const roomNumber = `${floor}${i.toString().padStart(2, '0')}`
-      const statusClass = getRandomRoomStatus()
-      const roomTypeShort = getRoomTypeShort(i)
-      const roomPrice = getRoomPrice(roomTypeShort)
-      
-      // 如果选择了特定房型且不是当前房型，则跳过
-      if (selectedRoomType.value !== 'all' && selectedRoomType.value !== roomTypeShort) {
-        continue;
-      }
-      
-      // 如果选择了特定状态且不是当前状态，则跳过
-      if (selectedStatus.value !== 'all' && selectedStatus.value !== statusClass) {
-        continue;
-      }
-      
-      html += `
-        <div class="room-cell ${statusClass}">
-          <div class="room-number">${roomNumber}</div>
-          <div class="room-type">${roomTypeShort}</div>
-          <div class="room-price">¥${roomPrice}</div>
-          <div class="room-status-tag ${statusClass}">${getRoomStatusText(statusClass)}</div>
-        </div>
-      `
-    }
-    
-    html += `
+        <div class="room-grid">
+          ${generateRoomCells(floor, 20)}
         </div>
       </div>
     `
   })
   
-  // 如果没有符合条件的房间，显示空状态
-  if (html === '') {
-    html = `
-      <div class="empty-state">
-        <div class="empty-icon"><el-icon><Search /></el-icon></div>
-        <div class="empty-text">没有找到符合条件的房间</div>
-        <button class="reset-filter-btn" onclick="resetFilters()">重置筛选</button>
-      </div>
-    `;
-  }
-  
   return html
 }
 
-// 生成完整的房间数据集合
-const generateRoomData = () => {
-  const floors = [2, 3, 4, 5, 6];
-  const roomsPerFloor = 12;
-  const allRooms = [];
-  
-  floors.forEach(floor => {
-    for (let i = 1; i <= roomsPerFloor; i++) {
-      const roomNumber = `${floor}${i.toString().padStart(2, '0')}`;
-      const status = getRandomRoomStatus();
-      const typeShort = getRoomTypeShort(i);
-      const roomPrice = getRoomPrice(typeShort);
-      
-      // 为入住房间生成客人信息
-      let guest = null;
-      let checkInTime = null;
-      
-      if (status === 'occupied') {
-        const randomGuest = getRandomGuest();
-        guest = randomGuest.name;
-        checkInTime = randomGuest.checkIn;
-      }
-      
-      allRooms.push({
-        number: roomNumber,
-        floor: floor.toString(),
-        typeShort,
-        type: getRoomTypeName(typeShort),
-        price: roomPrice,
-        status,
-        guest,
-        checkInTime
-      });
-    }
-  });
-  
-  return allRooms;
-}
-
-// 获取房间状态文字
-const getRoomStatusText = (status) => {
-  const statusMap = {
-    'available': '可预订',
-    'occupied': '已入住',
-    'reserved': '已预订',
-    'cleaning': '清洁中',
-    'maintenance': '维护中'
+// 生成房间单元格
+const generateRoomCells = (floor, count) => {
+  let cells = ''
+  for (let i = 1; i <= count; i++) {
+    const roomNumber = `${floor}${i.toString().padStart(2, '0')}`
+    const statusClass = getRandomRoomStatus()
+    const roomTypeShort = getRoomTypeShort(i)
+    const guestName = statusClass === 'occupied' ? getRandomGuestName() : ''
+    const checkOut = statusClass === 'occupied' ? getRandomCheckoutDate() : ''
+    
+    cells += `
+      <div class="room-cell ${statusClass}">
+        <div class="room-number">${roomNumber}</div>
+        <div class="room-info">
+          <div class="room-type">${getFullRoomType(roomTypeShort)}</div>
+          ${statusClass === 'occupied' ? `
+            <div class="guest-info">
+              <div class="guest-name">${guestName}</div>
+              <div class="checkout-date">退房: ${checkOut}</div>
+            </div>
+          ` : ''}
+          ${statusClass === 'reserved' ? `
+            <div class="reservation-info">
+              <div class="checkin-time">预抵达: ${getRandomTime()}</div>
+            </div>
+          ` : ''}
+          ${statusClass === 'cleaning' ? `
+            <div class="cleaning-info">
+              <div class="cleaning-status">预计完成: ${getRandomTime()}</div>
+            </div>
+          ` : ''}
+        </div>
+      </div>
+    `
   }
-  return statusMap[status] || status
-}
-
-// 获取房型对应的价格
-const getRoomPrice = (roomType) => {
-  const priceMap = {
-    'STA': 380,
-    'STW': 480,
-    'DEL': 680,
-    'EXE': 980,
-    'PRE': 1880
-  }
-  return priceMap[roomType] || 480
+  return cells
 }
 
 // 获取随机房间状态（仅供演示）
@@ -1520,223 +1197,229 @@ const getRoomTypeShort = (position) => {
   return 'PRE' // 总统套房
 }
 
+// 获取完整房型名称
+const getFullRoomType = (shortCode) => {
+  const types = {
+    'STA': '标准单人间',
+    'STW': '标准双人间',
+    'DEL': '豪华大床房',
+    'EXE': '行政套房',
+    'PRE': '总统套房'
+  }
+  return types[shortCode] || shortCode
+}
+
+// 获取随机客人姓名
+const getRandomGuestName = () => {
+  const surnames = ['张', '王', '李', '赵', '刘', '陈', '杨', '黄', '周', '吴']
+  const names = ['明', '华', '强', '伟', '芳', '娜', '秀英', '军', '杰', '磊', '敏']
+  
+  return surnames[Math.floor(Math.random() * surnames.length)] + 
+         names[Math.floor(Math.random() * names.length)]
+}
+
+// 获取随机退房日期
+const getRandomCheckoutDate = () => {
+  const today = new Date()
+  const daysAhead = Math.floor(Math.random() * 3) + 1
+  const checkoutDate = new Date(today)
+  checkoutDate.setDate(today.getDate() + daysAhead)
+  
+  return `${checkoutDate.getMonth() + 1}/${checkoutDate.getDate()}`
+}
+
+// 获取随机时间
+const getRandomTime = () => {
+  const hours = Math.floor(Math.random() * 10) + 8 // 8点到18点
+  const minutes = ['00', '15', '30', '45'][Math.floor(Math.random() * 4)]
+  return `${hours}:${minutes}`
+}
+
+// 初始化
+fetchBookingList()
+
 // 显示今日待办
 const showTodayTasks = () => {
   ElMessageBox.alert(
-    `<div class="detail-dialog-content">
-      <h3>今日待办事项</h3>
-      <div class="task-list">
-        ${todayTasks.map(task => `
-          <div class="task-item ${task.status}">
-            <div class="task-icon ${task.type}">
-              ${task.type === 'vip' ? '<i class="vip-icon"></i>' :
-                task.type === 'checkout' ? '<i class="checkout-icon"></i>' :
-                task.type === 'service' ? '<i class="service-icon"></i>' :
-                task.type === 'complaint' ? '<i class="complaint-icon"></i>' :
-                '<i class="cleaning-icon"></i>'}
-          </div>
-            <div class="task-content">
-              <div class="task-text">${task.content}</div>
-              <div class="task-status">
-                ${task.status === 'pending' ? '待处理' :
-                  task.status === 'processing' ? '处理中' : '已完成'}
-          </div>
-          </div>
-          </div>
-        `).join('')}
-          </div>
-    </div>`,
-    '今日待办事项',
-    {
-      dangerouslyUseHTMLString: true,
-      confirmButtonText: '关闭'
-    }
-  )
-}
-
-// 显示待确认预订详情
-const showPendingBookings = () => {
-  const pendingBookings = [
-    {
-      bookingNo: 'BK20240403001',
-      customerName: '张小明',
-      phone: '13611112222',
-      roomType: '标准双人间',
-      checkInDate: '2024-04-05',
-      checkOutDate: '2024-04-07'
-    },
-    {
-      bookingNo: 'BK20240403002',
-      customerName: '李华',
-      phone: '13922223333',
-      roomType: '豪华大床房',
-      checkInDate: '2024-04-06',
-      checkOutDate: '2024-04-08'
-    },
-    {
-      bookingNo: 'BK20240404001',
-      customerName: '王强',
-      phone: '13833334444',
-      roomType: '行政套房',
-      checkInDate: '2024-04-10',
-      checkOutDate: '2024-04-15'
-    }
-  ]
-  
-  ElMessageBox.alert(
-    `<div class="detail-dialog-content">
-      <h3>待确认预订列表</h3>
-      <div class="detail-list">
-        ${pendingBookings.map(booking => `
-          <div class="detail-item">
-            <div class="detail-item-header">
-              <span class="booking-no">${booking.bookingNo}</span>
-              <span class="booking-date">${booking.checkInDate} ~ ${booking.checkOutDate}</span>
+    `<div class="modern-dialog-content task-dialog">
+      <div class="dialog-header">
+        <div class="dialog-title">
+          <i class="el-icon-list"></i>
+          <h3>今日待办事项</h3>
         </div>
-            <div class="detail-item-body">
-              <div>客户：${booking.customerName}</div>
-              <div>电话：${booking.phone}</div>
-              <div>房型：${booking.roomType}</div>
+        <div class="dialog-summary">
+          <span>今日日期: ${new Date().toLocaleDateString()}</span>
+          <span>|</span>
+          <span>共 ${todayTasks.length} 个待办事项</span>
+        </div>
       </div>
-          </div>
-        `).join('')}
+      
+      <div class="tasks-container">
+        <div class="task-status-tabs">
+          <div class="status-tab active">全部</div>
+          <div class="status-tab">待处理</div>
+          <div class="status-tab">进行中</div>
+          <div class="status-tab">已完成</div>
+        </div>
+        
+        <div class="tasks-grid">
+          ${todayTasks.map(task => `
+            <div class="task-card ${task.status}">
+              <div class="task-priority ${task.priority}"></div>
+              <div class="task-header">
+                <div class="task-time">${task.time}</div>
+                <div class="task-category ${task.category}">${getCategoryName(task.category)}</div>
+              </div>
+              <div class="task-content">${task.content}</div>
+              <div class="task-footer">
+                <div class="task-status-badge ${task.status}">${getStatusName(task.status)}</div>
+                <div class="task-room">${task.room || '未分配'}</div>
+                <div class="task-actions">
+                  ${task.status === 'pending' ? '<button class="action-btn start-btn">开始处理</button>' : ''}
+                  ${task.status === 'processing' ? '<button class="action-btn complete-btn">完成</button>' : ''}
+                  <button class="action-btn view-btn">查看</button>
+                </div>
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+      
+      <div class="dialog-footer">
+        <button class="footer-btn primary-btn">添加待办</button>
+        <button class="footer-btn">关闭</button>
       </div>
     </div>`,
-    '待确认预订',
+    ' ',
     {
       dangerouslyUseHTMLString: true,
-      confirmButtonText: '关闭'
-    }
-  )
-}
-
-// 显示今日入住详情
-const showTodayCheckins = () => {
-  // 模拟今日入住数据
-  const todayBookings = [
-    {
-      bookingNo: 'BK20240404001',
-      customerName: '王五',
-      phone: '13912345678',
-      roomType: '豪华大床房',
-      checkInTime: '14:30',
-      checkOutDate: '2024-04-06',
-      status: 'confirmed'
-    },
-    {
-      bookingNo: 'BK20240404002',
-      customerName: '赵六',
-      phone: '13887654321',
-      roomType: '标准双人间',
-      checkInTime: '15:00',
-      checkOutDate: '2024-04-07',
-      status: 'confirmed'
-    },
-    {
-      bookingNo: 'BK20240404003',
-      customerName: '李明',
-      phone: '13765432198',
-      roomType: '行政套房',
-      checkInTime: '16:30',
-      checkOutDate: '2024-04-08',
-      status: 'confirmed'
-    }
-  ]
-  
-  ElMessageBox.alert(
-    `<div class="detail-dialog-content">
-      <h3>今日入住预订列表</h3>
-      <div class="detail-list">
-        ${todayBookings.map(booking => `
-          <div class="detail-item">
-            <div class="detail-item-header">
-              <span class="booking-no">${booking.bookingNo}</span>
-              <span class="booking-time">预计到店：${booking.checkInTime}</span>
-          </div>
-            <div class="detail-item-body">
-              <div>客户：${booking.customerName}</div>
-              <div>电话：${booking.phone}</div>
-              <div>房型：${booking.roomType}</div>
-              <div>离店：${booking.checkOutDate}</div>
-        </div>
-        </div>
-        `).join('')}
-      </div>
-    </div>`,
-    '今日入住预订',
-    {
-      dangerouslyUseHTMLString: true,
-      confirmButtonText: '关闭'
+      confirmButtonText: '关闭',
+      showConfirmButton: false,
+      customClass: 'borderless-dialog task-dialog large-dialog'
     }
   )
 }
 
 // 显示入住率详情
 const showOccupancyDetails = () => {
+  // 设置临时变量，避免与已声明变量冲突
+  const roomTotal = 100
+  const occupiedCount = 78
+  const rate = 78
+
   ElMessageBox.alert(
-    `<div class="detail-dialog-content">
-      <h3>当前入住率详情</h3>
-      <div class="occupancy-stats">
-        <div class="occupancy-item">
-          <div class="occupancy-label">当前入住率</div>
-          <div class="occupancy-value">${occupancyRate.value}%</div>
-            </div>
-        <div class="occupancy-item">
-          <div class="occupancy-label">总房间数</div>
-          <div class="occupancy-value">${totalRooms.value}</div>
-            </div>
-        <div class="occupancy-item">
-          <div class="occupancy-label">已入住</div>
-          <div class="occupancy-value">${occupiedRooms.value}</div>
-            </div>
-        <div class="occupancy-item">
-          <div class="occupancy-label">空闲房间</div>
-          <div class="occupancy-value">${totalRooms.value - occupiedRooms.value}</div>
+    `<div class="modern-dialog-content occupancy-dialog">
+      <div class="dialog-header">
+        <div class="dialog-title">
+          <i class="el-icon-data-analysis"></i>
+          <h3>酒店入住率统计</h3>
+        </div>
+        <div class="dialog-summary">
+          <span>统计日期: ${new Date().toLocaleDateString()}</span>
         </div>
       </div>
-      <div class="room-type-stats">
-        <h4>各房型入住情况</h4>
-        <table class="room-type-table">
-          <thead>
-            <tr>
-              <th>房型名称</th>
-              <th>总数量</th>
-              <th>可用数量</th>
-              <th>入住率</th>
-            </tr>
-          </thead>
-          <tbody>
+      
+      <div class="occupancy-panels">
+        <!-- 入住率概览卡片 -->
+        <div class="occupancy-overview">
+          <div class="overview-card total-card">
+            <div class="overview-title">总房间数</div>
+            <div class="overview-value">${roomTotal}</div>
+          </div>
+          <div class="overview-card occupied-card">
+            <div class="overview-title">已入住</div>
+            <div class="overview-value">${occupiedCount}</div>
+          </div>
+          <div class="overview-card available-card">
+            <div class="overview-title">空闲房间</div>
+            <div class="overview-value">${roomTotal - occupiedCount}</div>
+          </div>
+          <div class="overview-card rate-card">
+            <div class="overview-title">当前入住率</div>
+            <div class="overview-value highlight">${rate}%</div>
+            <div class="rate-visual">
+              <div class="rate-bar" style="width: ${rate}%"></div>
+            </div>
+          </div>
+        </div>
+        
+        <!-- 各房型入住详情 -->
+        <div class="room-type-details">
+          <h4>各房型入住情况</h4>
+          <div class="room-types-grid">
             ${roomTypes.map(type => `
-              <tr>
-                <td>${type.name}</td>
-                <td>${type.totalCount}</td>
-                <td>${type.availableCount}</td>
-                <td>${Math.round((type.totalCount - type.availableCount) / type.totalCount * 100)}%</td>
-              </tr>
+              <div class="room-type-card">
+                <div class="room-type-header">
+                  <span class="room-type-name">${type.name}</span>
+                  <span class="room-type-rate">${Math.round((type.totalCount - type.availableCount) / type.totalCount * 100)}%</span>
+                </div>
+                <div class="room-type-body">
+                  <div class="room-type-progress">
+                    <div class="progress-bar" style="width: ${Math.round((type.totalCount - type.availableCount) / type.totalCount * 100)}%"></div>
+                  </div>
+                  <div class="room-type-stats">
+                    <div>总数: ${type.totalCount}</div>
+                    <div>可用: ${type.availableCount}</div>
+                    <div>已住: ${type.totalCount - type.availableCount}</div>
+                  </div>
+                </div>
+              </div>
             `).join('')}
-          </tbody>
-        </table>
+          </div>
+        </div>
+        
+        <!-- 入住率趋势图 -->
+        <div class="occupancy-trend">
+          <h4>近7日入住率趋势</h4>
+          <div class="trend-chart">
+            <div class="chart-bars">
+              <div class="chart-bar" style="height: 65%;">
+                <div class="bar-label">65%</div>
+                <div class="date-label">3/28</div>
+              </div>
+              <div class="chart-bar" style="height: 70%;">
+                <div class="bar-label">70%</div>
+                <div class="date-label">3/29</div>
+              </div>
+              <div class="chart-bar" style="height: 60%;">
+                <div class="bar-label">60%</div>
+                <div class="date-label">3/30</div>
+              </div>
+              <div class="chart-bar" style="height: 68%;">
+                <div class="bar-label">68%</div>
+                <div class="date-label">3/31</div>
+              </div>
+              <div class="chart-bar" style="height: 75%;">
+                <div class="bar-label">75%</div>
+                <div class="date-label">4/1</div>
+              </div>
+              <div class="chart-bar" style="height: 78%;">
+                <div class="bar-label">78%</div>
+                <div class="date-label">4/2</div>
+              </div>
+              <div class="chart-bar active" style="height: ${rate}%;">
+                <div class="bar-label">${rate}%</div>
+                <div class="date-label">今日</div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="dialog-footer">
+        <button class="footer-btn">导出报表</button>
+        <button class="footer-btn">关闭</button>
       </div>
     </div>`,
-    '入住率详情',
+    ' ',
     {
       dangerouslyUseHTMLString: true,
       confirmButtonText: '关闭',
-      customClass: 'large-message-box'
+      showConfirmButton: false,
+      customClass: 'borderless-dialog occupancy-dialog large-dialog'
     }
   )
 }
-
-// 初始化
-fetchBookingList()
-
-// 房态预览相关数据
-const viewType = ref('grid')
-const selectedDate = ref(new Date())
-const selectedFloor = ref('all')
-const selectedRoomType = ref('all')
-const selectedStatus = ref('all')
-const roomStatusVisible = ref(false)
 </script>
 
 <style scoped>
@@ -2409,212 +2092,934 @@ const roomStatusVisible = ref(false)
   min-width: 500px;
 }
 
-.room-status-container {
-  padding: 10px;
+.room-status-tabs {
+  display: flex;
+  border-bottom: 1px solid #dee2e6;
+  margin-bottom: 15px;
 }
 
-.preview-header {
+.room-status-tab {
+  padding: 8px 15px;
+  cursor: pointer;
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.room-status-tab.active {
+  border-bottom: 2px solid #0d6efd;
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+.room-status-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 15px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #eaedf3;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  font-size: 13px;
+  color: #495057;
+}
+
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.status-dot.available {
+  background-color: #28a745;
+}
+
+.status-dot.occupied {
+  background-color: #dc3545;
+}
+
+.status-dot.reserved {
+  background-color: #ffc107;
+}
+
+.status-dot.cleaning {
+  background-color: #17a2b8;
+}
+
+.status-dot.maintenance {
+  background-color: #6c757d;
+}
+
+.room-status-grid {
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.floor-label {
+  font-weight: 600;
+  color: #495057;
+  padding: 5px 0;
+  margin-top: 10px;
+}
+
+.floor-rooms {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 10px;
+  margin-bottom: 15px;
+}
+
+.room-cell {
+  padding: 8px;
+  border-radius: 5px;
+  text-align: center;
+  position: relative;
+  height: 60px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  transition: all 0.2s;
+  cursor: pointer;
+}
+
+.room-cell:hover {
+  transform: scale(1.05);
+}
+
+.room-cell.available {
+  background-color: rgba(40, 167, 69, 0.2);
+  border: 1px solid rgba(40, 167, 69, 0.3);
+}
+
+.room-cell.occupied {
+  background-color: rgba(220, 53, 69, 0.2);
+  border: 1px solid rgba(220, 53, 69, 0.3);
+}
+
+.room-cell.reserved {
+  background-color: rgba(255, 193, 7, 0.2);
+  border: 1px solid rgba(255, 193, 7, 0.3);
+}
+
+.room-cell.cleaning {
+  background-color: rgba(23, 162, 184, 0.2);
+  border: 1px solid rgba(23, 162, 184, 0.3);
+}
+
+.room-cell.maintenance {
+  background-color: rgba(108, 117, 125, 0.2);
+  border: 1px solid rgba(108, 117, 125, 0.3);
+}
+
+.room-number {
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.room-info {
+  font-size: 13px;
+}
+
+.room-type {
+  margin-bottom: 5px;
+  color: #495057;
+}
+
+.guest-info, .reservation-info, .cleaning-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #dee2e6;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+.guest-name {
+  font-weight: 500;
+  color: #495057;
+  margin-bottom: 4px;
+}
+
+/* 现代化弹窗样式 */
+:deep(.borderless-dialog) {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 10px 40px rgba(0, 0, 0, 0.15);
+}
+
+:deep(.borderless-dialog .el-message-box__header) {
+  display: none;
+}
+
+:deep(.borderless-dialog .el-message-box__content) {
+  padding: 0;
+}
+
+:deep(.borderless-dialog .el-message-box__message) {
+  padding: 0;
+}
+
+:deep(.borderless-dialog .el-message-box__message p) {
+  margin: 0;
+}
+
+.modern-dialog-content {
+  position: relative;
+  min-width: 700px;
+  max-width: 90vw;
+}
+
+.large-dialog .modern-dialog-content {
+  min-width: 900px;
+}
+
+.dialog-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px 24px;
+  background: linear-gradient(135deg, #1a3e8f, #0d6efd);
+  color: white;
+}
+
+.dialog-title {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.dialog-title h3 {
+  margin: 0;
+  font-size: 20px;
+  font-weight: 600;
+}
+
+.dialog-summary {
+  font-size: 14px;
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  opacity: 0.9;
+}
+
+.data-table-container {
+  padding: 20px;
+  max-height: 500px;
+  overflow-y: auto;
+}
+
+.data-table {
+  width: 100%;
+  border-collapse: collapse;
+  text-align: left;
+}
+
+.data-table th {
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 2px solid #e9ecef;
+  font-weight: 600;
+  color: #495057;
+  font-size: 14px;
+}
+
+.data-table td {
+  padding: 12px 16px;
+  border-bottom: 1px solid #e9ecef;
+  vertical-align: middle;
+  font-size: 14px;
+}
+
+.data-table tr:hover {
+  background-color: #f8f9fa;
+}
+
+.customer-info {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.customer-name {
+  font-weight: 500;
+  color: #212529;
+}
+
+.customer-phone {
+  color: #6c757d;
+  font-size: 13px;
+}
+
+.booking-id {
+  font-family: monospace;
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+.action-cell {
+  display: flex;
+  gap: 8px;
+}
+
+.action-btn {
+  border: none;
+  background: none;
+  padding: 6px 10px;
+  border-radius: 4px;
+  font-size: 13px;
+  cursor: pointer;
+  transition: all 0.2s;
+  color: #fff;
+}
+
+.confirm-btn {
+  background-color: #28a745;
+}
+
+.confirm-btn:hover {
+  background-color: #218838;
+}
+
+.edit-btn {
+  background-color: #0d6efd;
+}
+
+.edit-btn:hover {
+  background-color: #0a58ca;
+}
+
+.checkin-btn {
+  background-color: #0d6efd;
+}
+
+.checkin-btn:hover {
+  background-color: #0a58ca;
+}
+
+.view-btn {
+  background-color: #6c757d;
+}
+
+.view-btn:hover {
+  background-color: #5a6268;
+}
+
+.status-badge {
+  display: inline-block;
+  padding: 4px 8px;
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 500;
+  color: white;
+}
+
+.status-badge.confirmed {
+  background-color: #0d6efd;
+}
+
+.dialog-footer {
+  background-color: #f8f9fa;
+  border-top: 1px solid #e9ecef;
+  padding: 16px 24px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
+.footer-btn {
+  padding: 8px 16px;
+  border-radius: 6px;
+  border: 1px solid #ced4da;
+  background-color: white;
+  color: #495057;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.footer-btn:hover {
+  background-color: #f1f3f5;
+}
+
+.footer-btn.primary-btn {
+  background-color: #0d6efd;
+  border-color: #0d6efd;
+  color: white;
+}
+
+.footer-btn.primary-btn:hover {
+  background-color: #0a58ca;
+  border-color: #0a58ca;
+}
+
+/* 入住率详情样式 */
+.occupancy-panels {
+  padding: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 24px;
+}
+
+.occupancy-overview {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.overview-card {
+  background: white;
+  border-radius: 8px;
+  padding: 16px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+  text-align: center;
+}
+
+.overview-title {
+  font-size: 14px;
+  color: #6c757d;
+  margin-bottom: 8px;
+}
+
+.overview-value {
+  font-size: 24px;
+  font-weight: 600;
+  color: #212529;
+}
+
+.overview-value.highlight {
+  color: #0d6efd;
+}
+
+.rate-visual {
+  margin-top: 10px;
+  background-color: #e9ecef;
+  height: 8px;
+  border-radius: 4px;
+  position: relative;
+  overflow: hidden;
+}
+
+.rate-bar {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: linear-gradient(to right, #0d6efd, #1a3e8f);
+  border-radius: 4px;
+}
+
+.room-type-details {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+}
+
+.room-type-details h4 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #343a40;
+  font-size: 16px;
+}
+
+.room-types-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.room-type-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.room-type-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.room-type-name {
+  font-weight: 500;
+  color: #343a40;
+}
+
+.room-type-rate {
+  font-weight: 600;
+  color: #0d6efd;
+}
+
+.room-type-body {
+  padding: 16px;
+}
+
+.room-type-progress {
+  height: 6px;
+  background-color: #e9ecef;
+  border-radius: 3px;
+  margin-bottom: 12px;
+  overflow: hidden;
+}
+
+.progress-bar {
+  height: 100%;
+  background: linear-gradient(to right, #0d6efd, #1a3e8f);
+  border-radius: 3px;
+}
+
+.room-type-stats {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 8px;
+  font-size: 13px;
+  color: #6c757d;
+}
+
+.occupancy-trend {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  padding: 16px;
+  background-color: white;
+}
+
+.occupancy-trend h4 {
+  margin-top: 0;
+  margin-bottom: 16px;
+  font-weight: 600;
+  color: #343a40;
+  font-size: 16px;
+}
+
+.trend-chart {
+  height: 200px;
+  position: relative;
+  padding-top: 20px;
+}
+
+.chart-bars {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-end;
+  height: 100%;
+  padding: 0 10px;
+}
+
+.chart-bar {
+  width: 40px;
+  background: linear-gradient(to top, rgba(13, 110, 253, 0.2), rgba(13, 110, 253, 0.6));
+  border-radius: 4px 4px 0 0;
+  position: relative;
+  margin: 0 10px;
+}
+
+.chart-bar.active {
+  background: linear-gradient(to top, rgba(13, 110, 253, 0.4), rgba(13, 110, 253, 0.9));
+}
+
+.bar-label {
+  position: absolute;
+  top: -20px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  font-weight: 500;
+  color: #343a40;
+}
+
+.date-label {
+  position: absolute;
+  bottom: -25px;
+  left: 0;
+  right: 0;
+  text-align: center;
+  font-size: 12px;
+  color: #6c757d;
+}
+
+/* 待办任务样式 */
+.tasks-container {
+  padding: 20px;
+}
+
+.task-status-tabs {
+  display: flex;
+  border-bottom: 1px solid #e9ecef;
+  margin-bottom: 20px;
+}
+
+.status-tab {
+  padding: 8px 16px;
+  margin-right: 10px;
+  cursor: pointer;
+  font-size: 14px;
+  position: relative;
+  color: #6c757d;
+}
+
+.status-tab.active {
+  color: #0d6efd;
+  font-weight: 500;
+}
+
+.status-tab.active:after {
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 100%;
+  height: 2px;
+  background-color: #0d6efd;
+}
+
+.tasks-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  max-height: 400px;
+  overflow-y: auto;
+}
+
+.task-card {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  position: relative;
+  overflow: hidden;
+  background-color: white;
+}
+
+.task-priority {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 4px;
+  height: 100%;
+}
+
+.task-priority.high {
+  background-color: #dc3545;
+}
+
+.task-priority.medium {
+  background-color: #fd7e14;
+}
+
+.task-priority.low {
+  background-color: #20c997;
+}
+
+.task-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.task-time {
+  font-size: 13px;
+  font-weight: 500;
+  color: #495057;
+}
+
+.task-category {
+  font-size: 12px;
+  padding: 2px 8px;
+  border-radius: 10px;
+  color: white;
+}
+
+.task-category.vip {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.task-category.checkout {
+  background-color: #0dcaf0;
+}
+
+.task-category.service {
+  background-color: #198754;
+}
+
+.task-category.complaint {
+  background-color: #dc3545;
+}
+
+.task-category.cleaning {
+  background-color: #6f42c1;
+}
+
+.task-content {
+  padding: 12px 16px;
+  color: #212529;
+  font-size: 14px;
+  line-height: 1.5;
+  border-bottom: 1px solid #e9ecef;
+}
+
+.task-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 12px 16px;
+  font-size: 13px;
+}
+
+.task-status-badge {
+  padding: 2px 8px;
+  border-radius: 10px;
+  font-size: 12px;
+}
+
+.task-status-badge.pending {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.task-status-badge.processing {
+  background-color: #0d6efd;
+  color: white;
+}
+
+.task-status-badge.completed {
+  background-color: #198754;
+  color: white;
+}
+
+.task-room {
+  color: #6c757d;
+}
+
+.task-actions {
+  display: flex;
+  gap: 8px;
+}
+
+.start-btn {
+  background-color: #ffc107;
+  color: #212529;
+}
+
+.start-btn:hover {
+  background-color: #e0a800;
+}
+
+.complete-btn {
+  background-color: #198754;
+}
+
+.complete-btn:hover {
+  background-color: #157347;
+}
+
+/* 房态一览样式 */
+.room-status-container {
+  padding: 20px;
+}
+
+.room-status-toolbar {
   display: flex;
   justify-content: space-between;
   align-items: center;
   margin-bottom: 20px;
 }
 
-.header-left {
+.view-tabs {
   display: flex;
-  flex-direction: column;
-}
-
-.header-title {
-  display: flex;
-  align-items: center;
-  margin-bottom: 5px;
-}
-
-.title-icon {
-  margin-right: 8px;
-  color: #409EFF;
-}
-
-.header-subtitle {
-  font-size: 13px;
-  color: #909399;
-}
-
-.room-stats-cards {
-  margin-bottom: 20px;
-}
-
-.stat-card {
-  border: none;
-  border-radius: 8px;
+  border: 1px solid #e9ecef;
+  border-radius: 6px;
   overflow: hidden;
 }
 
-.stat-card-content {
-  display: flex;
-  align-items: center;
-  padding: 10px;
+.view-tab {
+  padding: 8px 16px;
+  background-color: white;
+  cursor: pointer;
+  font-size: 14px;
+  transition: all 0.2s;
 }
 
-.stat-icon-wrapper {
-  width: 50px;
-  height: 50px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 15px;
+.view-tab:not(:last-child) {
+  border-right: 1px solid #e9ecef;
 }
 
-.stat-icon {
-  font-size: 24px;
+.view-tab:hover {
+  background-color: #f8f9fa;
+}
+
+.view-tab.active {
+  background-color: #0d6efd;
   color: white;
 }
 
-.stat-info {
+.status-legend {
   display: flex;
-  flex-direction: column;
+  gap: 16px;
 }
 
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.stat-title {
-  font-size: 13px;
-  color: #606266;
-}
-
-.stat-card.available, .stat-icon-wrapper.available {
-  background-color: rgba(40, 167, 69, 0.1);
-}
-
-.stat-icon-wrapper.available {
-  background-color: rgba(40, 167, 69, 0.8);
-}
-
-.stat-card.occupied, .stat-icon-wrapper.occupied {
-  background-color: rgba(220, 53, 69, 0.1);
-}
-
-.stat-icon-wrapper.occupied {
-  background-color: rgba(220, 53, 69, 0.8);
-}
-
-.stat-card.reserved, .stat-icon-wrapper.reserved {
-  background-color: rgba(255, 193, 7, 0.1);
-}
-
-.stat-icon-wrapper.reserved {
-  background-color: rgba(255, 193, 7, 0.8);
-}
-
-.stat-card.occupancy, .stat-icon-wrapper.occupancy {
-  background-color: rgba(111, 66, 193, 0.1);
-}
-
-.stat-icon-wrapper.occupancy {
-  background-color: rgba(111, 66, 193, 0.8);
-}
-
-.filter-section {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 15px;
-  margin-bottom: 20px;
-  padding: 15px;
-  background-color: #f8f9fa;
-  border-radius: 8px;
-}
-
-.filter-group {
+.legend-item {
   display: flex;
   align-items: center;
+  font-size: 13px;
+  color: #495057;
 }
 
-.filter-label {
+.status-dot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  margin-right: 5px;
+}
+
+.date-selector {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.date-nav {
+  width: 30px;
+  height: 30px;
+  border-radius: 50%;
+  background-color: white;
+  border: 1px solid #e9ecef;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+}
+
+.date-nav:hover {
+  background-color: #f8f9fa;
+}
+
+.current-date {
   font-size: 14px;
-  margin-right: 8px;
   font-weight: 500;
-  color: #606266;
+  color: #343a40;
 }
 
-.floor-container {
-  margin-bottom: 25px;
+.room-status-stats {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  margin-bottom: 20px;
+}
+
+.status-card {
+  background-color: white;
+  border-radius: 8px;
+  padding: 16px;
+  text-align: center;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.05);
+  border: 1px solid #e9ecef;
+}
+
+.status-value {
+  font-size: 24px;
+  font-weight: 600;
+  margin-bottom: 8px;
+}
+
+.status-label {
+  font-size: 14px;
+  color: #6c757d;
+}
+
+.status-card.available .status-value {
+  color: #28a745;
+}
+
+.status-card.occupied .status-value {
+  color: #dc3545;
+}
+
+.status-card.reserved .status-value {
+  color: #ffc107;
+}
+
+.status-card.cleaning .status-value {
+  color: #17a2b8;
+}
+
+.status-card.maintenance .status-value {
+  color: #6c757d;
+}
+
+.floor-view {
+  border: 1px solid #e9ecef;
+  border-radius: 8px;
+  overflow: hidden;
+  background-color: white;
+}
+
+.floor-section:not(:last-child) {
+  border-bottom: 1px solid #e9ecef;
 }
 
 .floor-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 10px;
+  padding: 12px 16px;
+  background-color: #f8f9fa;
 }
 
-.floor-title {
-  display: flex;
-  align-items: center;
-}
-
-.floor-label {
-  font-size: 16px;
+.floor-number {
   font-weight: 600;
-  margin-right: 10px;
-  color: #303133;
+  color: #343a40;
 }
 
-.floor-tag {
-  font-size: 12px;
-}
-
-.floor-stats {
+.floor-summary {
   display: flex;
-  gap: 15px;
-}
-
-.floor-stat-item {
-  display: flex;
-  align-items: center;
-}
-
-.stat-label {
+  gap: 16px;
   font-size: 13px;
-  color: #606266;
-  margin-right: 5px;
+  color: #6c757d;
 }
 
-.stat-value {
-  font-size: 13px;
-  font-weight: 600;
-}
-
-.stat-value.available {
+.floor-stat.available {
   color: #28a745;
 }
 
-.floor-rooms {
+.floor-stat.occupied {
+  color: #dc3545;
+}
+
+.floor-stat.reserved {
+  color: #ffc107;
+}
+
+.room-grid {
   display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 12px;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 16px;
+  padding: 16px;
 }
 
 .room-cell {
-  padding: 12px;
   border-radius: 8px;
-  position: relative;
-  height: 90px;
-  display: flex;
-  flex-direction: column;
-  transition: all 0.3s;
+  padding: 12px;
   cursor: pointer;
-  box-shadow: 0 2px 12px 0 rgba(0, 0, 0, 0.05);
+  position: relative;
+  transition: all 0.2s;
+  min-height: 80px;
 }
 
 .room-cell:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px 0 rgba(0, 0, 0, 0.1);
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
 }
 
 .room-cell.available {
@@ -2645,373 +3050,30 @@ const roomStatusVisible = ref(false)
 .room-number {
   font-weight: 600;
   font-size: 16px;
+  margin-bottom: 8px;
+  color: #343a40;
+}
+
+.room-info {
+  font-size: 13px;
 }
 
 .room-type {
-  font-size: 13px;
-  color: #606266;
   margin-bottom: 5px;
+  color: #495057;
 }
 
-.room-price {
-  font-size: 13px;
-  font-weight: 500;
-  color: #e6a23c;
-}
-
-.room-status-tag {
-  position: absolute;
-  top: 8px;
-  right: 8px;
+.guest-info, .reservation-info, .cleaning-info {
+  margin-top: 8px;
+  padding-top: 8px;
+  border-top: 1px dashed #dee2e6;
   font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: white;
+  color: #6c757d;
 }
 
-.room-status-tag.available {
-  background-color: #28a745;
-}
-
-.room-status-tag.occupied {
-  background-color: #dc3545;
-}
-
-.room-status-tag.reserved {
-  background-color: #ffc107;
-  color: #212529;
-}
-
-.room-status-tag.cleaning {
-  background-color: #17a2b8;
-}
-
-.room-status-tag.maintenance {
-  background-color: #6c757d;
-}
-
-:deep(.large-message-box) {
-  width: 90%;
-  max-width: 1200px;
-  max-height: 90vh;
-  overflow-y: auto;
-}
-
-/* 添加新样式 */
-/* 房间详情弹窗 */
-.room-detail-dialog {
-  padding: 0;
-}
-
-.room-detail-header {
-  display: flex;
-  margin-bottom: 20px;
-  gap: 20px;
-}
-
-.room-images {
-  flex: 0 0 55%;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.room-detail-img {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.room-info-side {
-  flex: 1;
-  padding: 10px 0;
-  display: flex;
-  flex-direction: column;
-}
-
-.room-number-large {
-  font-size: 24px;
-  font-weight: 700;
-  margin-bottom: 5px;
-}
-
-.room-type-name {
-  font-size: 16px;
-  color: #606266;
-  margin-bottom: 15px;
-}
-
-.room-status-large {
-  display: inline-block;
-  padding: 5px 12px;
-  border-radius: 4px;
+.guest-name {
   font-weight: 500;
-  margin-bottom: 10px;
-  color: white;
-}
-
-.room-status-large.available {
-  background-color: #28a745;
-}
-
-.room-status-large.occupied {
-  background-color: #dc3545;
-}
-
-.room-status-large.reserved {
-  background-color: #ffc107;
-  color: #212529;
-}
-
-.room-price-large {
-  font-size: 18px;
-  font-weight: 600;
-  color: #e6a23c;
-  margin-bottom: 15px;
-}
-
-.room-features {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 10px;
-}
-
-.feature-item {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  font-size: 14px;
-  color: #606266;
-}
-
-.room-detail-section {
-  margin-bottom: 20px;
-}
-
-.room-detail-section h4 {
-  font-size: 16px;
-  color: #303133;
-  margin-bottom: 10px;
-  padding-bottom: 5px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.guest-info {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.guest-info p {
-  margin: 0;
-  font-size: 14px;
-}
-
-.info-label {
-  color: #909399;
-  margin-right: 5px;
-}
-
-.room-description {
-  font-size: 14px;
-  line-height: 1.6;
-  color: #606266;
-}
-
-.room-actions {
-  display: flex;
-  gap: 15px;
-  margin-top: 20px;
-}
-
-.room-action-btn {
-  padding: 10px 20px;
-  border: none;
-  border-radius: 4px;
-  font-size: 14px;
-  font-weight: 500;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.room-action-btn.book-room {
-  background-color: #409EFF;
-  color: white;
-}
-
-.room-action-btn.checkin-room {
-  background-color: #28a745;
-  color: white;
-}
-
-.room-action-btn.checkout-room {
-  background-color: #dc3545;
-  color: white;
-}
-
-.room-action-btn.cancel-room,
-.room-action-btn.add-service,
-.room-action-btn.update-status {
-  background-color: #909399;
-  color: white;
-}
-
-.room-action-btn:hover {
-  opacity: 0.9;
-  transform: translateY(-2px);
-}
-
-/* 房间列表视图 */
-.room-list-view {
-  max-height: 600px;
-  overflow-y: auto;
-}
-
-.room-table {
-  width: 100%;
-  border-collapse: collapse;
-  font-size: 14px;
-}
-
-.room-table th {
-  background-color: #f8f9fa;
-  padding: 12px 15px;
-  text-align: left;
-  border-bottom: 2px solid #ebeef5;
-  color: #606266;
-  font-weight: 600;
-}
-
-.room-table td {
-  padding: 12px 15px;
-  border-bottom: 1px solid #ebeef5;
-}
-
-.room-row {
-  transition: all 0.3s;
-}
-
-.room-row:hover {
-  background-color: #f5f7fa;
-}
-
-.price-cell {
-  color: #e6a23c;
-  font-weight: 500;
-}
-
-.status-option {
-  display: flex;
-  align-items: center;
-  gap: 5px;
-}
-
-.status-dot {
-  width: 12px;
-  height: 12px;
-  border-radius: 50%;
-  display: inline-block;
-}
-
-.status-dot.available {
-  background-color: #28a745;
-}
-
-.status-dot.occupied {
-  background-color: #dc3545;
-}
-
-.status-dot.reserved {
-  background-color: #ffc107;
-}
-
-.status-tag {
-  display: inline-block;
-  padding: 2px 8px;
-  border-radius: 4px;
-  font-size: 12px;
-  color: white;
-}
-
-.status-tag.available {
-  background-color: #28a745;
-}
-
-.status-tag.occupied {
-  background-color: #dc3545;
-}
-
-.status-tag.reserved {
-  background-color: #ffc107;
-  color: #212529;
-}
-
-.action-cell {
-  white-space: nowrap;
-  display: flex;
-  gap: 5px;
-}
-
-.action-btn {
-  padding: 4px 8px;
-  border: none;
-  border-radius: 4px;
-  font-size: 12px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.action-btn.view-btn {
-  background-color: #909399;
-  color: white;
-}
-
-.action-btn.book-btn {
-  background-color: #409EFF;
-  color: white;
-}
-
-.action-btn.checkout-btn {
-  background-color: #dc3545;
-  color: white;
-}
-
-.action-btn:hover {
-  opacity: 0.9;
-}
-
-/* 空状态 */
-.empty-state {
-  text-align: center;
-  padding: 50px 0;
-  color: #909399;
-}
-
-.empty-icon {
-  font-size: 48px;
-  margin-bottom: 15px;
-}
-
-.empty-text {
-  font-size: 16px;
-  margin-bottom: 20px;
-}
-
-.reset-filter-btn {
-  padding: 8px 16px;
-  background-color: #409EFF;
-  color: white;
-  border: none;
-  border-radius: 4px;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.reset-filter-btn:hover {
-  background-color: #337ecc;
-}
-
-:deep(.room-detail-dialog-box) {
-  width: 800px;
-  max-width: 90vw;
+  color: #495057;
+  margin-bottom: 4px;
 }
 </style>
