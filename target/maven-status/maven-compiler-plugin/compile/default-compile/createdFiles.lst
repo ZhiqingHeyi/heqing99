@@ -38,6 +38,7 @@ com\hotel\controller\UserController.class
 com\hotel\entity\Booking.class
 com\hotel\service\impl\CleaningServiceImpl.class
 com\hotel\repository\CheckInRecordRepository.class
+com\hotel\dto\MembershipDTO$1.class
 com\hotel\entity\Room$RoomStatus.class
 com\hotel\service\impl\ReservationServiceImpl.class
 com\hotel\controller\LoginForwardController.class
@@ -49,6 +50,7 @@ com\hotel\controller\AdminController.class
 com\hotel\entity\RoomType.class
 com\hotel\service\impl\TaskServiceImpl.class
 com\hotel\repository\BookingRepository.class
+com\hotel\controller\MembershipController$1.class
 com\hotel\service\VisitorRecordService.class
 com\hotel\repository\ReservationRepository.class
 com\hotel\entity\Visitor$IdType.class
@@ -57,10 +59,10 @@ com\hotel\entity\VisitorRecord$VisitStatus.class
 com\hotel\entity\Visitor.class
 com\hotel\entity\VisitorRecord.class
 com\hotel\entity\CheckInRecord.class
-com\hotel\service\impl\UserServiceImpl.class
 com\hotel\entity\Statistics$StatisticsType.class
 com\hotel\repository\InvitationCodeRepository.class
 com\hotel\entity\Reservation.class
 com\hotel\service\HotelInfoService.class
 com\hotel\entity\User$UserRole.class
 com\hotel\service\impl\HotelInfoServiceImpl.class
+com\hotel\service\impl\UserServiceImpl$1.class

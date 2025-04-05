@@ -1,5 +1,6 @@
 package com.hotel.service.impl;
 
+import com.hotel.entity.MemberLevel;
 import com.hotel.entity.User;
 import com.hotel.repository.UserRepository;
 import com.hotel.service.InvitationCodeService;
@@ -51,7 +52,7 @@ public class UserServiceImpl implements UserService {
         
         // 设置默认会员级别和积分
         if (user.getMemberLevel() == null) {
-            user.setMemberLevel("普通用户");
+            user.setMemberLevel(MemberLevel.REGULAR);
         }
         if (user.getPoints() == null) {
             user.setPoints(0);
@@ -247,7 +248,7 @@ public class UserServiceImpl implements UserService {
     @Override
     public String getMemberLevelByUserId(Long userId) {
         User user = getUserById(userId);
-        return user.getMemberLevel();
+        return user.getMemberLevel().getDisplayName();
     }
     
     @Override
@@ -258,19 +259,20 @@ public class UserServiceImpl implements UserService {
     
     @Override
     public int getPointsRateByUserId(Long userId) {
-        String memberLevel = getMemberLevelByUserId(userId);
+        User user = getUserById(userId);
+        MemberLevel memberLevel = user.getMemberLevel();
         
         // 根据会员等级返回积分比例
         switch (memberLevel) {
-            case "普通用户":
+            case REGULAR:
                 return 0; // 普通用户不积分
-            case "铜牌会员":
+            case BRONZE:
                 return 100; // 1元=1积分
-            case "银牌会员":
+            case SILVER:
                 return 120; // 1元=1.2积分
-            case "金牌会员":
+            case GOLD:
                 return 150; // 1元=1.5积分
-            case "钻石会员":
+            case DIAMOND:
                 return 200; // 1元=2积分
             default:
                 return 0;
@@ -278,24 +280,24 @@ public class UserServiceImpl implements UserService {
     }
     
     // 辅助方法：计算消费对应的积分
-    private int calculatePointsForSpending(String memberLevel, BigDecimal amount) {
+    private int calculatePointsForSpending(MemberLevel memberLevel, BigDecimal amount) {
         int pointsRate = 0;
         
         // 根据会员等级设置积分比例
         switch (memberLevel) {
-            case "普通用户":
+            case REGULAR:
                 pointsRate = 0; // 普通用户不积分
                 break;
-            case "铜牌会员":
+            case BRONZE:
                 pointsRate = 100; // 1元=1积分
                 break;
-            case "银牌会员":
+            case SILVER:
                 pointsRate = 120; // 1元=1.2积分
                 break;
-            case "金牌会员":
+            case GOLD:
                 pointsRate = 150; // 1元=1.5积分
                 break;
-            case "钻石会员":
+            case DIAMOND:
                 pointsRate = 200; // 1元=2积分
                 break;
         }

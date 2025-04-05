@@ -1,6 +1,7 @@
 package com.hotel.controller;
 
 import com.hotel.dto.MembershipDTO;
+import com.hotel.entity.MemberLevel;
 import com.hotel.entity.User;
 import com.hotel.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -8,7 +9,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @RestController
@@ -185,37 +188,48 @@ public class MembershipController {
     public ResponseEntity<?> getMembershipLevels() {
         try {
             System.out.println("接收到获取会员等级列表请求");
-            Map<String, Object> bronzeLevel = new HashMap<>();
-            bronzeLevel.put("name", "铜牌会员");
-            bronzeLevel.put("code", "BRONZE");
-            bronzeLevel.put("threshold", 1500);
-            bronzeLevel.put("discount", 0.98);
-            bronzeLevel.put("pointsRate", 100);
             
-            Map<String, Object> silverLevel = new HashMap<>();
-            silverLevel.put("name", "银牌会员");
-            silverLevel.put("code", "SILVER");
-            silverLevel.put("threshold", 5000);
-            silverLevel.put("discount", 0.95);
-            silverLevel.put("pointsRate", 120);
+            List<Map<String, Object>> levels = new ArrayList<>();
             
-            Map<String, Object> goldLevel = new HashMap<>();
-            goldLevel.put("name", "金牌会员");
-            goldLevel.put("code", "GOLD");
-            goldLevel.put("threshold", 10000);
-            goldLevel.put("discount", 0.9);
-            goldLevel.put("pointsRate", 150);
-            
-            Map<String, Object> diamondLevel = new HashMap<>();
-            diamondLevel.put("name", "钻石会员");
-            diamondLevel.put("code", "DIAMOND");
-            diamondLevel.put("threshold", 30000);
-            diamondLevel.put("discount", 0.85);
-            diamondLevel.put("pointsRate", 200);
+            // 从枚举中获取会员等级信息
+            for (MemberLevel level : MemberLevel.values()) {
+                if (level == MemberLevel.REGULAR) {
+                    continue; // 跳过普通用户
+                }
+                
+                Map<String, Object> levelInfo = new HashMap<>();
+                levelInfo.put("name", level.getDisplayName());
+                levelInfo.put("code", level.name());
+                levelInfo.put("discount", level.getDiscount());
+                
+                // 设置阈值
+                int threshold = 0;
+                switch (level) {
+                    case BRONZE:
+                        threshold = 1500;
+                        levelInfo.put("pointsRate", 100);
+                        break;
+                    case SILVER:
+                        threshold = 5000;
+                        levelInfo.put("pointsRate", 120);
+                        break;
+                    case GOLD:
+                        threshold = 10000;
+                        levelInfo.put("pointsRate", 150);
+                        break;
+                    case DIAMOND:
+                        threshold = 30000;
+                        levelInfo.put("pointsRate", 200);
+                        break;
+                }
+                
+                levelInfo.put("threshold", threshold);
+                levels.add(levelInfo);
+            }
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("levels", new Object[]{bronzeLevel, silverLevel, goldLevel, diamondLevel});
+            response.put("levels", levels);
             
             System.out.println("返回会员等级列表成功");
             return ResponseEntity.ok(response);

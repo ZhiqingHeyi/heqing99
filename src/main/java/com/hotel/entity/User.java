@@ -49,7 +49,8 @@ public class User {
     private List<Reservation> reservations;
     
     @Column(nullable = false)
-    private String memberLevel = "普通用户";
+    @Enumerated(EnumType.STRING)
+    private MemberLevel memberLevel = MemberLevel.REGULAR;
     
     @Column(nullable = false)
     private Integer points = 0;
@@ -65,6 +66,18 @@ public class User {
 
     @Transient
     private String invitationCode;
+    
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    private List<ConsumptionRecord> consumptionRecords;
+    
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    private List<MemberLevelChangeRecord> levelChangeRecords;
+    
+    @OneToMany(mappedBy = "user")
+    @JsonIgnoreProperties("user")
+    private List<PointsExchangeRecord> pointsExchangeRecords;
 
     public enum UserRole {
         SUPER_ADMIN, // 超级管理员
@@ -78,35 +91,13 @@ public class User {
      * 获取会员折扣率
      */
     public double getDiscountRate() {
-        switch (memberLevel) {
-            case "铜牌会员":
-                return 0.98;
-            case "银牌会员":
-                return 0.95;
-            case "金牌会员":
-                return 0.9;
-            case "钻石会员":
-                return 0.85;
-            default:
-                return 1.0;
-        }
+        return memberLevel.getDiscount();
     }
     
     /**
      * 根据累计消费更新会员等级
      */
     public void updateMemberLevel() {
-        int amount = totalSpent.intValue();
-        if (amount >= 30000) {
-            this.memberLevel = "钻石会员";
-        } else if (amount >= 10000) {
-            this.memberLevel = "金牌会员";
-        } else if (amount >= 5000) {
-            this.memberLevel = "银牌会员";
-        } else if (amount >= 1500) {
-            this.memberLevel = "铜牌会员";
-        } else {
-            this.memberLevel = "普通用户";
-        }
+        this.memberLevel = MemberLevel.getByTotalSpent(totalSpent.intValue());
     }
 }

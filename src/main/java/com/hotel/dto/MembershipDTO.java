@@ -1,5 +1,6 @@
 package com.hotel.dto;
 
+import com.hotel.entity.MemberLevel;
 import com.hotel.entity.User;
 import lombok.Data;
 
@@ -35,47 +36,17 @@ public class MembershipDTO {
         dto.setUsername(user.getUsername());
         dto.setName(user.getName());
         
-        // 处理会员等级转换 - 兼容用户可能为普通字符串或枚举
-        if (user.getMemberLevel() != null) {
-            if (user.getMemberLevel() instanceof User.MemberLevel) {
-                // 如果是枚举类型
-                User.MemberLevel level = (User.MemberLevel) user.getMemberLevel();
-                dto.setMemberLevel(level.getDisplayName());
-                dto.setDiscount(level.getDiscount());
-            } else {
-                // 如果是字符串类型
-                String memberLevelStr = user.getMemberLevel().toString();
-                dto.setMemberLevel(memberLevelStr);
-                
-                // 根据字符串设置折扣
-                switch (memberLevelStr) {
-                    case "铜牌会员":
-                        dto.setDiscount(0.98);
-                        break;
-                    case "银牌会员":
-                        dto.setDiscount(0.95);
-                        break;
-                    case "金牌会员":
-                        dto.setDiscount(0.90);
-                        break;
-                    case "钻石会员":
-                        dto.setDiscount(0.85);
-                        break;
-                    default:
-                        dto.setDiscount(1.0);
-                        break;
-                }
-            }
-        } else {
-            dto.setMemberLevel("普通用户");
-            dto.setDiscount(1.0);
-        }
+        // 处理会员等级
+        MemberLevel level = user.getMemberLevel();
+        dto.setMemberLevel(level.getDisplayName());
+        dto.setMemberLevelCode(level.name());
+        dto.setDiscount(level.getDiscount());
         
         dto.setPoints(user.getPoints());
         dto.setTotalSpent(user.getTotalSpent());
         
         // 设置积分率
-        switch (user.getMemberLevel()) {
+        switch (level) {
             case REGULAR:
                 dto.setPointsRate(0);
                 break;
@@ -94,7 +65,7 @@ public class MembershipDTO {
         }
         
         // 计算下一等级所需消费金额
-        switch (user.getMemberLevel()) {
+        switch (level) {
             case REGULAR:
                 dto.setNextLevelSpend(BigDecimal.valueOf(1500).subtract(user.getTotalSpent()));
                 dto.setNextLevel("铜牌会员");
