@@ -13,6 +13,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.*;
+import java.util.stream.Collectors;
 
 @Service
 public class PointsExchangeServiceImpl implements PointsExchangeService {
@@ -104,7 +105,7 @@ public class PointsExchangeServiceImpl implements PointsExchangeService {
     public List<PointsExchangeRecord> getUserExchangeRecords(Long userId) {
         return exchangeRecords.stream()
                 .filter(r -> r.getUser().getId().equals(userId))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -141,7 +142,7 @@ public class PointsExchangeServiceImpl implements PointsExchangeService {
         return exchangeRecords.stream()
                 .filter(r -> r.getUser().getId().equals(userId))
                 .filter(r -> !r.getExchangeTime().isBefore(startDate) && !r.getExchangeTime().isAfter(endDate))
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override

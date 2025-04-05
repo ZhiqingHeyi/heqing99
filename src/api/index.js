@@ -60,7 +60,18 @@ apiClient.interceptors.response.use(
 // 用户相关API
 export const userApi = {
   // 用户注册
-  register: (userData) => apiClient.post('/users/register', userData),
+  register: (userData) => {
+    console.log('调用注册API:', userData)
+    return apiClient.post('/users/register', userData)
+      .then(response => {
+        console.log('注册API响应:', response)
+        return response
+      })
+      .catch(error => {
+        console.error('注册API错误:', error)
+        throw error
+      })
+  },
   
   // 用户登录
   login: (credentials) => apiClient.post('/users/login', credentials),

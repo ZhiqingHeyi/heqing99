@@ -6,6 +6,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class MarketingCampaignServiceImpl implements MarketingCampaignService {
@@ -54,7 +55,7 @@ public class MarketingCampaignServiceImpl implements MarketingCampaignService {
     public List<MarketingCampaign> getActiveCampaigns() {
         return campaigns.stream()
                 .filter(c -> c.getStatus() == MarketingCampaign.CampaignStatus.ACTIVE)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override
@@ -63,7 +64,7 @@ public class MarketingCampaignServiceImpl implements MarketingCampaignService {
                 .filter(c -> c.getTargetMemberLevel() == null || 
                         c.getTargetMemberLevel().equals(memberLevel))
                 .filter(c -> c.getStatus() == MarketingCampaign.CampaignStatus.ACTIVE)
-                .toList();
+                .collect(Collectors.toList());
     }
 
     @Override

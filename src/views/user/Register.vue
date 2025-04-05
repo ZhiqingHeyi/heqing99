@@ -88,6 +88,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import { userApi } from '../../api'; // 导入API服务
 
 const router = useRouter()
 const memberFormRef = ref(null)
@@ -171,28 +172,37 @@ const handleMemberRegister = async () => {
       loading.value = true
       
       try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // 这里应该是实际调用API注册会员的地方
-        console.log('会员注册提交的数据:', {
+        // 构建注册数据对象
+        const registerData = {
           username: memberForm.username,
           phone: memberForm.phone,
           password: memberForm.password,
           email: memberForm.email,
           realName: memberForm.realName
-        })
+        }
         
-        // 注册成功后提示
-        ElMessage.success('注册成功!')
+        console.log('会员注册提交的数据:', registerData)
+
+        // 使用API服务进行注册
+        const response = await userApi.register(registerData)
+
+        console.log('注册响应:', response)
         
-        // 跳转到登录页
-        setTimeout(() => {
-          router.push('/login')
-        }, 1500)
+        if (response.success) {
+          // 注册成功后提示
+          ElMessage.success('注册成功!')
+          
+          // 跳转到登录页
+          setTimeout(() => {
+            router.push('/login')
+          }, 1500)
+        } else {
+          // 注册失败提示
+          ElMessage.error(response.message || '注册失败，请稍后重试')
+        }
       } catch (error) {
         console.error('会员注册失败:', error)
-        ElMessage.error('注册失败，请稍后重试')
+        ElMessage.error(error.message || '注册失败，请稍后重试')
       } finally {
         loading.value = false
       }

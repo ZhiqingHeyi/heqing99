@@ -2545,3 +2545,63 @@ Caused by: java.sql.SQLException: Access denied for user 'root'@'localhost' (usi
 2025-04-05 21:32:35.784  INFO 24604 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
 2025-04-05 21:32:35.786  INFO 24604 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
 2025-04-05 21:32:35.798  INFO 24604 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-04-05 21:39:37.327  INFO 35440 --- [main] com.hotel.HotelManagementApplication     : Starting HotelManagementApplication using Java 18.0.2 on LAPTOP-HeYIXianJun with PID 35440 (E:\桌面\javahotel\heqing99\target\classes started by 上善若水 in E:\桌面\javahotel\heqing99)
+2025-04-05 21:39:37.329 DEBUG 35440 --- [main] com.hotel.HotelManagementApplication     : Running with Spring Boot v2.7.0, Spring v5.3.20
+2025-04-05 21:39:37.329  INFO 35440 --- [main] com.hotel.HotelManagementApplication     : No active profile set, falling back to 1 default profile: "default"
+2025-04-05 21:39:38.282  INFO 35440 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-04-05 21:39:38.464  INFO 35440 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 180 ms. Found 17 JPA repository interfaces.
+2025-04-05 21:39:39.139  INFO 35440 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2025-04-05 21:39:39.139  INFO 35440 --- [main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [1.2.30] using APR version [1.7.0].
+2025-04-05 21:39:39.139  INFO 35440 --- [main] o.a.catalina.core.AprLifecycleListener   : APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+2025-04-05 21:39:39.139  INFO 35440 --- [main] o.a.catalina.core.AprLifecycleListener   : APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+2025-04-05 21:39:39.219  INFO 35440 --- [main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 1.1.1k  25 Mar 2021]
+2025-04-05 21:39:39.228  INFO 35440 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-04-05 21:39:39.228  INFO 35440 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.63]
+2025-04-05 21:39:39.411  INFO 35440 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-04-05 21:39:39.411  INFO 35440 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2034 ms
+2025-04-05 21:39:39.602  INFO 35440 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-04-05 21:39:39.672  INFO 35440 --- [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.6.9.Final
+2025-04-05 21:39:39.874  INFO 35440 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2025-04-05 21:39:39.995  INFO 35440 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-04-05 21:39:40.394  INFO 35440 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-04-05 21:39:40.407  INFO 35440 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2025-04-05 21:39:41.575  INFO 35440 --- [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2025-04-05 21:39:41.585  INFO 35440 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-04-05 21:39:42.163  WARN 35440 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-04-05 21:39:43.008  INFO 35440 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@7af2ee23, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@5d10e2b6, org.springframework.security.web.context.SecurityContextPersistenceFilter@23b3afb4, org.springframework.security.web.header.HeaderWriterFilter@1e4bf55b, org.springframework.security.web.authentication.logout.LogoutFilter@4fce655d, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@452a32f2, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@3cf1b5fb, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@5d3a238, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@267309f7, org.springframework.security.web.session.SessionManagementFilter@15d68a50, org.springframework.security.web.access.ExceptionTranslationFilter@7c928399, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@95958d9]
+2025-04-05 21:39:43.173  INFO 35440 --- [main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2025-04-05 21:39:43.457  INFO 35440 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2025-04-05 21:39:43.467  INFO 35440 --- [main] com.hotel.HotelManagementApplication     : Started HotelManagementApplication in 6.705 seconds (JVM running for 7.907)
+2025-04-05 21:54:57.203  INFO 35440 --- [SpringApplicationShutdownHook] j.LocalContainerEntityManagerFactoryBean : Closing JPA EntityManagerFactory for persistence unit 'default'
+2025-04-05 21:54:57.247  INFO 35440 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown initiated...
+2025-04-05 21:54:57.314  INFO 35440 --- [SpringApplicationShutdownHook] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Shutdown completed.
+2025-04-05 21:55:15.447  INFO 34500 --- [main] com.hotel.HotelManagementApplication     : Starting HotelManagementApplication using Java 18.0.2 on LAPTOP-HeYIXianJun with PID 34500 (E:\桌面\javahotel\heqing99\target\classes started by 上善若水 in E:\桌面\javahotel\heqing99)
+2025-04-05 21:55:15.450 DEBUG 34500 --- [main] com.hotel.HotelManagementApplication     : Running with Spring Boot v2.7.0, Spring v5.3.20
+2025-04-05 21:55:15.450  INFO 34500 --- [main] com.hotel.HotelManagementApplication     : No active profile set, falling back to 1 default profile: "default"
+2025-04-05 21:55:16.898  INFO 34500 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Bootstrapping Spring Data JPA repositories in DEFAULT mode.
+2025-04-05 21:55:17.173  INFO 34500 --- [main] .s.d.r.c.RepositoryConfigurationDelegate : Finished Spring Data repository scanning in 268 ms. Found 17 JPA repository interfaces.
+2025-04-05 21:55:18.165  INFO 34500 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat initialized with port(s): 8080 (http)
+2025-04-05 21:55:18.165  INFO 34500 --- [main] o.a.catalina.core.AprLifecycleListener   : Loaded Apache Tomcat Native library [1.2.30] using APR version [1.7.0].
+2025-04-05 21:55:18.165  INFO 34500 --- [main] o.a.catalina.core.AprLifecycleListener   : APR capabilities: IPv6 [true], sendfile [true], accept filters [false], random [true], UDS [true].
+2025-04-05 21:55:18.165  INFO 34500 --- [main] o.a.catalina.core.AprLifecycleListener   : APR/OpenSSL configuration: useAprConnector [false], useOpenSSL [true]
+2025-04-05 21:55:18.235  INFO 34500 --- [main] o.a.catalina.core.AprLifecycleListener   : OpenSSL successfully initialized [OpenSSL 1.1.1k  25 Mar 2021]
+2025-04-05 21:55:18.256  INFO 34500 --- [main] o.apache.catalina.core.StandardService   : Starting service [Tomcat]
+2025-04-05 21:55:18.256  INFO 34500 --- [main] org.apache.catalina.core.StandardEngine  : Starting Servlet engine: [Apache Tomcat/9.0.63]
+2025-04-05 21:55:18.488  INFO 34500 --- [main] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring embedded WebApplicationContext
+2025-04-05 21:55:18.488  INFO 34500 --- [main] w.s.c.ServletWebServerApplicationContext : Root WebApplicationContext: initialization completed in 2966 ms
+2025-04-05 21:55:18.740  INFO 34500 --- [main] o.hibernate.jpa.internal.util.LogHelper  : HHH000204: Processing PersistenceUnitInfo [name: default]
+2025-04-05 21:55:18.842  INFO 34500 --- [main] org.hibernate.Version                    : HHH000412: Hibernate ORM core version 5.6.9.Final
+2025-04-05 21:55:19.258  INFO 34500 --- [main] o.hibernate.annotations.common.Version   : HCANN000001: Hibernate Commons Annotations {5.1.2.Final}
+2025-04-05 21:55:19.550  INFO 34500 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Starting...
+2025-04-05 21:55:20.184  INFO 34500 --- [main] com.zaxxer.hikari.HikariDataSource       : HikariPool-1 - Start completed.
+2025-04-05 21:55:20.214  INFO 34500 --- [main] org.hibernate.dialect.Dialect            : HHH000400: Using dialect: org.hibernate.dialect.MySQL8Dialect
+2025-04-05 21:55:22.041  INFO 34500 --- [main] o.h.e.t.j.p.i.JtaPlatformInitiator       : HHH000490: Using JtaPlatform implementation: [org.hibernate.engine.transaction.jta.platform.internal.NoJtaPlatform]
+2025-04-05 21:55:22.062  INFO 34500 --- [main] j.LocalContainerEntityManagerFactoryBean : Initialized JPA EntityManagerFactory for persistence unit 'default'
+2025-04-05 21:55:23.159  WARN 34500 --- [main] JpaBaseConfiguration$JpaWebConfiguration : spring.jpa.open-in-view is enabled by default. Therefore, database queries may be performed during view rendering. Explicitly configure spring.jpa.open-in-view to disable this warning
+2025-04-05 21:55:24.343  INFO 34500 --- [main] o.s.s.web.DefaultSecurityFilterChain     : Will secure any request with [org.springframework.security.web.session.DisableEncodeUrlFilter@35599228, org.springframework.security.web.context.request.async.WebAsyncManagerIntegrationFilter@51ac72f7, org.springframework.security.web.context.SecurityContextPersistenceFilter@78a7fccd, org.springframework.security.web.header.HeaderWriterFilter@3cf1b5fb, org.springframework.security.web.authentication.logout.LogoutFilter@261b27db, org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter@5d10e2b6, org.springframework.security.web.savedrequest.RequestCacheAwareFilter@5d3a238, org.springframework.security.web.servletapi.SecurityContextHolderAwareRequestFilter@4246f904, org.springframework.security.web.authentication.AnonymousAuthenticationFilter@15324f25, org.springframework.security.web.session.SessionManagementFilter@7be85f15, org.springframework.security.web.access.ExceptionTranslationFilter@15d68a50, org.springframework.security.web.access.intercept.FilterSecurityInterceptor@1f2d0ca2]
+2025-04-05 21:55:24.598  INFO 34500 --- [main] o.s.b.a.w.s.WelcomePageHandlerMapping    : Adding welcome page: class path resource [static/index.html]
+2025-04-05 21:55:24.998  INFO 34500 --- [main] o.s.b.w.embedded.tomcat.TomcatWebServer  : Tomcat started on port(s): 8080 (http) with context path ''
+2025-04-05 21:55:25.011  INFO 34500 --- [main] com.hotel.HotelManagementApplication     : Started HotelManagementApplication in 10.474 seconds (JVM running for 11.684)
+2025-04-05 22:05:23.319  INFO 34500 --- [http-nio-8080-exec-1] o.a.c.c.C.[Tomcat].[localhost].[/]       : Initializing Spring DispatcherServlet 'dispatcherServlet'
+2025-04-05 22:05:23.319  INFO 34500 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Initializing Servlet 'dispatcherServlet'
+2025-04-05 22:05:23.324  INFO 34500 --- [http-nio-8080-exec-1] o.s.web.servlet.DispatcherServlet        : Completed initialization in 3 ms
