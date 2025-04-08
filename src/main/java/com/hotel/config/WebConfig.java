@@ -32,8 +32,6 @@ public class WebConfig implements WebMvcConfigurer {
         config.addAllowedOrigin("http://localhost:3000");
         // 允许前端应用的IP地址
         config.addAllowedOrigin("http://127.0.0.1:3000");
-        // 也可以允许所有源访问
-        // config.addAllowedOrigin("*");
         
         // 允许凭证，如Cookie
         config.setAllowCredentials(true);

@@ -14,6 +14,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 @Service
 @Transactional
@@ -30,49 +31,105 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public User register(User user) {
-        // 检查用户名是否已存在
-        if (userRepository.findByUsername(user.getUsername()).isPresent()) {
-            throw new RuntimeException("用户名已存在");
-        }
-
-        // 对于管理员、前台和保洁人员角色，需要验证邀请码
-        if (user.getRole() == User.UserRole.admin ||
-            user.getRole() == User.UserRole.receptionist ||
-            user.getRole() == User.UserRole.cleaner) {
-            String invitationCode = user.getInvitationCode();
-            if (invitationCode == null || invitationCode.trim().isEmpty()) {
-                throw new RuntimeException("该角色需要提供邀请码");
+        try {
+            System.out.println("===== 开始用户注册处理 =====");
+            System.out.println("用户角色: " + user.getRole());
+            
+            // 检查用户名是否已存在
+            if (userRepository.findByUsername(user.getUsername()).isPresent()) {
+                System.out.println("用户名已存在: " + user.getUsername());
+                throw new RuntimeException("用户名已存在");
             }
-            invitationCodeService.validateInvitationCode(invitationCode, user.getRole());
-            invitationCodeService.useInvitationCode(invitationCode);
-        }
 
-        // 加密密码
-        user.setPassword(passwordEncoder.encode(user.getPassword()));
-        
-        // 设置默认会员级别和积分
-        if (user.getMemberLevel() == null) {
-            user.setMemberLevel(MemberLevel.REGULAR);
+            // 对于管理员、前台和保洁人员角色，需要验证邀请码
+            if (user.getRole() == User.UserRole.ADMIN ||
+                user.getRole() == User.UserRole.RECEPTIONIST ||
+                user.getRole() == User.UserRole.CLEANER) {
+                
+                // 确保invitationCodeService已经被注入
+                if (invitationCodeService == null) {
+                    System.out.println("严重错误: invitationCodeService未注入");
+                    throw new RuntimeException("系统错误：邀请码服务未配置");
+                }
+                
+                String invitationCode = user.getInvitationCode();
+                if (invitationCode == null || invitationCode.trim().isEmpty()) {
+                    System.out.println("缺少邀请码");
+                    throw new RuntimeException("该角色需要提供邀请码");
+                }
+                
+                System.out.println("验证邀请码: " + invitationCode);
+                invitationCodeService.validateInvitationCode(invitationCode, user.getRole());
+                
+                System.out.println("使用邀请码: " + invitationCode);
+                invitationCodeService.useInvitationCode(invitationCode);
+            }
+
+            // 加密密码
+            System.out.println("加密密码");
+            user.setPassword(passwordEncoder.encode(user.getPassword()));
+            
+            // 设置默认会员级别和积分
+            System.out.println("设置默认会员信息");
+            if (user.getMemberLevel() == null) {
+                System.out.println("设置默认会员等级: " + MemberLevel.REGULAR);
+                user.setMemberLevel(MemberLevel.REGULAR);
+            }
+            if (user.getPoints() == null) {
+                System.out.println("设置默认积分: 0");
+                user.setPoints(0);
+            }
+            if (user.getTotalSpent() == null) {
+                System.out.println("设置默认消费金额: 0");
+                user.setTotalSpent(BigDecimal.ZERO);
+            }
+            
+            System.out.println("保存用户到数据库");
+            User savedUser = userRepository.save(user);
+            System.out.println("用户保存成功，ID: " + savedUser.getId());
+            
+            return savedUser;
+        } catch (Exception e) {
+            System.err.println("===== 用户注册过程中发生错误 =====");
+            System.err.println("错误类型: " + e.getClass().getName());
+            System.err.println("错误消息: " + e.getMessage());
+            e.printStackTrace();
+            throw e;
         }
-        if (user.getPoints() == null) {
-            user.setPoints(0);
-        }
-        if (user.getTotalSpent() == null) {
-            user.setTotalSpent(BigDecimal.ZERO);
-        }
-        
-        return userRepository.save(user);
     }
 
     @Override
-    public String authenticate(String username, String password) {
-        User user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("用户不存在"));
+    public String authenticate(String usernameOrPhone, String password) {
+        // 保存日志
+        System.out.println("尝试验证用户: " + usernameOrPhone);
+        
+        // 尝试通过用户名查找用户
+        Optional<User> userByUsername = userRepository.findByUsername(usernameOrPhone);
+        
+        // 如果通过用户名未找到用户，尝试通过手机号查找
+        User user;
+        if (userByUsername.isPresent()) {
+            user = userByUsername.get();
+            System.out.println("通过用户名找到用户: " + user.getUsername());
+        } else {
+            // 尝试通过手机号查找
+            Optional<User> userByPhone = userRepository.findByPhone(usernameOrPhone);
+            if (userByPhone.isPresent()) {
+                user = userByPhone.get();
+                System.out.println("通过手机号找到用户: " + user.getUsername());
+            } else {
+                System.out.println("未找到用户: " + usernameOrPhone);
+                throw new RuntimeException("用户不存在");
+            }
+        }
 
+        // 验证密码
         if (!passwordEncoder.matches(password, user.getPassword())) {
+            System.out.println("密码验证失败");
             throw new RuntimeException("密码错误");
         }
 
+        System.out.println("用户验证成功，生成token");
         // 生成JWT token
         String token = JwtUtil.generateToken(user.getUsername(), user.getRole().toString());
         return token;
@@ -87,6 +144,13 @@ public class UserServiceImpl implements UserService {
     @Override
     public User getUserByUsername(String username) {
         return userRepository.findByUsername(username)
+                .orElseThrow(() -> new RuntimeException("用户不存在"));
+    }
+
+    // 添加通过手机号获取用户的方法
+    @Override
+    public User getUserByPhone(String phone) {
+        return userRepository.findByPhone(phone)
                 .orElseThrow(() -> new RuntimeException("用户不存在"));
     }
 
@@ -142,14 +206,14 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllActiveStaff() {
-        return userRepository.findByRoleAndEnabledTrue(User.UserRole.cleaner);
+        return userRepository.findByRoleAndEnabledTrue(User.UserRole.CLEANER);
     }
 
     @Override
     public List<User> getAllStaff() {
         List<User> staff = new ArrayList<>();
-        staff.addAll(userRepository.findByRole(User.UserRole.cleaner));
-        staff.addAll(userRepository.findByRole(User.UserRole.receptionist));
+        staff.addAll(userRepository.findByRole(User.UserRole.CLEANER));
+        staff.addAll(userRepository.findByRole(User.UserRole.RECEPTIONIST));
         return staff;
     }
 
@@ -161,6 +225,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public long countAllUsers() {
         return userRepository.count();
+    }
+
+    @Override
+    public boolean existsByPhone(String phone) {
+        return userRepository.existsByPhone(phone);
     }
 
     @Override

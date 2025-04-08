@@ -25,7 +25,7 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setUsername("admin");
             adminUser.setPassword(passwordEncoder.encode("admin123"));
             adminUser.setName("系统管理员");
-            adminUser.setRole(User.UserRole.admin);
+            adminUser.setRole(User.UserRole.ADMIN);
             adminUser.setEnabled(true);
             adminUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(adminUser);
@@ -39,7 +39,7 @@ public class DataInitializer implements CommandLineRunner {
             frontUser.setUsername("front");
             frontUser.setPassword(passwordEncoder.encode("front123"));
             frontUser.setName("前台接待");
-            frontUser.setRole(User.UserRole.receptionist);
+            frontUser.setRole(User.UserRole.RECEPTIONIST);
             frontUser.setEnabled(true);
             frontUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(frontUser);
@@ -53,7 +53,7 @@ public class DataInitializer implements CommandLineRunner {
             cleanerUser.setUsername("cleaner");
             cleanerUser.setPassword(passwordEncoder.encode("cleaner123"));
             cleanerUser.setName("清洁人员");
-            cleanerUser.setRole(User.UserRole.cleaner);
+            cleanerUser.setRole(User.UserRole.CLEANER);
             cleanerUser.setEnabled(true);
             cleanerUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(cleanerUser);

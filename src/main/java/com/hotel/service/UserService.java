@@ -27,6 +27,11 @@ public interface UserService {
     User getUserByUsername(String username);
 
     /**
+     * 通过手机号获取用户信息
+     */
+    User getUserByPhone(String phone);
+
+    /**
      * 创建用户
      */
     User createUser(User user);
@@ -80,6 +85,11 @@ public interface UserService {
      * 统计所有用户数量
      */
     long countAllUsers();
+
+    /**
+     * 检查手机号是否已被注册
+     */
+    boolean existsByPhone(String phone);
 
     // 会员相关方法
     User updateMemberLevel(Long userId);

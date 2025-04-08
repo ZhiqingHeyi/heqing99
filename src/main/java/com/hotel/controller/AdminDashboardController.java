@@ -205,7 +205,7 @@ public class AdminDashboardController {
     @PostMapping("/staff")
     public ResponseEntity<?> createStaff(@RequestBody User staff) {
         try {
-            staff.setRole(User.UserRole.cleaner);
+            staff.setRole(User.UserRole.CLEANER);
             User savedStaff = userService.createUser(staff);
             return ResponseEntity.status(HttpStatus.CREATED).body(savedStaff);
         } catch (Exception e) {

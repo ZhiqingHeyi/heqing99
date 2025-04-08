@@ -17,43 +17,34 @@ public class UserController {
     @Autowired
     private UserService userService;
 
-    @PostMapping("/register")
-    public ResponseEntity<?> register(@RequestBody User user) {
-        try {
-            System.out.println("接收到用户注册请求: " + user.getUsername());
-            User registeredUser = userService.register(user);
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "注册成功");
-            response.put("userId", registeredUser.getId());
-            response.put("username", registeredUser.getUsername());
-            
-            System.out.println("用户注册成功, userId: " + registeredUser.getId());
-            return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("用户注册失败: " + e.getMessage());
-            e.printStackTrace();
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "注册失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
-        }
-    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
-            System.out.println("接收到用户登录请求: " + credentials.get("username"));
-            String token = userService.authenticate(
-                    credentials.get("username"),
-                    credentials.get("password")
-            );
+            String usernameOrPhone = credentials.get("username");
+            String password = credentials.get("password");
             
-            // 获取用户信息
-            User user = userService.getUserByUsername(credentials.get("username"));
+            System.out.println("接收到用户登录请求: " + usernameOrPhone);
             
+            // 验证用户凭证并获取token
+            String token = userService.authenticate(usernameOrPhone, password);
+            
+            // 获取用户信息 - 尝试通过用户名查找
+            User user = null;
+            try {
+                // 首先尝试用户名查找
+                user = userService.getUserByUsername(usernameOrPhone);
+            } catch (RuntimeException e) {
+                // 如果用户名查找失败，尝试手机号查找
+                try {
+                    user = userService.getUserByPhone(usernameOrPhone);
+                } catch (RuntimeException e2) {
+                    System.err.println("无法找到用户信息: " + e2.getMessage());
+                    throw new RuntimeException("用户验证成功但无法获取用户信息");
+                }
+            }
+            
+            // 构建响应
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("message", "登录成功");
@@ -63,7 +54,7 @@ public class UserController {
             response.put("name", user.getName());
             response.put("role", user.getRole().toString());
             
-            System.out.println("用户登录成功, userId: " + user.getId());
+            System.out.println("用户登录成功, userId: " + user.getId() + ", username: " + user.getUsername());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("用户登录失败: " + e.getMessage());

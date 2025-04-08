@@ -41,8 +41,13 @@ apiClient.interceptors.response.use(
         console.error('身份验证失败，请重新登录');
       }
       
+      // 处理500服务器错误
+      if (error.response.status === 500) {
+        console.error('服务器内部错误:', error.response.data);
+      }
+      
       // 将错误信息放在error对象上，方便调用者处理
-      error.message = error.response.data.message || '请求失败';
+      error.message = error.response.data.message || error.response.data || '请求失败';
       error.statusCode = error.response.status;
     } else if (error.request) {
       // 请求发送了但没有收到响应
@@ -65,11 +70,27 @@ export const userApi = {
     return apiClient.post('/users/register', userData)
       .then(response => {
         console.log('注册API响应:', response)
+        // 确保处理后端返回的成功/失败信息
+        if (response && response.success === false) {
+          // 显式的失败响应
+          throw new Error(response.message || '注册失败，请稍后重试')
+        }
         return response
       })
       .catch(error => {
         console.error('注册API错误:', error)
-        throw error
+        // 处理不同类型的错误
+        if (error.response) {
+          // 服务器返回了错误状态码
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          // 请求发送了但没有收到响应
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          // 请求设置出错
+          throw error
+        }
       })
   },
   

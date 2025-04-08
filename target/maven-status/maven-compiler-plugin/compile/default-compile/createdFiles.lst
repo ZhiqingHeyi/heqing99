@@ -29,6 +29,7 @@ com\hotel\controller\RoomController$9.class
 com\hotel\entity\User.class
 com\hotel\controller\RoomController$2.class
 com\hotel\service\PointsExchangeService.class
+com\hotel\controller\WebController.class
 com\hotel\HotelManagementApplication.class
 com\hotel\repository\RoomRepository.class
 com\hotel\service\impl\PointsExchangeRecordServiceImpl.class
@@ -46,6 +47,7 @@ com\hotel\service\ReservationService.class
 com\hotel\config\ErrorConfig.class
 com\hotel\config\WebMvcConfig.class
 com\hotel\controller\RoomController$3.class
+com\hotel\controller\MemberRegisterController.class
 com\hotel\entity\CheckInRecord$DepositStatus.class
 com\hotel\dto\MembershipDTO.class
 com\hotel\service\impl\VisitorRecordServiceImpl.class

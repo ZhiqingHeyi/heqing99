@@ -99,9 +99,9 @@ public class User {
 
     public enum UserRole {
         SUPER_ADMIN, // 超级管理员
-        admin,      // 管理员
-        receptionist,      // 前台
-        cleaner,    // 清洁人员
+        ADMIN,      // 管理员 (原admin)
+        RECEPTIONIST,      // 前台 (原receptionist)
+        CLEANER,    // 清洁人员 (原cleaner)
         CUSTOMER    // 普通用户
     }
     
