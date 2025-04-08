@@ -95,16 +95,70 @@ export const userApi = {
   },
   
   // 用户登录
-  login: (credentials) => apiClient.post('/users/login', credentials),
+  login: (credentials) => {
+    console.log('调用登录API:', credentials)
+    return apiClient.post('/users/login', credentials)
+      .then(response => {
+        console.log('登录API响应:', response)
+        // 确保处理后端返回的成功/失败信息
+        if (response && response.success === false) {
+          // 显式的失败响应
+          throw new Error(response.message || '登录失败，请稍后重试')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('登录API错误:', error)
+        // 处理不同类型的错误
+        if (error.response) {
+          // 服务器返回了错误状态码
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          // 请求发送了但没有收到响应
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          // 请求设置出错
+          throw error
+        }
+      })
+  },
   
   // 获取用户信息
-  getUserInfo: (userId) => apiClient.get(`/users/${userId}`),
+  getUserInfo: (userId) => {
+    console.log('调用获取用户信息API:', userId)
+    return apiClient.get(`/users/${userId}`)
+      .then(response => {
+        console.log('获取用户信息API响应:', response)
+        if (response && response.success === false) {
+          throw new Error(response.message || '获取用户信息失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取用户信息API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
   
   // 更新用户信息
   updateUserInfo: (userId, userData) => apiClient.put(`/users/${userId}`, userData),
   
   // 修改密码
-  changePassword: (userId, passwordData) => apiClient.put(`/users/${userId}/password`, passwordData)
+  changePassword: (userId, passwordData) => apiClient.put(`/users/${userId}/password`, passwordData),
+
+  // 刷新Token
+  refreshToken: (refreshData) => apiClient.post('/users/refresh-token', refreshData),
+
+  // 退出登录
+  logout: (token) => apiClient.post('/users/logout', { token })
 };
 
 // 会员相关API
@@ -165,4 +219,4 @@ export const roomApi = {
 };
 
 // 导出API客户端，方便直接使用
-export default apiClient; 
+export default apiClient;

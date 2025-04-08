@@ -122,9 +122,21 @@ const handleLogin = async () => {
           localStorage.setItem('userName', loginForm.username);
           localStorage.setItem('userId', response.userId || '');
           
-          // 获取会员信息
+          // 获取用户详细信息
           try {
             if (response.userId) {
+              const userInfo = await userApi.getUserInfo(response.userId);
+              
+              // 保存用户个人信息
+              if (userInfo && userInfo.data) {
+                localStorage.setItem('userRealName', userInfo.data.realName || '');
+                localStorage.setItem('userPhone', userInfo.data.phone || '');
+                localStorage.setItem('userEmail', userInfo.data.email || '');
+                localStorage.setItem('userBirthday', userInfo.data.birthday || '');
+                localStorage.setItem('userGender', userInfo.data.gender || '');
+              }
+              
+              // 获取会员信息
               const memberInfo = await membershipApi.getMemberInfo(response.userId);
               
               // 保存会员信息
@@ -137,9 +149,9 @@ const handleLogin = async () => {
               localStorage.setItem('userPoints', '0');
               localStorage.setItem('userTotalSpent', '0');
             }
-          } catch (memberError) {
-            console.error('获取会员信息失败:', memberError);
-            // 如果获取会员信息失败，设置默认值
+          } catch (error) {
+            console.error('获取用户信息失败:', error);
+            // 如果获取用户信息失败，设置默认值
             localStorage.setItem('userLevel', '普通用户');
             localStorage.setItem('userPoints', '0');
             localStorage.setItem('userTotalSpent', '0');

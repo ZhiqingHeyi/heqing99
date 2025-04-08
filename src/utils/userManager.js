@@ -1,6 +1,6 @@
 import { reactive } from 'vue'
 import mitt from 'mitt'
-import { userApi, membershipApi } from '@/api/index'
+import { userApi, membershipApi } from '../api'
 
 // 使用mitt创建事件总线
 export const UserEventBus = mitt()
@@ -41,6 +41,75 @@ class UserManagerClass {
     }
     
     UserManagerClass.instance = this
+
+    // 初始化定时刷新
+    this.refreshInterval = null;
+    this.startAutoRefresh();
+  }
+
+  // 开始自动刷新
+  startAutoRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+    }
+    // 每5分钟刷新一次用户数据
+    this.refreshInterval = setInterval(() => {
+      if (userState.isAuthenticated) {
+        this.fetchUserData().catch(console.error);
+      }
+    }, 5 * 60 * 1000);
+  }
+
+  // 停止自动刷新
+  stopAutoRefresh() {
+    if (this.refreshInterval) {
+      clearInterval(this.refreshInterval);
+      this.refreshInterval = null;
+    }
+  }
+
+  // 检查数据一致性
+  async checkDataConsistency() {
+    if (!userState.isAuthenticated || !userState.userData.id) {
+      return;
+    }
+
+    try {
+      const memberInfo = await membershipApi.getMemberInfo(userState.userData.id);
+      
+      if (memberInfo && memberInfo.data) {
+        const serverData = memberInfo.data;
+        const localData = {
+          level: localStorage.getItem('userLevel'),
+          points: parseInt(localStorage.getItem('userPoints') || '0'),
+          totalSpent: parseFloat(localStorage.getItem('userTotalSpent') || '0')
+        };
+
+        // 检查数据是否一致
+        if (serverData.memberLevel !== localData.level ||
+            serverData.points !== localData.points ||
+            Math.abs(serverData.totalSpent - localData.totalSpent) > 0.01) {
+          
+          // 数据不一致，更新本地存储
+          localStorage.setItem('userLevel', serverData.memberLevel);
+          localStorage.setItem('userPoints', String(serverData.points));
+          localStorage.setItem('userTotalSpent', String(serverData.totalSpent));
+
+          // 更新状态
+          Object.assign(userState.userData, {
+            level: serverData.memberLevel,
+            points: serverData.points,
+            totalSpent: serverData.totalSpent
+          });
+
+          // 触发数据更新事件
+          UserEventBus.emit('userDataUpdated', userState.userData);
+        }
+      }
+    } catch (error) {
+      console.error('检查数据一致性失败:', error);
+      UserEventBus.emit('userDataError', error.message);
+    }
   }
 
   // 初始化用户状态
@@ -99,6 +168,21 @@ class UserManagerClass {
     return userState
   }
   
+  // 获取用户数据
+  async getUserData() {
+    if (!userState.isAuthenticated || !userState.userData.id) {
+      throw new Error('用户未登录');
+    }
+
+    try {
+      await this.fetchUserData();
+      return userState.userData;
+    } catch (error) {
+      console.error('获取用户数据失败:', error);
+      throw error;
+    }
+  }
+
   // 获取用户详细信息
   async fetchUserData() {
     if (!userState.isAuthenticated || !userState.userData.id) {
@@ -112,8 +196,9 @@ class UserManagerClass {
       // 调用API获取用户基本信息
       const userResponse = await userApi.getUserInfo(userState.userData.id)
       
-      if (!userResponse || !userResponse.success) {
-        throw new Error(userResponse?.message || '获取用户信息失败')
+      // 直接使用API返回的数据，因为响应拦截器已经处理了数据结构
+      if (!userResponse) {
+        throw new Error('获取用户信息失败')
       }
       
       // 更新用户基本信息
@@ -124,16 +209,29 @@ class UserManagerClass {
       
       if (membershipResponse && membershipResponse.success) {
         // 更新会员相关信息
+        const memberData = membershipResponse.data;
+        
+        // 更新本地存储
+        localStorage.setItem('userLevel', memberData.memberLevel);
+        localStorage.setItem('userPoints', String(memberData.points));
+        localStorage.setItem('userTotalSpent', String(memberData.totalSpent));
+        
+        // 更新状态
         Object.assign(userState.userData, {
-          level: membershipResponse.data.level,
-          points: membershipResponse.data.points,
-          totalSpent: membershipResponse.data.totalSpent,
-          joinDate: membershipResponse.data.joinDate
-        })
+          level: memberData.memberLevel,
+          points: memberData.points,
+          totalSpent: memberData.totalSpent,
+          joinDate: memberData.joinDate
+        });
+
+        // 更新本地存储
+        localStorage.setItem('userLevel', memberData.memberLevel);
+        localStorage.setItem('userPoints', String(memberData.points));
+        localStorage.setItem('userTotalSpent', String(memberData.totalSpent));
       }
       
       // 触发用户数据更新事件
-      UserEventBus.$emit('userDataUpdated', userState.userData)
+      UserEventBus.emit('userDataUpdated', userState.userData)
       
       return userState.userData
     } catch (error) {
@@ -141,7 +239,7 @@ class UserManagerClass {
       userState.error = error.message || '获取用户数据失败'
       
       // 触发用户数据错误事件
-      UserEventBus.$emit('userDataError', userState.error)
+      UserEventBus.emit('userDataError', userState.error)
       throw error
     } finally {
       userState.isLoading = false
@@ -169,7 +267,7 @@ class UserManagerClass {
       Object.assign(userState.userData, userData)
       
       // 触发用户数据更新事件
-      UserEventBus.$emit('userDataUpdated', userState.userData)
+      UserEventBus.emit('userDataUpdated', userState.userData)
       
       return true
     } catch (error) {
@@ -177,7 +275,7 @@ class UserManagerClass {
       userState.error = error.message || '更新用户信息失败'
       
       // 触发用户数据错误事件
-      UserEventBus.$emit('userDataError', userState.error)
+      UserEventBus.emit('userDataError', userState.error)
       throw error
     } finally {
       userState.isLoading = false
@@ -291,11 +389,17 @@ class UserManagerClass {
   
   // 清除用户状态
   clearUserState() {
+    // 停止自动刷新
+    this.stopAutoRefresh();
+
     // 清除本地存储
     localStorage.removeItem('userToken')
     localStorage.removeItem('userRefreshToken')
     localStorage.removeItem('tokenExpiresAt')
     localStorage.removeItem('userId')
+    localStorage.removeItem('userLevel')
+    localStorage.removeItem('userPoints')
+    localStorage.removeItem('userTotalSpent')
     
     // 重置状态
     userState.isAuthenticated = false
@@ -321,7 +425,7 @@ class UserManagerClass {
     })
     
     // 触发用户退出事件
-    UserEventBus.$emit('userLoggedOut')
+    UserEventBus.emit('userLoggedOut')
   }
   
   // 检查token是否过期
@@ -367,10 +471,137 @@ class UserManagerClass {
       return false
     }
   }
+
+  // 处理会员等级变更
+  async handleMemberLevelChange(oldLevel, newLevel, reason) {
+    if (!userState.isAuthenticated || !userState.userData.id) {
+      throw new Error('用户未登录或ID无效');
+    }
+
+    try {
+      // 调用后端API记录等级变更
+      const response = await membershipApi.createLevelChangeRecord({
+        userId: userState.userData.id,
+        oldLevel,
+        newLevel,
+        reason
+      });
+
+      if (!response || !response.success) {
+        throw new Error(response?.message || '记录会员等级变更失败');
+      }
+
+      // 更新本地状态
+      userState.userData.level = newLevel;
+      localStorage.setItem('userLevel', newLevel);
+
+      // 触发等级变更事件
+      UserEventBus.emit('memberLevelChanged', {
+        oldLevel,
+        newLevel,
+        reason
+      });
+
+      return true;
+    } catch (error) {
+      console.error('处理会员等级变更时出错:', error);
+      userState.error = error.message;
+      UserEventBus.$emit('userDataError', error.message);
+      throw error;
+    }
+  }
+
+  // 获取会员等级变更历史
+  async getMemberLevelChangeHistory(page = 1, size = 10) {
+    if (!userState.isAuthenticated || !userState.userData.id) {
+      throw new Error('用户未登录或ID无效');
+    }
+
+    try {
+      const response = await membershipApi.getLevelChangeHistory(
+        userState.userData.id,
+        page,
+        size
+      );
+
+      if (!response || !response.success) {
+        throw new Error(response?.message || '获取会员等级变更历史失败');
+      }
+
+      return response.data;
+    } catch (error) {
+      console.error('获取会员等级变更历史时出错:', error);
+      userState.error = error.message;
+      UserEventBus.$emit('userDataError', error.message);
+      throw error;
+    }
+  }
+
+  // 优化错误处理
+  handleError(error, operation) {
+    console.error(`${operation}时出错:`, error);
+    
+    // 设置错误状态
+    userState.error = error.message || `${operation}失败`;
+    
+    // 检查是否是认证相关错误
+    if (error.status === 401 || error.status === 403) {
+      this.clearUserState();
+      UserEventBus.$emit('authenticationError', error.message);
+      return;
+    }
+    
+    // 触发错误事件
+    UserEventBus.$emit('userDataError', {
+      operation,
+      message: error.message,
+      timestamp: new Date()
+    });
+    
+    // 如果是网络错误，标记需要重新同步
+    if (error.name === 'NetworkError') {
+      userState.needsSync = true;
+    }
+  }
+
+  // 检查并处理会员升级
+  async checkAndHandleMemberUpgrade() {
+    if (!userState.isAuthenticated || !userState.userData.id) {
+      return;
+    }
+
+    try {
+      const currentLevel = userState.userData.level;
+      const totalSpent = userState.userData.totalSpent;
+      
+      // 根据消费金额计算应该的等级
+      let newLevel = currentLevel;
+      if (totalSpent >= 30000) {
+        newLevel = '钻石会员';
+      } else if (totalSpent >= 10000) {
+        newLevel = '金牌会员';
+      } else if (totalSpent >= 5000) {
+        newLevel = '银牌会员';
+      } else if (totalSpent >= 1500) {
+        newLevel = '铜牌会员';
+      }
+
+      // 如果等级需要变更
+      if (newLevel !== currentLevel) {
+        await this.handleMemberLevelChange(
+          currentLevel,
+          newLevel,
+          `累计消费达到${totalSpent}元自动升级`
+        );
+      }
+    } catch (error) {
+      this.handleError(error, '检查会员升级');
+    }
+  }
 }
 
 // 创建单例实例
 export const UserManager = new UserManagerClass()
 
 // 默认导出
-export default UserManager 
+export default UserManager

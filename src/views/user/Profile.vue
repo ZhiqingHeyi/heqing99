@@ -264,17 +264,24 @@ const userInfo = reactive({
 })
 
 // 计算下一个等级需要的消费金额
-if (userInfo.level === '普通用户') {
-  userInfo.nextLevel = '铜牌会员（再消费¥' + (1500 - userInfo.totalSpent) + '）'
-} else if (userInfo.level === '铜牌会员') {
-  userInfo.nextLevel = '银牌会员（再消费¥' + (5000 - userInfo.totalSpent) + '）'
-} else if (userInfo.level === '银牌会员') {
-  userInfo.nextLevel = '金牌会员（再消费¥' + (10000 - userInfo.totalSpent) + '）'
-} else if (userInfo.level === '金牌会员') {
-  userInfo.nextLevel = '钻石会员（再消费¥' + (30000 - userInfo.totalSpent) + '）'
-} else {
-  userInfo.nextLevel = '已是最高等级'
+const updateNextLevel = () => {
+  if (userInfo.level === '普通用户') {
+    userInfo.nextLevel = '铜牌会员（再消费¥' + (1500 - userInfo.totalSpent) + '）'
+  } else if (userInfo.level === '铜牌会员') {
+    userInfo.nextLevel = '银牌会员（再消费¥' + (5000 - userInfo.totalSpent) + '）'
+  } else if (userInfo.level === '银牌会员') {
+    userInfo.nextLevel = '金牌会员（再消费¥' + (10000 - userInfo.totalSpent) + '）'
+  } else if (userInfo.level === '金牌会员') {
+    userInfo.nextLevel = '钻石会员（再消费¥' + (30000 - userInfo.totalSpent) + '）'
+  } else {
+    userInfo.nextLevel = '已是最高等级'
+  }
 }
+
+// 监听 totalSpent 的变化，更新 nextLevel
+watch(() => userInfo.totalSpent, () => {
+  updateNextLevel()
+})
 
 // 用户表单
 const userForm = reactive({
@@ -444,12 +451,43 @@ const goToBooking = () => {
 
 // 保存用户信息
 const saveUserInfo = async () => {
-  ElMessage.success('个人信息保存成功')
-  isEditing.value = false
-  
-  // 更新显示的用户名
-  userInfo.userName = userForm.userName
-  localStorage.setItem('userName', userForm.userName)
+  try {
+    // 调用API保存用户信息
+    const response = await userApi.updateUserInfo({
+      userName: userForm.userName,
+      realName: userForm.realName,
+      phone: userForm.phone,
+      email: userForm.email,
+      birthday: userForm.birthday,
+      gender: userForm.gender
+    })
+    
+    if (response.success) {
+      ElMessage.success('个人信息保存成功')
+      isEditing.value = false
+      
+      // 更新显示的用户名
+      userInfo.userName = userForm.userName
+      localStorage.setItem('userName', userForm.userName)
+      
+      // 重新获取会员信息
+      const memberInfo = await membershipApi.getMemberInfo(localStorage.getItem('userId'))
+      if (memberInfo && memberInfo.data) {
+        userInfo.level = memberInfo.data.memberLevel
+        userInfo.points = memberInfo.data.points
+        userInfo.totalSpent = memberInfo.data.totalSpent
+        localStorage.setItem('userLevel', memberInfo.data.memberLevel)
+        localStorage.setItem('userPoints', String(memberInfo.data.points))
+        localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent))
+        updateNextLevel()
+      }
+    } else {
+      ElMessage.error(response.message || '保存失败')
+    }
+  } catch (error) {
+    console.error('保存用户信息失败:', error)
+    ElMessage.error('保存失败：' + error.message)
+  }
 }
 
 // 修改密码
@@ -628,19 +666,44 @@ const getMemberBenefits = () => {
   ]
 }
 
-onMounted(() => {
+onMounted(async () => {
   // 加载用户数据
   console.log('Profile组件已挂载')
   console.log('当前用户信息:', userInfo)
   
   // 确保用户已登录
-  if (!localStorage.getItem('userToken')) {
+  const userId = localStorage.getItem('userId')
+  if (!userId) {
     console.warn('用户未登录，但访问了个人中心')
-    localStorage.setItem('userToken', 'debug-token')
-    localStorage.setItem('userName', userInfo.userName)
-    localStorage.setItem('userLevel', userInfo.level)
-    localStorage.setItem('userPoints', userInfo.points.toString())
-    localStorage.setItem('userTotalSpent', userInfo.totalSpent.toString())
+    router.push('/login')
+    return
+  }
+  
+  try {
+    // 获取用户基本信息
+    const userResponse = await userApi.getUserInfo(userId)
+    if (userResponse && userResponse.data) {
+      userForm.realName = userResponse.data.realName || ''
+      userForm.phone = userResponse.data.phone || ''
+      userForm.email = userResponse.data.email || ''
+      userForm.birthday = userResponse.data.birthday || ''
+      userForm.gender = userResponse.data.gender || ''
+    }
+    
+    // 获取会员信息
+    const memberInfo = await membershipApi.getMemberInfo(userId)
+    if (memberInfo && memberInfo.data) {
+      userInfo.level = memberInfo.data.memberLevel
+      userInfo.points = memberInfo.data.points
+      userInfo.totalSpent = memberInfo.data.totalSpent
+      localStorage.setItem('userLevel', memberInfo.data.memberLevel)
+      localStorage.setItem('userPoints', String(memberInfo.data.points))
+      localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent))
+      updateNextLevel()
+    }
+  } catch (error) {
+    console.error('获取用户数据失败:', error)
+    ElMessage.error('获取用户数据失败：' + error.message)
   }
   
   // 确保路由配置和组件渲染正常
