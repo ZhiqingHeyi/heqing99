@@ -1,0 +1,352 @@
+package com.hotel.controller;
+
+import com.hotel.entity.ConsumptionRecord;
+import com.hotel.entity.MemberLevel;
+import com.hotel.entity.User;
+import com.hotel.service.ConsumptionRecordService;
+import com.hotel.service.PointsExchangeRecordService;
+import com.hotel.service.UserService;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.format.annotation.DateTimeFormat;
+import org.springframework.http.ResponseEntity;
+import org.springframework.web.bind.annotation.*;
+
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
+import java.util.*;
+import java.util.stream.Collectors;
+
+/**
+ * 会员统计分析控制器
+ */
+@RestController
+@RequestMapping("/api/member-stats")
+public class MemberStatsController {
+
+    @Autowired
+    private UserService userService;
+
+    @Autowired
+    private ConsumptionRecordService consumptionRecordService;
+    
+    @Autowired
+    private PointsExchangeRecordService pointsExchangeRecordService;
+
+    /**
+     * 获取会员等级分布情况
+     */
+    @GetMapping("/level-distribution")
+    public ResponseEntity<?> getMemberLevelDistribution() {
+        try {
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 获取所有会员
+            List<User> allUsers = userService.getAllUsers().stream()
+                    .filter(user -> user.getRole() == User.UserRole.CUSTOMER)
+                    .collect(Collectors.toList());
+            
+            stats.put("totalMembers", allUsers.size());
+            
+            // 按会员等级分组
+            Map<MemberLevel, List<User>> usersByLevel = allUsers.stream()
+                    .collect(Collectors.groupingBy(User::getMemberLevel));
+            
+            Map<String, Object> levelCounts = new HashMap<>();
+            for (MemberLevel level : MemberLevel.values()) {
+                List<User> usersInLevel = usersByLevel.getOrDefault(level, Collections.emptyList());
+                levelCounts.put(level.name(), usersInLevel.size());
+                levelCounts.put(level.name() + "_percent", 
+                        allUsers.isEmpty() ? 0 : (double) usersInLevel.size() / allUsers.size() * 100);
+            }
+            
+            stats.put("levelDistribution", levelCounts);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取会员等级分布失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 获取会员消费统计
+     */
+    @GetMapping("/consumption")
+    public ResponseEntity<?> getMemberConsumptionStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+            // 设置默认时间范围为过去30天
+            if (startDate == null) {
+                startDate = LocalDate.now().minusDays(30);
+            }
+            if (endDate == null) {
+                endDate = LocalDate.now();
+            }
+            
+            LocalDateTime start = startDate.atStartOfDay();
+            LocalDateTime end = endDate.atTime(LocalTime.MAX);
+            
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 获取所有会员
+            List<User> allUsers = userService.getAllUsers().stream()
+                    .filter(user -> user.getRole() == User.UserRole.CUSTOMER)
+                    .collect(Collectors.toList());
+            
+            // 计算消费总额
+            BigDecimal totalConsumption = BigDecimal.ZERO;
+            BigDecimal totalDiscountedAmount = BigDecimal.ZERO;
+            int totalPoints = 0;
+            Map<String, BigDecimal> consumptionByType = new HashMap<>();
+            
+            for (User user : allUsers) {
+                List<ConsumptionRecord> records = consumptionRecordService
+                        .getConsumptionRecordsByUserAndTimeRange(user, start, end);
+                
+                for (ConsumptionRecord record : records) {
+                    totalConsumption = totalConsumption.add(record.getAmount());
+                    totalDiscountedAmount = totalDiscountedAmount.add(record.getDiscountedAmount());
+                    totalPoints += record.getPointsEarned();
+                    
+                    String type = record.getType();
+                    BigDecimal typeAmount = consumptionByType.getOrDefault(type, BigDecimal.ZERO);
+                    consumptionByType.put(type, typeAmount.add(record.getAmount()));
+                }
+            }
+            
+            stats.put("totalConsumption", totalConsumption);
+            stats.put("totalDiscountedAmount", totalDiscountedAmount);
+            stats.put("totalDiscount", totalConsumption.subtract(totalDiscountedAmount));
+            stats.put("totalPointsEarned", totalPoints);
+            
+            // 格式化消费类型数据
+            stats.put("consumptionByType", consumptionByType);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取会员消费统计失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 获取会员消费趋势（按月）
+     */
+    @GetMapping("/consumption-trend")
+    public ResponseEntity<?> getMemberConsumptionTrend(
+            @RequestParam(required = false) Integer months) {
+        try {
+            // 默认获取过去12个月的数据
+            if (months == null || months <= 0) {
+                months = 12;
+            }
+            
+            Map<String, Object> stats = new HashMap<>();
+            List<Map<String, Object>> monthlyData = new ArrayList<>();
+            
+            // 计算每个月的消费总额
+            for (int i = months - 1; i >= 0; i--) {
+                LocalDate monthStart = LocalDate.now().minusMonths(i).withDayOfMonth(1);
+                LocalDate monthEnd = monthStart.plusMonths(1).minusDays(1);
+                
+                LocalDateTime start = monthStart.atStartOfDay();
+                LocalDateTime end = monthEnd.atTime(LocalTime.MAX);
+                
+                BigDecimal totalAmount = BigDecimal.ZERO;
+                BigDecimal totalDiscountedAmount = BigDecimal.ZERO;
+                int totalPoints = 0;
+                
+                // 获取所有会员
+                List<User> allUsers = userService.getAllUsers().stream()
+                        .filter(user -> user.getRole() == User.UserRole.CUSTOMER)
+                        .collect(Collectors.toList());
+                
+                for (User user : allUsers) {
+                    List<ConsumptionRecord> records = consumptionRecordService
+                            .getConsumptionRecordsByUserAndTimeRange(user, start, end);
+                    
+                    for (ConsumptionRecord record : records) {
+                        totalAmount = totalAmount.add(record.getAmount());
+                        totalDiscountedAmount = totalDiscountedAmount.add(record.getDiscountedAmount());
+                        totalPoints += record.getPointsEarned();
+                    }
+                }
+                
+                Map<String, Object> monthData = new HashMap<>();
+                monthData.put("month", monthStart.getYear() + "-" + String.format("%02d", monthStart.getMonthValue()));
+                monthData.put("totalAmount", totalAmount);
+                monthData.put("totalDiscountedAmount", totalDiscountedAmount);
+                monthData.put("totalPoints", totalPoints);
+                
+                monthlyData.add(monthData);
+            }
+            
+            stats.put("monthlyTrend", monthlyData);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取会员消费趋势失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 获取积分兑换统计
+     */
+    @GetMapping("/points-exchange")
+    public ResponseEntity<?> getPointsExchangeStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+            // 设置默认时间范围为过去30天
+            if (startDate == null) {
+                startDate = LocalDate.now().minusDays(30);
+            }
+            if (endDate == null) {
+                endDate = LocalDate.now();
+            }
+            
+            LocalDateTime start = startDate.atStartOfDay();
+            LocalDateTime end = endDate.atTime(LocalTime.MAX);
+            
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 获取所有会员
+            List<User> allUsers = userService.getAllUsers().stream()
+                    .filter(user -> user.getRole() == User.UserRole.CUSTOMER)
+                    .collect(Collectors.toList());
+            
+            int totalPointsExchanged = 0;
+            BigDecimal totalCashValue = BigDecimal.ZERO;
+            Map<String, Integer> exchangeByType = new HashMap<>();
+            Map<String, Integer> exchangeByStatus = new HashMap<>();
+            
+            for (User user : allUsers) {
+                List<com.hotel.entity.PointsExchangeRecord> records = pointsExchangeRecordService
+                        .getExchangeRecordsByUserAndTimeRange(user, start, end);
+                
+                for (com.hotel.entity.PointsExchangeRecord record : records) {
+                    totalPointsExchanged += record.getPointsUsed();
+                    totalCashValue = totalCashValue.add(record.getCashValue());
+                    
+                    // 按兑换类型统计
+                    String type = record.getExchangeType().name();
+                    exchangeByType.put(type, exchangeByType.getOrDefault(type, 0) + record.getPointsUsed());
+                    
+                    // 按状态统计
+                    String status = record.getStatus().name();
+                    exchangeByStatus.put(status, exchangeByStatus.getOrDefault(status, 0) + 1);
+                }
+            }
+            
+            stats.put("totalPointsExchanged", totalPointsExchanged);
+            stats.put("totalCashValue", totalCashValue);
+            stats.put("exchangeByType", exchangeByType);
+            stats.put("exchangeByStatus", exchangeByStatus);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取积分兑换统计失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 获取会员活跃度统计
+     */
+    @GetMapping("/member-activity")
+    public ResponseEntity<?> getMemberActivityStats(
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE) LocalDate endDate) {
+        try {
+            // 设置默认时间范围为过去90天
+            if (startDate == null) {
+                startDate = LocalDate.now().minusDays(90);
+            }
+            if (endDate == null) {
+                endDate = LocalDate.now();
+            }
+            
+            LocalDateTime start = startDate.atStartOfDay();
+            LocalDateTime end = endDate.atTime(LocalTime.MAX);
+            
+            Map<String, Object> stats = new HashMap<>();
+            
+            // 获取所有会员
+            List<User> allUsers = userService.getAllUsers().stream()
+                    .filter(user -> user.getRole() == User.UserRole.CUSTOMER)
+                    .collect(Collectors.toList());
+            
+            int totalActiveMembers = 0;
+            Map<MemberLevel, Integer> activeByLevel = new HashMap<>();
+            List<Map<String, Object>> topSpenders = new ArrayList<>();
+            
+            for (User user : allUsers) {
+                List<ConsumptionRecord> records = consumptionRecordService
+                        .getConsumptionRecordsByUserAndTimeRange(user, start, end);
+                
+                if (!records.isEmpty()) {
+                    totalActiveMembers++;
+                    
+                    // 按等级统计活跃会员
+                    MemberLevel level = user.getMemberLevel();
+                    activeByLevel.put(level, activeByLevel.getOrDefault(level, 0) + 1);
+                    
+                    // 统计消费金额
+                    BigDecimal totalSpent = BigDecimal.ZERO;
+                    for (ConsumptionRecord record : records) {
+                        totalSpent = totalSpent.add(record.getAmount());
+                    }
+                    
+                    // 添加到高消费会员列表
+                    Map<String, Object> memberSpending = new HashMap<>();
+                    memberSpending.put("userId", user.getId());
+                    memberSpending.put("username", user.getUsername());
+                    memberSpending.put("name", user.getName());
+                    memberSpending.put("memberLevel", user.getMemberLevel().name());
+                    memberSpending.put("totalSpent", totalSpent);
+                    memberSpending.put("consumptionCount", records.size());
+                    
+                    topSpenders.add(memberSpending);
+                }
+            }
+            
+            // 格式化活跃会员数据
+            Map<String, Integer> activeByLevelFormatted = new HashMap<>();
+            for (Map.Entry<MemberLevel, Integer> entry : activeByLevel.entrySet()) {
+                activeByLevelFormatted.put(entry.getKey().name(), entry.getValue());
+            }
+            
+            // 排序获取前10名高消费会员
+            topSpenders.sort((a, b) -> ((BigDecimal) b.get("totalSpent"))
+                    .compareTo((BigDecimal) a.get("totalSpent")));
+            if (topSpenders.size() > 10) {
+                topSpenders = topSpenders.subList(0, 10);
+            }
+            
+            stats.put("totalMembers", allUsers.size());
+            stats.put("totalActiveMembers", totalActiveMembers);
+            stats.put("activityRate", allUsers.isEmpty() ? 0 : (double) totalActiveMembers / allUsers.size() * 100);
+            stats.put("activeByLevel", activeByLevelFormatted);
+            stats.put("topSpenders", topSpenders);
+            
+            return ResponseEntity.ok(stats);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取会员活跃度统计失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+} 

@@ -180,6 +180,7 @@ router.beforeEach((to, from, next) => {
   if (to.meta.requiresAuth && !isUserLoggedIn) {
     console.log('需要用户登录，重定向到登录页')
     
+    /* 注释掉调试代码
     // 为了调试，模拟一个登录状态
     if (to.path === '/user') {
       console.log('调试模式：设置临时用户登录状态')
@@ -191,6 +192,7 @@ router.beforeEach((to, from, next) => {
       next()
       return
     }
+    */
     
     next({
       path: '/login',
