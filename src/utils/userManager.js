@@ -249,36 +249,31 @@ class UserManagerClass {
   // 更新用户信息
   async updateUserInfo(userData) {
     if (!userState.isAuthenticated || !userState.userData.id) {
-      throw new Error('用户未登录或ID无效')
+      throw new Error('用户未登录');
     }
-    
-    userState.isLoading = true
-    userState.error = null
-    
+
     try {
       // 调用API更新用户信息
-      const response = await userApi.updateUserInfo(userState.userData.id, userData)
-      
-      if (!response || !response.success) {
-        throw new Error(response?.message || '更新用户信息失败')
+      const response = await userApi.updateUserInfo(userState.userData.id, {
+        realName: userData.realName,
+        phone: userData.phone,
+        email: userData.email,
+        birthday: userData.birthday,
+        gender: userData.gender
+      });
+
+      if (response && response.data) {
+        // 更新本地状态
+        Object.assign(userState.userData, response.data);
+        // 触发数据更新事件
+        UserEventBus.emit('userDataUpdated', userState.userData);
+        return response.data;
       }
-      
-      // 更新本地状态
-      Object.assign(userState.userData, userData)
-      
-      // 触发用户数据更新事件
-      UserEventBus.emit('userDataUpdated', userState.userData)
-      
-      return true
+
+      throw new Error('更新用户信息失败');
     } catch (error) {
-      console.error('更新用户信息时出错:', error)
-      userState.error = error.message || '更新用户信息失败'
-      
-      // 触发用户数据错误事件
-      UserEventBus.emit('userDataError', userState.error)
-      throw error
-    } finally {
-      userState.isLoading = false
+      console.error('更新用户信息失败:', error);
+      throw error;
     }
   }
   

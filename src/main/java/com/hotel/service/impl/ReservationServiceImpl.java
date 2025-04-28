@@ -176,6 +176,17 @@ public class ReservationServiceImpl implements ReservationService {
         return reservationRepository.findByStatus(Reservation.ReservationStatus.CHECKED_IN);
     }
 
+    @Override
+    public boolean hasRoomReservations(Long roomId) {
+        Optional<Room> roomOpt = roomRepository.findById(roomId);
+        if (!roomOpt.isPresent()) {
+            return false;
+        }
+        Room room = roomOpt.get();
+        List<Reservation> reservations = reservationRepository.findByRoom(room);
+        return !reservations.isEmpty();
+    }
+
     private boolean hasTimeConflict(Reservation newReservation) {
         List<Reservation> existingReservations = reservationRepository.findByRoom(newReservation.getRoom());
 

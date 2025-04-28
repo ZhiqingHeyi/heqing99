@@ -1,8 +1,5 @@
 <template>
   <div class="room-status-preview">
-    <!-- 组件状态指示 -->
-    <div class="status-indicator">组件已成功加载</div>
-    
     <!-- 顶部控制栏 -->
     <div class="preview-header">
       <div class="header-left">
@@ -340,154 +337,220 @@ const floors = ['1', '2', '3', '4', '5']
 
 // 房型列表
 const roomTypes = [
-  { value: 'all', label: '全部房型' },
-  { value: 'STA', label: '标准单人间' },
-  { value: 'STW', label: '标准双人间' },
-  { value: 'DEL', label: '豪华大床房' },
-  { value: 'EXE', label: '行政套房' },
-  { value: 'PRE', label: '总统套房' }
+  { label: '标准单人间', value: 'standard-single' },
+  { label: '标准双人间', value: 'standard-double' },
+  { label: '豪华大床房', value: 'deluxe' },
+  { label: '行政套房', value: 'executive' },
+  { label: '总统套房', value: 'presidential' }
 ]
 
 // 状态选项
 const statusOptions = [
-  { value: 'available', label: '可用' },
-  { value: 'occupied', label: '已入住' },
-  { value: 'reserved', label: '已预订' },
-  { value: 'cleaning', label: '清洁中' },
-  { value: 'maintenance', label: '维护中' }
+  { label: '可用', value: 'available' },
+  { label: '已入住', value: 'occupied' },
+  { label: '已预订', value: 'reserved' },
+  { label: '清洁中', value: 'cleaning' },
+  { label: '维护中', value: 'maintenance' }
 ]
 
-// 房间数据
+// 房间统计数据
+const roomStats = [
+  { 
+    title: '总房间数', 
+    value: 60, 
+    icon: 'House',
+    type: 'info'
+  },
+  { 
+    title: '可用房间', 
+    value: 15, 
+    icon: 'Checked',
+    type: 'success'
+  },
+  { 
+    title: '已入住', 
+    value: 35, 
+    icon: 'Calendar',
+    type: 'danger'
+  },
+  { 
+    title: '入住率', 
+    value: '58%', 
+    icon: 'WarningFilled',
+    type: 'warning'
+  }
+]
+
+// 房间数据（模拟数据）
 const rooms = ref([])
 
 // 初始化房间数据
 const initRooms = () => {
-  const generatedRooms = []
-  // 生成房间数据
-  for (let floor of floors) {
-    for (let i = 1; i <= 12; i++) {
-      const roomNumber = `${floor}${String(i).padStart(2, '0')}`
-      const typeIndex = Math.floor(i / 3) % roomTypes.length
-      const roomType = roomTypes[typeIndex === 0 ? 1 : typeIndex]
-      const statusIndex = Math.floor(Math.random() * statusOptions.length)
-      const status = statusOptions[statusIndex].value
-      
-      const room = {
-        number: roomNumber,
-        floor: floor,
-        type: roomType.label,
-        typeShort: roomType.value,
-        price: getRoomPrice(roomType.value),
-        status: status,
-        guest: status === 'occupied' ? getRandomGuest() : null,
-        checkIn: status === 'occupied' ? getRandomDate(-5, 0) : null,
-        checkOut: status === 'occupied' ? getRandomDate(1, 5) : null
-      }
-      
-      generatedRooms.push(room)
-    }
+  const roomsData = []
+  const roomTypeMap = {
+    'standard-single': { type: '标准单人间', typeShort: 'STA', price: 480 },
+    'standard-double': { type: '标准双人间', typeShort: 'STW', price: 580 },
+    'deluxe': { type: '豪华大床房', typeShort: 'DEL', price: 880 },
+    'executive': { type: '行政套房', typeShort: 'EXE', price: 1280 },
+    'presidential': { type: '总统套房', typeShort: 'PRE', price: 3280 }
   }
   
-  rooms.value = generatedRooms
-}
-
-// 获取随机客人姓名
-const getRandomGuest = () => {
-  const names = ['张先生', '王女士', '李先生', '赵女士', '陈先生', '刘女士']
-  return names[Math.floor(Math.random() * names.length)]
-}
-
-// 获取随机日期
-const getRandomDate = (minDays, maxDays) => {
-  const today = new Date()
-  const dayOffset = Math.floor(Math.random() * (maxDays - minDays + 1)) + minDays
-  const date = new Date(today)
-  date.setDate(date.getDate() + dayOffset)
+  // 生成房间数据
+  floors.forEach(floor => {
+    const roomsPerFloor = 12
+    for (let i = 1; i <= roomsPerFloor; i++) {
+      const roomNumber = `${floor}${i.toString().padStart(2, '0')}`
+      
+      // 根据房间号分配房型
+      let roomTypeKey
+      if (i <= 4) roomTypeKey = 'standard-single'
+      else if (i <= 8) roomTypeKey = 'standard-double'
+      else if (i <= 10) roomTypeKey = 'deluxe'
+      else if (i <= 11) roomTypeKey = 'executive'
+      else roomTypeKey = 'presidential'
+      
+      const roomType = roomTypeMap[roomTypeKey]
+      
+      // 随机生成房间状态
+      const statusIndex = Math.floor(Math.random() * 100)
+      let status
+      if (statusIndex < 25) status = 'available'
+      else if (statusIndex < 80) status = 'occupied'
+      else if (statusIndex < 90) status = 'reserved'
+      else if (statusIndex < 95) status = 'cleaning'
+      else status = 'maintenance'
+      
+      // 生成入住信息（如果已入住）
+      let guest = null
+      let phone = null
+      let checkIn = null
+      let checkOut = null
+      let deposit = null
+      let remarks = null
+      
+      if (status === 'occupied') {
+        const guests = ['张三', '李四', '王五', '赵六', '钱七', '孙八', '周九', '吴十']
+        guest = guests[Math.floor(Math.random() * guests.length)]
+        phone = `138${Math.floor(10000000 + Math.random() * 90000000)}`
+        
+        // 生成入住日期（1-3天前）
+        const checkInDate = new Date()
+        checkInDate.setDate(checkInDate.getDate() - Math.floor(1 + Math.random() * 3))
+        checkIn = formatDate(checkInDate) + ' ' + formatTime(checkInDate)
+        
+        // 生成离店日期（1-3天后）
+        const checkOutDate = new Date()
+        checkOutDate.setDate(checkOutDate.getDate() + Math.floor(1 + Math.random() * 3))
+        checkOut = formatDate(checkOutDate) + ' 12:00'
+        
+        deposit = 500
+        
+        const remarksList = ['无特殊要求', '需要加床', '靠近电梯', '高层房间', '安静房间', '有小孩', '商务出行']
+        remarks = remarksList[Math.floor(Math.random() * remarksList.length)]
+      }
+      
+      roomsData.push({
+        number: roomNumber,
+        floor,
+        type: roomType.type,
+        typeShort: roomType.typeShort,
+        roomTypeKey,
+        price: roomType.price,
+        status,
+        guest,
+        phone,
+        checkIn,
+        checkOut,
+        deposit,
+        remarks
+      })
+    }
+  })
   
+  rooms.value = roomsData
+  
+  // 更新统计数据
+  updateRoomStats()
+}
+
+// 更新房间统计数据
+const updateRoomStats = () => {
+  const totalRooms = rooms.value.length
+  const availableRooms = rooms.value.filter(room => room.status === 'available').length
+  const occupiedRooms = rooms.value.filter(room => room.status === 'occupied').length
+  const occupancyRate = Math.round((occupiedRooms / totalRooms) * 100)
+  
+  roomStats[0].value = totalRooms
+  roomStats[1].value = availableRooms
+  roomStats[2].value = occupiedRooms
+  roomStats[3].value = `${occupancyRate}%`
+}
+
+// 格式化日期
+const formatDate = (date) => {
   const year = date.getFullYear()
   const month = String(date.getMonth() + 1).padStart(2, '0')
   const day = String(date.getDate()).padStart(2, '0')
-  
   return `${year}-${month}-${day}`
 }
 
-// 获取房间价格
-const getRoomPrice = (type) => {
-  const priceMap = {
-    'STA': 380,
-    'STW': 480,
-    'DEL': 680,
-    'EXE': 980,
-    'PRE': 1880
-  }
-  return priceMap[type] || 480
+// 格式化时间
+const formatTime = (date) => {
+  const hours = String(date.getHours()).padStart(2, '0')
+  const minutes = String(date.getMinutes()).padStart(2, '0')
+  return `${hours}:${minutes}`
 }
 
-// 房间统计数据
-const roomStats = computed(() => [
-  {
-    title: '可用房间',
-    value: rooms.value.filter(room => room.status === 'available').length,
-    type: 'available',
-    icon: 'Checked'
-  },
-  {
-    title: '已入住',
-    value: rooms.value.filter(room => room.status === 'occupied').length,
-    type: 'occupied',
-    icon: 'User'
-  },
-  {
-    title: '已预订',
-    value: rooms.value.filter(room => room.status === 'reserved').length,
-    type: 'reserved',
-    icon: 'Calendar'
-  },
-  {
-    title: '入住率',
-    value: calculateOccupancyRate() + '%',
-    type: 'occupancy',
-    icon: 'WarningFilled'
-  }
-])
-
-// 计算入住率
-const calculateOccupancyRate = () => {
-  const totalRooms = rooms.value.length
-  const occupiedRooms = rooms.value.filter(room => room.status === 'occupied').length
-  return Math.round((occupiedRooms / totalRooms) * 100)
-}
-
-// 筛选后的楼层
+// 根据楼层筛选房间
 const filteredFloors = computed(() => {
-  if (selectedFloor.value === 'all') return floors
+  if (selectedFloor.value === 'all') {
+    return floors
+  }
   return [selectedFloor.value]
 })
 
-// 筛选后的房间
+// 根据筛选条件过滤房间
 const filteredRooms = computed(() => {
-  return rooms.value.filter(room => {
-    // 楼层筛选
-    if (selectedFloor.value !== 'all' && room.floor !== selectedFloor.value) return false
-    
-    // 房型筛选
-    if (selectedRoomType.value !== 'all' && room.typeShort !== selectedRoomType.value) return false
-    
-    // 状态筛选
-    if (selectedStatus.value !== 'all' && room.status !== selectedStatus.value) return false
-    
-    return true
-  })
+  let result = rooms.value
+  
+  // 按楼层筛选
+  if (selectedFloor.value !== 'all') {
+    result = result.filter(room => room.floor === selectedFloor.value)
+  }
+  
+  // 按房型筛选
+  if (selectedRoomType.value !== 'all') {
+    result = result.filter(room => room.roomTypeKey === selectedRoomType.value)
+  }
+  
+  // 按状态筛选
+  if (selectedStatus.value !== 'all') {
+    result = result.filter(room => room.status === selectedStatus.value)
+  }
+  
+  return result
 })
 
-// 根据楼层获取房间
+// 获取指定楼层的房间
 const getRoomsByFloor = (floor) => {
   return rooms.value.filter(room => room.floor === floor)
 }
 
-// 根据楼层获取筛选后的房间
+// 获取指定楼层的过滤后房间
 const getFilteredRoomsByFloor = (floor) => {
-  return filteredRooms.value.filter(room => room.floor === floor)
+  let result = getRoomsByFloor(floor)
+  
+  // 按房型筛选
+  if (selectedRoomType.value !== 'all') {
+    result = result.filter(room => room.roomTypeKey === selectedRoomType.value)
+  }
+  
+  // 按状态筛选
+  if (selectedStatus.value !== 'all') {
+    result = result.filter(room => room.status === selectedStatus.value)
+  }
+  
+  return result
 }
 
 // 获取指定楼层的房间数量
@@ -542,9 +605,9 @@ const selectedRoom = ref({})
 
 // 房间图片
 const roomImages = [
-  'https://via.placeholder.com/500x300.png?text=房间图片1',
-  'https://via.placeholder.com/500x300.png?text=房间图片2',
-  'https://via.placeholder.com/500x300.png?text=房间图片3'
+  '/src/assets/room1.jpg',
+  '/src/assets/room2.jpg',
+  '/src/assets/room3.jpg'
 ]
 
 // 获取房间面积
@@ -613,16 +676,6 @@ onMounted(() => {
   gap: 24px;
 }
 
-.status-indicator {
-  background-color: #28a745;
-  color: white;
-  padding: 8px 16px;
-  border-radius: 4px;
-  text-align: center;
-  margin-bottom: 16px;
-  font-weight: bold;
-}
-
 .preview-header {
   display: flex;
   justify-content: space-between;
@@ -632,5 +685,3 @@ onMounted(() => {
 .header-left {
   display: flex;
   flex-direction: column;
-}
-</style>

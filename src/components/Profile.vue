@@ -1,7 +1,51 @@
 <template>
   <div class="profile-container">
-    <!-- ... existing code ... -->
-    
+    <!-- 个人信息卡片 -->
+    <el-card class="info-card">
+      <div slot="header">
+        <span>个人基本信息</span>
+        <el-button 
+          type="text" 
+          style="float: right; padding: 3px 0" 
+          @click="toggleEdit"
+        >
+          {{ isEditing ? '取消' : '编辑' }}
+        </el-button>
+      </div>
+
+      <el-form :model="userData" :disabled="!isEditing" label-width="100px">
+        <el-form-item label="用户名">
+          <el-input v-model="userData.userName" :disabled="true"></el-input>
+        </el-form-item>
+        <el-form-item label="真实姓名">
+          <el-input v-model="userData.realName"></el-input>
+        </el-form-item>
+        <el-form-item label="手机号码">
+          <el-input v-model="userData.phone"></el-input>
+        </el-form-item>
+        <el-form-item label="电子邮箱">
+          <el-input v-model="userData.email"></el-input>
+        </el-form-item>
+        <el-form-item label="生日">
+          <el-date-picker
+            v-model="userData.birthday"
+            type="date"
+            placeholder="选择日期">
+          </el-date-picker>
+        </el-form-item>
+        <el-form-item label="性别">
+          <el-select v-model="userData.gender">
+            <el-option label="男" value="male"></el-option>
+            <el-option label="女" value="female"></el-option>
+            <el-option label="保密" value="secret"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item v-if="isEditing">
+          <el-button type="primary" @click="saveUserInfo">保存</el-button>
+          <el-button @click="toggleEdit">取消</el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
     <!-- 会员等级信息卡片 -->
     <el-card class="member-card">
       <div slot="header">
@@ -66,11 +110,23 @@
 <script>
 import { userManager } from '@/utils/userManager';
 import { formatDate } from '@/utils/dateUtils';
+
 export default {
   name: 'Profile',
   data() {
     return {
-      userData: {},
+      isEditing: false,
+      userData: {
+        userName: '',
+        realName: '',
+        phone: '',
+        email: '',
+        birthday: '',
+        gender: '',
+        level: '',
+        points: 0,
+        totalSpent: 0
+      },
       loading: {
         user: false,
         history: false
@@ -169,7 +225,7 @@ export default {
       this.loading.user = true;
       try {
         const userData = await userManager.getUserData();
-        this.userData = userData;
+        this.userData = { ...userData };
         await this.loadLevelChangeHistory();
       } catch (error) {
         this.showError(error.message);
@@ -202,6 +258,26 @@ export default {
     showError(message) {
       this.errorMessage = message;
       this.errorDialogVisible = true;
+    },
+
+    toggleEdit() {
+      if (this.isEditing) {
+        // 取消编辑，恢复原始数据
+        this.loadUserData();
+      }
+      this.isEditing = !this.isEditing;
+    },
+
+    async saveUserInfo() {
+      try {
+        await userManager.updateUserInfo(this.userData);
+        this.isEditing = false;
+        this.$message.success('个人信息更新成功');
+        // 重新加载用户数据以确保显示最新信息
+        await this.loadUserData();
+      } catch (error) {
+        this.showError(error.message);
+      }
     }
   },
 
@@ -224,7 +300,9 @@ export default {
 .profile-container {
   padding: 20px;
   
-  .member-card, .history-card {
+  .info-card,
+  .member-card,
+  .history-card {
     margin-bottom: 20px;
   }
 

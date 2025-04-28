@@ -130,6 +130,10 @@ const router = createRouter({
         {
           path: 'cleaning/records',
           name: 'cleaning-records',
+        },
+        {
+          path: 'rooms',
+          name: 'room-management',
         }
       ]
     }
@@ -235,7 +239,7 @@ router.beforeEach((to, from, next) => {
     }
 
     // 根据角色验证访问权限
-    const adminPaths = ['/admin/dashboard', '/admin/users', '/admin/staff', '/admin/invite-codes']
+    const adminPaths = ['/admin/dashboard', '/admin/users', '/admin/staff', '/admin/invite-codes', '/admin/rooms']
     const receptionistPaths = ['/admin/reception/bookings', '/admin/reception/checkin', '/admin/reception/visitors', '/admin/reception/visitor-records']
     const cleanerPaths = ['/admin/cleaning/tasks', '/admin/cleaning/records']
 

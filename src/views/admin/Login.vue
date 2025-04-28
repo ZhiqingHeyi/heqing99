@@ -132,10 +132,10 @@ const handleLogin = async () => {
     console.log('当前环境:', {
       port: window.location.port,
       baseUrl: baseUrl,
-      fullUrl: `${baseUrl}/api/admin/login`
+      fullUrl: `${baseUrl}/api/auth/login`
     });
     
-    const response = await fetch(`${baseUrl}/api/admin/login`, {
+    const response = await fetch(`${baseUrl}/api/auth/login`, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json'

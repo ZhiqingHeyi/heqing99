@@ -97,7 +97,7 @@ export const userApi = {
   // 用户登录
   login: (credentials) => {
     console.log('调用登录API:', credentials)
-    return apiClient.post('/users/login', credentials)
+    return apiClient.post('/api/login', credentials)
       .then(response => {
         console.log('登录API响应:', response)
         // 确保处理后端返回的成功/失败信息
@@ -127,13 +127,13 @@ export const userApi = {
   // 获取用户信息
   getUserInfo: (userId) => {
     console.log('调用获取用户信息API:', userId)
-    return apiClient.get(`/users/${userId}`)
+    return apiClient.get(`/api/users/${userId}`)
       .then(response => {
         console.log('获取用户信息API响应:', response)
-        if (response && response.success === false) {
-          throw new Error(response.message || '获取用户信息失败')
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取用户信息失败')
         }
-        return response
+        return response.data
       })
       .catch(error => {
         console.error('获取用户信息API错误:', error)

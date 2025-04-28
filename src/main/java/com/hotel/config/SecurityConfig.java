@@ -57,11 +57,14 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 // 后端API
                 .antMatchers(HttpMethod.POST, "/admin/login").permitAll()
                 .antMatchers(HttpMethod.GET, "/admin/login").permitAll()
-                .antMatchers(HttpMethod.POST, "/api/admin/login").permitAll()
+                .antMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
                 // 用户相关API
                 .antMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/users/check-username").permitAll()
+                .antMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
+                .antMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
+                .antMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                 // 添加OPTIONS请求支持，用于CORS预检
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()

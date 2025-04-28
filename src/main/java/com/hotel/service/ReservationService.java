@@ -120,4 +120,9 @@ public interface ReservationService {
      * 获取用户指定状态的预订
      */
     List<Reservation> getReservationsByUserAndStatus(User user, Reservation.ReservationStatus status);
+
+    /**
+     * 检查房间是否有关联的预订记录
+     */
+    boolean hasRoomReservations(Long roomId);
 }

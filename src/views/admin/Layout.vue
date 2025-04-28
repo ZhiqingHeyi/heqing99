@@ -91,6 +91,10 @@
                 <el-icon><UserFilled /></el-icon>
                 <span>员工管理</span>
               </el-menu-item>
+              <el-menu-item index="/admin/rooms" @click="switchComponent('rooms')" class="tech-menu-item">
+                <el-icon><HomeFilled /></el-icon>
+                <span>房间管理</span>
+              </el-menu-item>
               <el-menu-item index="/admin/invite-codes" @click="switchComponent('inviteCodes')" class="tech-menu-item">
                 <el-icon><Key /></el-icon>
                 <span>邀请码管理</span>
@@ -177,13 +181,14 @@
 <script setup>
 import { ref, computed, shallowRef, markRaw, onMounted, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
-import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch, Bell } from '@element-plus/icons-vue'
+import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch, Bell, HomeFilled } from '@element-plus/icons-vue'
 
 // 导入组件
 import Dashboard from './Dashboard.vue'
 import InviteCodes from './InviteCodes.vue'
 import Staff from './Staff.vue'
 import Users from './Users.vue'
+import RoomManagement from './RoomManagement.vue'
 // 导入前台接待组件
 import Bookings from './reception/Bookings.vue'
 import Checkin from './reception/Checkin.vue'
@@ -253,7 +258,8 @@ const componentMap = {
   'visitors': markRaw(Visitors),
   // 保洁相关组件
   'tasks': markRaw(CleaningTasks),
-  'records': markRaw(CleaningRecords)
+  'records': markRaw(CleaningRecords),
+  'rooms': markRaw(RoomManagement)
 }
 
 // 切换组件
@@ -274,7 +280,8 @@ const switchComponent = (componentName) => {
     'visitors': '/admin/reception/visitors',
     // 保洁相关路径
     'tasks': '/admin/cleaning/tasks',
-    'records': '/admin/cleaning/records'
+    'records': '/admin/cleaning/records',
+    'rooms': '/admin/rooms'
   }
   activeMenu.value = pathMap[componentName]
 
@@ -319,6 +326,8 @@ onMounted(() => {
     switchComponent('tasks')
   } else if (path.includes('/admin/cleaning/records')) {
     switchComponent('records')
+  } else if (path.includes('/admin/rooms')) {
+    switchComponent('rooms')
   } else {
     // 默认显示对应角色的首页
     if (userRole.value === 'receptionist') {

@@ -5,6 +5,7 @@ import com.hotel.entity.RoomType;
 import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -26,6 +27,199 @@ public class RoomController {
 
     @Autowired
     private ReservationService reservationService;
+
+    /**
+     * 获取所有房间
+     * 用于管理员查看和管理所有房间
+     */
+    @GetMapping("")
+    public ResponseEntity<List<Room>> getAllRooms() {
+        List<Room> rooms = roomService.getAllRooms();
+        return ResponseEntity.ok(rooms);
+    }
+
+    /**
+     * 根据ID获取房间
+     */
+    @GetMapping("/{id}")
+    public ResponseEntity<?> getRoomById(@PathVariable Long id) {
+        Room room = roomService.getRoomById(id);
+        if (room == null) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "房间不存在");
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        }
+        return ResponseEntity.ok(room);
+    }
+
+    /**
+     * 添加新房间
+     */
+    @PostMapping("")
+    public ResponseEntity<?> addRoom(@RequestBody Room room) {
+        try {
+            // 检查房间号是否已存在
+            if (roomService.isRoomNumberExists(room.getRoomNumber())) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间号已存在");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            Room savedRoom = roomService.addRoom(room);
+            return ResponseEntity.status(HttpStatus.CREATED).body(savedRoom);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "添加房间失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 更新房间信息
+     */
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateRoom(@PathVariable Long id, @RequestBody Room room) {
+        try {
+            Room existingRoom = roomService.getRoomById(id);
+            if (existingRoom == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间不存在");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            // 如果房间号发生变化，检查新房间号是否已存在
+            if (!existingRoom.getRoomNumber().equals(room.getRoomNumber()) 
+                    && roomService.isRoomNumberExists(room.getRoomNumber())) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间号已存在");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            room.setId(id);
+            Room updatedRoom = roomService.updateRoom(room);
+            return ResponseEntity.ok(updatedRoom);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "更新房间失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 删除房间
+     */
+    @DeleteMapping("/{id}")
+    public ResponseEntity<?> deleteRoom(@PathVariable Long id) {
+        try {
+            Room room = roomService.getRoomById(id);
+            if (room == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间不存在");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            // 检查房间是否有关联的预订
+            boolean hasReservations = reservationService.hasRoomReservations(id);
+            if (hasReservations) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间有关联的预订记录，无法删除");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            roomService.deleteRoom(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "房间删除成功");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "删除房间失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 修改房间状态
+     */
+    @PutMapping("/{id}/status")
+    public ResponseEntity<?> updateRoomStatus(@PathVariable Long id, @RequestBody Map<String, String> statusMap) {
+        try {
+            if (!statusMap.containsKey("status")) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "状态参数缺失");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            Room room = roomService.getRoomById(id);
+            if (room == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间不存在");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            String statusStr = statusMap.get("status");
+            try {
+                Room.RoomStatus status = Room.RoomStatus.valueOf(statusStr);
+                Room updatedRoom = roomService.updateRoomStatus(id, status);
+                return ResponseEntity.ok(updatedRoom);
+            } catch (IllegalArgumentException e) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "无效的房间状态");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "更新房间状态失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 标记房间需要清洁
+     */
+    @PutMapping("/{id}/cleaning")
+    public ResponseEntity<?> markRoomNeedCleaning(@PathVariable Long id) {
+        try {
+            Room room = roomService.getRoomById(id);
+            if (room == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间不存在");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            roomService.markRoomNeedCleaning(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "房间已标记为需要清洁");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "标记房间清洁状态失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 确认房间清洁完成
+     */
+    @PutMapping("/{id}/cleaning/complete")
+    public ResponseEntity<?> confirmRoomCleaned(@PathVariable Long id) {
+        try {
+            Room room = roomService.getRoomById(id);
+            if (room == null) {
+                Map<String, String> errorResponse = new HashMap<>();
+                errorResponse.put("message", "房间不存在");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            roomService.confirmRoomCleaned(id);
+            Map<String, String> response = new HashMap<>();
+            response.put("message", "房间清洁完成确认");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "确认房间清洁完成失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
 
     /**
      * 获取所有房间类型
@@ -74,8 +268,8 @@ public class RoomController {
     /**
      * 获取单个房间类型详情
      */
-    @GetMapping("/{id}")
-    public ResponseEntity<?> getRoomDetail(@PathVariable Long id) {
+    @GetMapping("/type/{id}")
+    public ResponseEntity<?> getRoomTypeDetail(@PathVariable Long id) {
         try {
             RoomType roomType = roomService.getRoomTypeById(id);
             if (roomType == null) {
