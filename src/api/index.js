@@ -2,7 +2,7 @@ import axios from 'axios';
 
 // 创建Axios实例，设置基本配置
 const apiClient = axios.create({
-  baseURL: '/api', // 所有请求都会添加/api前缀，Vite代理会将请求转发到后端
+  baseURL: '', // 设置为空，手动管理路径前缀
   timeout: 10000, // 请求超时时间
   headers: {
     'Content-Type': 'application/json'
@@ -67,7 +67,7 @@ export const userApi = {
   // 用户注册
   register: (userData) => {
     console.log('调用注册API:', userData)
-    return apiClient.post('/users/register', userData)
+    return apiClient.post('/api/users/register', userData)
       .then(response => {
         console.log('注册API响应:', response)
         // 确保处理后端返回的成功/失败信息
@@ -97,7 +97,7 @@ export const userApi = {
   // 用户登录
   login: (credentials) => {
     console.log('调用登录API:', credentials)
-    return apiClient.post('/api/login', credentials)
+    return apiClient.post('/api/users/login', credentials)
       .then(response => {
         console.log('登录API响应:', response)
         // 确保处理后端返回的成功/失败信息
@@ -125,9 +125,9 @@ export const userApi = {
   },
   
   // 获取用户信息
-  getUserInfo: (userId) => {
-    console.log('调用获取用户信息API:', userId)
-    return apiClient.get(`/api/users/${userId}`)
+  getUserInfo: () => {
+    console.log('调用获取用户信息API')
+    return apiClient.get('/api/users/profile')
       .then(response => {
         console.log('获取用户信息API响应:', response)
         if (!response || response.success === false) {
@@ -149,73 +149,217 @@ export const userApi = {
   },
   
   // 更新用户信息
-  updateUserInfo: (userId, userData) => apiClient.put(`/users/${userId}`, userData),
+  updateUserInfo: (userData) => apiClient.put('/api/users/profile', userData),
   
   // 修改密码
-  changePassword: (userId, passwordData) => apiClient.put(`/users/${userId}/password`, passwordData),
+  changePassword: (passwordData) => apiClient.put('/api/users/password', passwordData),
 
   // 刷新Token
-  refreshToken: (refreshData) => apiClient.post('/users/refresh-token', refreshData),
+  refreshToken: (refreshData) => apiClient.post('/api/refresh-token', refreshData),
 
   // 退出登录
-  logout: (token) => apiClient.post('/users/logout', { token })
+  logout: () => apiClient.post('/api/logout')
 };
 
 // 会员相关API
 export const membershipApi = {
   // 获取会员信息
-  getMemberInfo: (userId) => apiClient.get(`/membership/${userId}`),
+  getMemberInfo: () => {
+    console.log('调用获取会员信息API')
+    return apiClient.get('/api/membership/info')
+      .then(response => {
+        console.log('获取会员信息API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取会员信息失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取会员信息API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
   
-  // 更新会员等级
-  updateMemberLevel: (userId) => apiClient.post(`/membership/${userId}/update-level`),
-  
-  // 添加积分
-  addPoints: (userId, points) => apiClient.post(`/membership/${userId}/add-points?points=${points}`),
-  
-  // 使用积分
-  redeemPoints: (userId, points) => apiClient.post(`/membership/${userId}/redeem-points?points=${points}`),
-  
-  // 添加消费记录
-  addSpending: (userId, amount) => apiClient.post(`/membership/${userId}/add-spending?amount=${amount}`),
-  
-  // 获取折扣信息
-  getDiscount: (userId) => apiClient.get(`/membership/${userId}/discount`),
+  // 获取积分历史记录
+  getPointsHistory: (page = 1, pageSize = 10) => {
+    console.log('调用获取积分历史记录API:', { page, pageSize })
+    return apiClient.get('/api/membership/points/history', { params: { page, pageSize } })
+      .then(response => {
+        console.log('获取积分历史记录API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取积分历史记录失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取积分历史记录API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
   
   // 获取会员等级列表
-  getMembershipLevels: () => apiClient.get('/membership/levels')
+  getMembershipLevels: () => apiClient.get('/api/membership/levels')
 };
 
 // 预订相关API
 export const reservationApi = {
   // 创建预订
-  createReservation: (reservationData) => apiClient.post('/reservations', reservationData),
+  createReservation: (reservationData) => apiClient.post('/api/reservations', reservationData),
   
   // 获取用户的所有预订
-  getUserReservations: (userId) => apiClient.get(`/reservations/user/${userId}`),
+  getUserReservations: (page = 1, pageSize = 10, status = null) => {
+    console.log('调用获取用户预订API:', { page, pageSize, status })
+    const params = { page, pageSize }
+    if (status) {
+      params.status = status
+    }
+    
+    return apiClient.get('/api/reservations/user', { params })
+      .then(response => {
+        console.log('获取用户预订API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取预订信息失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取用户预订API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
   
   // 获取预订详情
-  getReservation: (id) => apiClient.get(`/reservations/${id}`),
+  getReservation: (id) => apiClient.get(`/api/reservations/${id}`),
   
   // 取消预订
-  cancelReservation: (id) => apiClient.post(`/reservations/${id}/cancel`),
+  cancelReservation: (id) => apiClient.post(`/api/reservations/${id}/cancel`),
   
   // 确认预订（管理员用）
-  confirmReservation: (id) => apiClient.post(`/reservations/${id}/confirm`),
+  confirmReservation: (id) => apiClient.post(`/api/reservations/${id}/confirm`),
   
   // 计算折扣价格
-  calculateDiscount: (userId, amount) => apiClient.post(`/reservations/calculate-discount?userId=${userId}&amount=${amount}`)
+  calculateDiscount: (originalPrice) => apiClient.post('/api/membership/calculate-discount', { originalPrice })
 };
 
 // 房间相关API
 export const roomApi = {
   // 获取所有房间类型
-  getAllRoomTypes: () => apiClient.get('/rooms/types'),
+  getAllRoomTypes: () => apiClient.get('/api/rooms/types'),
   
   // 获取房间详情
-  getRoomDetails: (id) => apiClient.get(`/rooms/${id}`),
+  getRoomDetails: (id) => apiClient.get(`/api/rooms/${id}`),
   
   // 检查房间可用性
-  checkRoomAvailability: (params) => apiClient.get('/rooms/availability', { params })
+  checkRoomAvailability: (params) => apiClient.get('/api/rooms/availability', { params })
+};
+
+// 消费记录相关API
+export const consumptionRecordApi = {
+  // 获取用户的消费记录
+  getUserConsumptionRecords: (userId, page = 0, size = 10) => {
+    console.log('调用获取用户消费记录API:', userId)
+    return apiClient.get(`/api/consumption-records/user/${userId}?page=${page}&size=${size}`)
+      .then(response => {
+        console.log('获取用户消费记录API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取消费记录失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取用户消费记录API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 获取消费记录详情
+  getConsumptionRecordDetail: (id) => apiClient.get(`/api/consumption-records/${id}`),
+  
+  // 按时间范围查询
+  getConsumptionRecordsByTimeRange: (userId, startDate, endDate) => 
+    apiClient.get(`/api/consumption-records/user/${userId}/time-range?start=${startDate}&end=${endDate}`),
+    
+  // 按消费类型查询
+  getConsumptionRecordsByType: (userId, type) => 
+    apiClient.get(`/api/consumption-records/user/${userId}/type/${type}`),
+    
+  // 创建消费记录
+  createConsumptionRecord: (userId, amount, type, description, reservationId, roomId) => {
+    let url = `/api/consumption-records?userId=${userId}&amount=${amount}&type=${type}`;
+    if (description) url += `&description=${encodeURIComponent(description)}`;
+    if (reservationId) url += `&reservationId=${reservationId}`;
+    if (roomId) url += `&roomId=${roomId}`;
+    return apiClient.post(url);
+  }
+};
+
+// 积分兑换相关API
+export const pointsExchangeApi = {
+  // 获取用户的积分兑换记录
+  getUserExchangeRecords: (userId, page = 0, size = 10) => {
+    console.log('调用获取用户积分兑换记录API:', userId)
+    return apiClient.get(`/api/points-exchange/user/${userId}?page=${page}&size=${size}`)
+      .then(response => {
+        console.log('获取用户积分兑换记录API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取积分兑换记录失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取用户积分兑换记录API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 获取特定状态的积分兑换记录
+  getExchangeRecordsByStatus: (userId, status) => 
+    apiClient.get(`/api/points-exchange/user/${userId}/status/${status}`),
+    
+  // 提交积分兑换申请
+  submitExchangeRequest: (userId, points, type, description) => {
+    let url = `/api/points-exchange/submit?userId=${userId}&points=${points}&type=${type}`;
+    if (description) url += `&description=${encodeURIComponent(description)}`;
+    return apiClient.post(url);
+  },
+  
+  // 计算积分兑换现金价值
+  calculateCashValue: (points) => apiClient.get(`/api/points-exchange/calculate?points=${points}`)
 };
 
 // 导出API客户端，方便直接使用

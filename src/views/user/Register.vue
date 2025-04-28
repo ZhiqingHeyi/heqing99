@@ -5,7 +5,7 @@
       <el-card class="register-card luxury-card">
         <div class="luxury-header">
           <div class="logo-wrapper">
-            <img src="/src/assets/logo.svg" alt="鹤清酒店" class="logo" />
+            <img src="../../assets/logo.svg" alt="鹤清酒店" class="logo" />
           </div>
           <h2 class="register-title">尊贵会员注册</h2>
           <div class="luxury-divider">
@@ -194,7 +194,22 @@ const handleMemberRegister = async () => {
           
           // 跳转到登录页
           setTimeout(() => {
-            router.push('/login')
+            try {
+              // 保存用户名到localStorage，以便在登录页面自动填充
+              localStorage.setItem('tempUserName', memberForm.username);
+              console.log('注册成功，正在跳转到登录页面...');
+              
+              // 使用replace而不是push，避免堆栈问题
+              router.replace('/login').catch(err => {
+                console.error('路由跳转失败:', err);
+                // 如果直接跳转失败，尝试通过链接跳转
+                window.location.href = '/login';
+              });
+            } catch (error) {
+              console.error('跳转到登录页面出错:', error);
+              // 使用原生方法跳转
+              window.location.href = '/login';
+            }
           }, 1500)
         } else {
           // 注册失败提示
@@ -212,7 +227,19 @@ const handleMemberRegister = async () => {
 
 // 跳转到登录页
 const goToLogin = () => {
-  router.push('/login')
+  try {
+    console.log('正在跳转到登录页面...');
+    // 使用replace而不是push，避免堆栈问题
+    router.replace('/login').catch(err => {
+      console.error('路由跳转失败:', err);
+      // 如果直接跳转失败，尝试通过链接跳转
+      window.location.href = '/login';
+    });
+  } catch (error) {
+    console.error('跳转到登录页面出错:', error);
+    // 使用原生方法跳转
+    window.location.href = '/login';
+  }
 }
 </script>
 
@@ -233,7 +260,7 @@ const goToLogin = () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('/src/assets/images/luxury-hotel.jpg'), url('/src/assets/images/hotel-bg.jpg');
+  background-image: url('../../assets/hotel1.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -306,15 +333,12 @@ const goToLogin = () => {
 .divider-icon {
   display: inline-block;
   position: relative;
-  width: 40px;
-  height: 40px;
-  background-image: url('/src/assets/divider-icon.png');
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
+  width: 20px;
+  height: 20px;
   background-color: white;
   border-radius: 50%;
   z-index: 1;
+  border: 1px solid #d4af37;
 }
 
 .register-form {

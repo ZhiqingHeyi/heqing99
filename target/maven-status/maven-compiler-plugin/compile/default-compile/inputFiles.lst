@@ -16,6 +16,7 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\AdminDashboardCont
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\MemberRegisterController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\SecurityConfig.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\ConsumptionRecordService.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\MemberLevelChangeRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\JpaConfig.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\RoomType.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\ConsumptionRecord.java
@@ -33,6 +34,7 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\CleaningRecordRepo
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\VisitorRecordRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\ConsumptionRecordServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\RoomServiceImpl.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\MemberLevelController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\PointsExchangeRecordService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\WebMvcConfig.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\MarketingCampaign.java
@@ -53,11 +55,13 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\MemberLevelChangeC
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\util\JwtUtil.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\WebController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\PointsExchangeRecord.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\MemberLevelServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\ReservationServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\ReservationRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\MembershipBatchController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\StatisticsRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\BookingRepository.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\MemberLevelChange.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\ReceptionController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\PointsExchangeController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\MarketingCampaignService.java
@@ -71,10 +75,12 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\config\ErrorConfig.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\ConsumptionRecordController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\HotelInfoService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\VisitorRepository.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\common\ApiResponse.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\PointsExpiryService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\UserService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\VisitorRecordService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\VisitorRecord.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\MemberLevelService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\UserRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Room.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\VisitorRecordServiceImpl.java
@@ -90,9 +96,11 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Reservation.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\PointsExpiryRecordRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\RoomService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\PointsExchangeRecordRepository.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\MemberLevelChangeService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\CustomErrorController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\SpaController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\MemberLevelChangeRecordServiceImpl.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\MemberLevelChangeServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\CleaningServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\AdminController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\MemberLevelChangeRecord.java

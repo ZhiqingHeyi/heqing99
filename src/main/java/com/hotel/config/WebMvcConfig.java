@@ -33,6 +33,12 @@ public class WebMvcConfig implements WebMvcConfigurer {
                 .addResourceLocations("classpath:/static/");
         registry.addResourceHandler("/index.html")
                 .addResourceLocations("classpath:/static/");
+        // 添加对images目录的映射
+        registry.addResourceHandler("/images/**")
+                .addResourceLocations("classpath:/static/images/");
+        // 添加对assets/images目录的映射
+        registry.addResourceHandler("/assets/images/**")
+                .addResourceLocations("classpath:/static/assets/images/");
     }
     
     @Override
@@ -49,6 +55,9 @@ public class WebMvcConfig implements WebMvcConfigurer {
         registry.addViewController("/admin/reception/visitors").setViewName("forward:/index.html");
         registry.addViewController("/admin/cleaning/tasks").setViewName("forward:/index.html");
         registry.addViewController("/admin/cleaning/records").setViewName("forward:/index.html");
+        
+        // 添加对登录页面的映射
+        registry.addViewController("/login").setViewName("forward:/login.html");
         
         // 设置高优先级
         registry.setOrder(Ordered.HIGHEST_PRECEDENCE);

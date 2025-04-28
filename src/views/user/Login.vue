@@ -196,7 +196,7 @@ const handleLogin = async () => {
   left: 0;
   width: 100%;
   height: 100%;
-  background-image: url('../../assets/images/luxury-hotel.jpg'), url('../../assets/hotel1.jpg');
+  background-image: url('../../assets/hotel1.jpg');
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
@@ -268,15 +268,12 @@ const handleLogin = async () => {
 .divider-icon {
   display: inline-block;
   position: relative;
-  width: 40px;
-  height: 40px;
-  background-image: url('../../assets/divider-icon.png');
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
+  width: 20px;
+  height: 20px;
   background-color: white;
   border-radius: 50%;
   z-index: 1;
+  border: 1px solid #d4af37;
 }
 
 .login-form {

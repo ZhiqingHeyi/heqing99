@@ -14,9 +14,11 @@ com\hotel\controller\ReservationController$1.class
 com\hotel\controller\RoomController$1.class
 com\hotel\controller\RoomController$7.class
 com\hotel\service\impl\ConsumptionRecordServiceImpl$1.class
+com\hotel\service\impl\MemberLevelServiceImpl.class
 com\hotel\entity\CleaningRecord.class
 com\hotel\repository\StatisticsRepository.class
 com\hotel\controller\RoomController$4.class
+com\hotel\common\ApiResponse.class
 com\hotel\repository\HotelInfoRepository.class
 com\hotel\controller\InvitationCodeController.class
 com\hotel\config\SecurityConfig.class
@@ -29,6 +31,7 @@ com\hotel\controller\RoomController$9.class
 com\hotel\entity\User.class
 com\hotel\controller\RoomController$2.class
 com\hotel\service\PointsExchangeService.class
+com\hotel\service\impl\MemberLevelChangeServiceImpl.class
 com\hotel\controller\WebController.class
 com\hotel\HotelManagementApplication.class
 com\hotel\repository\RoomRepository.class
@@ -60,9 +63,11 @@ com\hotel\service\impl\PointsExpiryServiceImpl.class
 com\hotel\entity\MarketingCampaign$CampaignType.class
 com\hotel\service\impl\ConsumptionRecordServiceImpl.class
 com\hotel\entity\Reservation$ReservationStatus.class
+com\hotel\service\MemberLevelService.class
 com\hotel\entity\MemberLevelChangeRecord.class
 com\hotel\controller\CustomErrorController.class
 com\hotel\repository\PointsExpiryRecordRepository.class
+com\hotel\entity\MemberLevelChange.class
 com\hotel\repository\RoomTypeRepository.class
 com\hotel\service\PointsExpiryService.class
 com\hotel\repository\PointsExchangeRecordRepository.class
@@ -70,6 +75,7 @@ com\hotel\entity\PointsExpiryRecord.class
 com\hotel\service\impl\MemberLevelChangeRecordServiceImpl.class
 com\hotel\controller\ConsumptionRecordController.class
 com\hotel\controller\CleaningTaskController.class
+com\hotel\service\MemberLevelChangeService.class
 com\hotel\entity\PointsExchangeRecord.class
 com\hotel\config\JpaConfig.class
 com\hotel\controller\UserController.class
@@ -88,6 +94,7 @@ com\hotel\service\impl\RoomServiceImpl.class
 com\hotel\service\TaskService.class
 com\hotel\controller\SpaController.class
 com\hotel\service\impl\InvitationCodeServiceImpl.class
+com\hotel\controller\MemberLevelController.class
 com\hotel\controller\AdminController.class
 com\hotel\controller\ReservationController.class
 com\hotel\controller\RoomController$5.class
@@ -112,6 +119,7 @@ com\hotel\config\ControllerConfig$MemberMarketingControllerConfig.class
 com\hotel\entity\VisitorRecord$VisitStatus.class
 com\hotel\entity\Visitor.class
 com\hotel\entity\VisitorRecord.class
+com\hotel\repository\MemberLevelChangeRepository.class
 com\hotel\entity\CheckInRecord.class
 com\hotel\repository\MemberLevelChangeRecordRepository.class
 com\hotel\controller\ReceptionController.class

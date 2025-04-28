@@ -242,6 +242,7 @@ import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { User, Tickets, Medal, Setting } from '@element-plus/icons-vue'
+import { userApi, membershipApi, reservationApi } from '@/api'
 
 console.log('Profile.vue组件加载')
 
@@ -346,71 +347,10 @@ const notificationSettings = reactive({
 })
 
 // 模拟预订数据
-const bookingList = ref([
-  {
-    id: 1,
-    bookingNo: 'B2023001',
-    roomType: '豪华大床房',
-    checkInDate: '2023-04-15',
-    checkOutDate: '2023-04-17',
-    status: 'pending'
-  },
-  {
-    id: 2,
-    bookingNo: 'B2023002',
-    roomType: '行政套房',
-    checkInDate: '2023-05-01',
-    checkOutDate: '2023-05-03',
-    status: 'confirmed'
-  },
-  {
-    id: 3,
-    bookingNo: 'B2023003',
-    roomType: '总统套房',
-    checkInDate: '2023-03-10',
-    checkOutDate: '2023-03-12',
-    status: 'completed'
-  }
-])
+const bookingList = ref([])
 
 // 模拟积分数据
-const pointsList = ref([
-  {
-    id: 1,
-    date: '2023-04-01',
-    description: '住宿消费',
-    points: 100,
-    balance: 320
-  },
-  {
-    id: 2,
-    date: '2023-03-15',
-    description: '积分兑换',
-    points: -50,
-    balance: 220
-  },
-  {
-    id: 3,
-    date: '2023-03-10',
-    description: '注册奖励',
-    points: 100,
-    balance: 270
-  },
-  {
-    id: 4,
-    date: '2023-03-05',
-    description: '生日奖励',
-    points: 50,
-    balance: 170
-  },
-  {
-    id: 5,
-    date: '2023-02-20',
-    description: '首次预订奖励',
-    points: 120,
-    balance: 120
-  }
-])
+const pointsList = ref([])
 
 // 获取预订状态对应的类型
 const getStatusType = (status) => {
@@ -440,7 +380,7 @@ const handleMenuSelect = (index) => {
   if (index === 'bookings') {
     fetchBookingList()
   } else if (index === 'points') {
-    // 加载积分数据
+    fetchPointsList()
   }
 }
 
@@ -462,7 +402,7 @@ const saveUserInfo = async () => {
       gender: userForm.gender
     })
     
-    if (response.success) {
+    if (response && response.success) {
       ElMessage.success('个人信息保存成功')
       isEditing.value = false
       
@@ -471,22 +411,22 @@ const saveUserInfo = async () => {
       localStorage.setItem('userName', userForm.userName)
       
       // 重新获取会员信息
-      const memberInfo = await membershipApi.getMemberInfo(localStorage.getItem('userId'))
+      const memberInfo = await membershipApi.getMemberInfo()
       if (memberInfo && memberInfo.data) {
-        userInfo.level = memberInfo.data.memberLevel
+        userInfo.level = memberInfo.data.level
         userInfo.points = memberInfo.data.points
         userInfo.totalSpent = memberInfo.data.totalSpent
-        localStorage.setItem('userLevel', memberInfo.data.memberLevel)
+        localStorage.setItem('userLevel', memberInfo.data.level)
         localStorage.setItem('userPoints', String(memberInfo.data.points))
         localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent))
         updateNextLevel()
       }
     } else {
-      ElMessage.error(response.message || '保存失败')
+      ElMessage.error(response?.message || '保存失败')
     }
   } catch (error) {
     console.error('保存用户信息失败:', error)
-    ElMessage.error('保存失败：' + error.message)
+    ElMessage.error('保存失败: ' + error.message)
   }
 }
 
@@ -496,13 +436,32 @@ const changePassword = async () => {
   
   await passwordFormRef.value.validate(async (valid) => {
     if (valid) {
-      // 模拟API调用
-      await new Promise(resolve => setTimeout(resolve, 1000))
-      
-      ElMessage.success('密码修改成功')
-      passwordForm.oldPassword = ''
-      passwordForm.newPassword = ''
-      passwordForm.confirmPassword = ''
+      try {
+        loading.value = true
+        
+        // 调用API修改密码
+        const response = await userApi.changePassword({
+          oldPassword: passwordForm.oldPassword,
+          newPassword: passwordForm.newPassword,
+          confirmPassword: passwordForm.confirmPassword
+        })
+        
+        if (response && response.success) {
+          ElMessage.success('密码修改成功')
+          // 清空表单
+          passwordForm.oldPassword = ''
+          passwordForm.newPassword = ''
+          passwordForm.confirmPassword = ''
+        } else {
+          ElMessage.error(response?.message || '密码修改失败')
+        }
+        
+        loading.value = false
+      } catch (error) {
+        loading.value = false
+        console.error('密码修改失败:', error)
+        ElMessage.error('密码修改失败: ' + error.message)
+      }
     }
   })
 }
@@ -521,9 +480,21 @@ const handleLogout = async () => {
       type: 'warning'
     })
     
+    try {
+      // 调用API退出登录
+      await userApi.logout()
+    } catch (apiError) {
+      console.error('API退出登录失败:', apiError)
+      // 即使API失败，也继续前端登出流程
+    }
+    
     // 清除登录信息
     localStorage.removeItem('userToken')
     localStorage.removeItem('userName')
+    localStorage.removeItem('userId')
+    localStorage.removeItem('userLevel')
+    localStorage.removeItem('userPoints')
+    localStorage.removeItem('userTotalSpent')
     
     ElMessage.success('已退出登录')
     router.push('/')
@@ -547,13 +518,22 @@ const cancelBooking = async (row) => {
       type: 'warning'
     })
     
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用取消预订API
+    const response = await reservationApi.cancelReservation(row.id)
     
-    row.status = 'cancelled'
-    ElMessage.success('预订已取消')
+    if (response && response.success) {
+      ElMessage.success('预订已取消')
+      // 刷新预订列表
+      fetchBookingList()
+    } else {
+      ElMessage.error((response?.message) || '取消预订失败')
+    }
   } catch (error) {
-    // 用户取消操作
+    // 用户取消操作或API错误
+    if (error !== 'cancel' && error.message) {
+      console.error('取消预订失败:', error)
+      ElMessage.error('取消预订失败: ' + error.message)
+    }
   }
 }
 
@@ -573,18 +553,57 @@ const fetchBookingList = async () => {
   loading.value = true
   
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 使用API获取预订列表
+    const status = bookingTab.value !== 'all' ? bookingTab.value : null
+    const response = await reservationApi.getUserReservations(currentPage.value, pageSize.value, status)
     
-    // 根据tab筛选数据
-    if (bookingTab.value !== 'all') {
-      bookingList.value = bookingList.value.filter(item => item.status === bookingTab.value)
+    if (response && response.success) {
+      bookingList.value = response.data.list || []
+      total.value = response.data.total || 0
+    } else {
+      ElMessage.warning('获取预订列表失败: ' + (response?.message || '未知错误'))
+      bookingList.value = []
+      total.value = 0
     }
     
-    total.value = bookingList.value.length
     loading.value = false
   } catch (error) {
     console.error('获取预订列表失败:', error)
+    ElMessage.error('获取预订列表失败: ' + error.message)
+    bookingList.value = []
+    total.value = 0
+    loading.value = false
+  }
+}
+
+// 获取积分记录
+const fetchPointsList = async () => {
+  loading.value = true
+  
+  try {
+    // 从API获取积分记录
+    const response = await membershipApi.getPointsHistory(currentPage.value, pageSize.value)
+    
+    if (response && response.success) {
+      // 将积分记录转换为表格展示所需的格式
+      const records = response.data.list || []
+      pointsList.value = records.map(record => ({
+        id: record.id,
+        date: record.createTime.split(' ')[0],
+        description: record.description,
+        points: record.points,
+        balance: record.balance
+      }))
+    } else {
+      ElMessage.warning('获取积分记录失败: ' + (response?.message || '未知错误'))
+      pointsList.value = []
+    }
+    
+    loading.value = false
+  } catch (error) {
+    console.error('获取积分记录失败:', error)
+    ElMessage.error('获取积分记录失败: ' + error.message)
+    pointsList.value = []
     loading.value = false
   }
 }
@@ -671,39 +690,51 @@ onMounted(async () => {
   console.log('Profile组件已挂载')
   console.log('当前用户信息:', userInfo)
   
-  // 确保用户已登录
-  const userId = localStorage.getItem('userId')
-  if (!userId) {
-    console.warn('用户未登录，但访问了个人中心')
-    router.push('/login')
-    return
-  }
-  
   try {
+    loading.value = true
+    
     // 获取用户基本信息
-    const userResponse = await userApi.getUserInfo(userId)
-    if (userResponse && userResponse.data) {
-      userForm.realName = userResponse.data.realName || ''
-      userForm.phone = userResponse.data.phone || ''
-      userForm.email = userResponse.data.email || ''
-      userForm.birthday = userResponse.data.birthday || ''
-      userForm.gender = userResponse.data.gender || ''
+    const userResponse = await userApi.getUserInfo()
+    if (userResponse) {
+      userForm.userName = userResponse.username || userInfo.userName
+      userForm.realName = userResponse.realName || ''
+      userForm.phone = userResponse.phone || ''
+      userForm.email = userResponse.email || ''
+      userForm.birthday = userResponse.birthday || ''
+      userForm.gender = userResponse.gender || ''
+      
+      // 更新显示的用户名
+      userInfo.userName = userResponse.username || userInfo.userName
+      localStorage.setItem('userName', userInfo.userName)
     }
     
     // 获取会员信息
-    const memberInfo = await membershipApi.getMemberInfo(userId)
+    const memberInfo = await membershipApi.getMemberInfo()
     if (memberInfo && memberInfo.data) {
-      userInfo.level = memberInfo.data.memberLevel
-      userInfo.points = memberInfo.data.points
-      userInfo.totalSpent = memberInfo.data.totalSpent
-      localStorage.setItem('userLevel', memberInfo.data.memberLevel)
-      localStorage.setItem('userPoints', String(memberInfo.data.points))
-      localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent))
+      userInfo.level = memberInfo.data.level || '普通用户'
+      userInfo.points = memberInfo.data.points || 0
+      userInfo.totalSpent = memberInfo.data.totalSpent || 0
+      localStorage.setItem('userLevel', userInfo.level)
+      localStorage.setItem('userPoints', String(userInfo.points))
+      localStorage.setItem('userTotalSpent', String(userInfo.totalSpent))
       updateNextLevel()
     }
+    
+    loading.value = false
+    
+    // 加载初始的预订列表
+    if (activeMenu.value === 'bookings') {
+      fetchBookingList()
+    }
+    
+    // 加载初始的积分记录
+    if (activeMenu.value === 'points') {
+      fetchPointsList()
+    }
   } catch (error) {
+    loading.value = false
     console.error('获取用户数据失败:', error)
-    ElMessage.error('获取用户数据失败：' + error.message)
+    ElMessage.error('获取用户数据失败: ' + error.message)
   }
   
   // 确保路由配置和组件渲染正常

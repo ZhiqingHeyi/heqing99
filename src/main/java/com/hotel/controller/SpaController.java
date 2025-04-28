@@ -10,7 +10,6 @@ public class SpaController {
      * 将所有前端路由请求重定向到index.html
      */
     @GetMapping({
-        "/",
         "/admin", 
         "/admin/**"
     })
