@@ -5,6 +5,7 @@ import com.hotel.entity.User;
 import com.hotel.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -471,6 +472,7 @@ public class UserController {
     }
 
     @GetMapping("/staff/active")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllActiveStaff() {
         try {
             System.out.println("接收到获取在职员工请求");
@@ -479,9 +481,8 @@ public class UserController {
             // 移除敏感信息
             users.forEach(user -> user.setPassword(null));
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", users);
+            // 使用API响应工具类返回统一格式
+            ApiResponse<List<User>> response = ApiResponse.success(users);
             
             System.out.println("返回在职员工信息成功, 员工数量: " + users.size());
             return ResponseEntity.ok(response);
@@ -489,33 +490,44 @@ public class UserController {
             System.err.println("获取在职员工失败: " + e.getMessage());
             e.printStackTrace();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取在职员工失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 使用API响应工具类返回错误信息
+            ApiResponse<?> errorResponse = ApiResponse.fail("获取在职员工失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 
     @GetMapping("/count/{role}")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> countUsersByRole(@PathVariable User.UserRole role) {
         try {
             System.out.println("接收到统计角色用户数量请求, role: " + role);
+            
+            // 验证角色参数是否有效
+            if (role == null) {
+                return ResponseEntity.badRequest().body(
+                    ApiResponse.fail("无效的角色参数")
+                );
+            }
+            
             Long count = userService.countUsersByRole(role);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("count", count);
+            // 使用API响应工具类返回统一格式
+            ApiResponse<Long> response = ApiResponse.success(count);
             
             System.out.println("返回角色用户数量成功, 角色: " + role + ", 数量: " + count);
             return ResponseEntity.ok(response);
+        } catch (IllegalArgumentException e) {
+            System.err.println("角色参数错误: " + e.getMessage());
+            return ResponseEntity.badRequest().body(
+                ApiResponse.fail("角色参数错误: " + e.getMessage())
+            );
         } catch (Exception e) {
             System.err.println("统计角色用户数量失败: " + e.getMessage());
             e.printStackTrace();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "统计角色用户数量失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 使用API响应工具类返回错误信息
+            ApiResponse<?> errorResponse = ApiResponse.fail("统计角色用户数量失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 }

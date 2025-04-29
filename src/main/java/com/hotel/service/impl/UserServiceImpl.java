@@ -212,7 +212,15 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllActiveStaff() {
-        return userRepository.findAllActiveStaff();
+        try {
+            System.out.println("获取所有活跃员工...");
+            List<User> activeStaff = userRepository.findAllActiveStaff();
+            System.out.println("成功获取活跃员工，数量: " + activeStaff.size());
+            return activeStaff;
+        } catch (Exception e) {
+            System.err.println("获取活跃员工失败: " + e.getMessage());
+            throw new RuntimeException("获取活跃员工时发生错误: " + e.getMessage(), e);
+        }
     }
 
     @Override
@@ -225,7 +233,19 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public Long countUsersByRole(User.UserRole role) {
-        return userRepository.countByRole(role);
+        if (role == null) {
+            throw new IllegalArgumentException("角色参数不能为空");
+        }
+        
+        try {
+            System.out.println("统计角色为 " + role + " 的用户数量...");
+            long count = userRepository.countByRole(role);
+            System.out.println("成功获取角色 " + role + " 的用户数量: " + count);
+            return count;
+        } catch (Exception e) {
+            System.err.println("统计角色用户数量失败: " + e.getMessage());
+            throw new RuntimeException("统计角色用户数量时发生错误: " + e.getMessage(), e);
+        }
     }
 
     @Override

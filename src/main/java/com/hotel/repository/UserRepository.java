@@ -22,7 +22,7 @@ public interface UserRepository extends JpaRepository<User, Long> {
 
     List<User> findByRoleAndEnabledTrue(User.UserRole role);
 
-    @Query("SELECT u FROM User u WHERE (u.role = 'RECEPTIONIST' OR u.role = 'CLEANER') AND u.enabled = true")
+    @Query("SELECT u FROM User u WHERE (u.role = 'ADMIN' OR u.role = 'RECEPTIONIST' OR u.role = 'CLEANER') AND u.enabled = true")
     List<User> findAllActiveStaff();
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = ?1")
