@@ -137,7 +137,9 @@ public class CheckInController {
             List<AdditionalCharge> additionalCharges = null;
             if (checkoutInfo.containsKey("additionalCharges")) {
                 // 需要将Map转换为AdditionalCharge对象列表
-                additionalCharges = AdditionalCharge.fromList((List<Map<String, Object>>) checkoutInfo.get("additionalCharges"));
+                @SuppressWarnings("unchecked")
+                List<Map<String, Object>> chargesList = (List<Map<String, Object>>) checkoutInfo.get("additionalCharges");
+                additionalCharges = AdditionalCharge.fromList(chargesList);
             }
             
             // 解析退还押金

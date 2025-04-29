@@ -306,4 +306,35 @@ public class CheckInServiceImpl implements CheckInService {
         // 保存更新后的入住记录
         return checkInRecordRepository.save(checkInRecord);
     }
+    
+    @Override
+    public CheckInRecord updateCheckInRecord(CheckInRecord checkInRecord) {
+        // 验证入住记录
+        if (checkInRecord == null) {
+            throw new IllegalArgumentException("入住记录不能为空");
+        }
+        
+        // 检查入住记录ID是否存在
+        if (checkInRecord.getId() == null) {
+            throw new IllegalArgumentException("入住记录ID不能为空");
+        }
+        
+        // 检查入住记录是否存在
+        CheckInRecord existingRecord = checkInRecordRepository.findById(checkInRecord.getId())
+                .orElseThrow(() -> new ResourceNotFoundException("入住记录不存在，ID: " + checkInRecord.getId()));
+        
+        // 如果客人已退房，不允许更新
+        if (existingRecord.getStatus() == CheckInRecord.CheckInStatus.CHECKED_OUT) {
+            throw new IllegalStateException("客人已退房，无法更新入住信息");
+        }
+        
+        // 保存更新后的记录
+        return checkInRecordRepository.save(checkInRecord);
+    }
+    
+    @Override
+    public List<CheckInRecord> getCurrentlyCheckedInRecords() {
+        // 使用repository中已定义的方法查询当前所有入住的客人记录
+        return checkInRecordRepository.findCurrentlyCheckedIn();
+    }
 } 

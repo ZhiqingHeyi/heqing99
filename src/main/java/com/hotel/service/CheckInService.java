@@ -53,4 +53,10 @@ public interface CheckInService {
 
     // 延长入住时间
     CheckInRecord extendStay(Long checkInId, LocalDate newCheckOutDate, String remarks);
+    
+    // 更新入住记录
+    CheckInRecord updateCheckInRecord(CheckInRecord checkInRecord);
+    
+    // 获取当前所有入住的客人记录
+    List<CheckInRecord> getCurrentlyCheckedInRecords();
 } 

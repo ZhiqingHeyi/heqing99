@@ -310,7 +310,7 @@ public class ReservationServiceImpl implements ReservationService {
     @Transactional
     public CheckInRecord processCheckIn(CheckInRecord checkInRecord) {
         // 设置入住时间
-        checkInRecord.setActualCheckIn(LocalDateTime.now());
+        checkInRecord.setActualCheckInTime(LocalDateTime.now());
         
         // 保存记录
         return checkInRecordRepository.save(checkInRecord);
