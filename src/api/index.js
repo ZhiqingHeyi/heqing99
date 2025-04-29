@@ -362,5 +362,203 @@ export const pointsExchangeApi = {
   calculateCashValue: (points) => apiClient.get(`/api/points-exchange/calculate?points=${points}`)
 };
 
+// 入住相关API
+export const checkInApi = {
+  // 创建入住记录
+  createCheckIn: (checkInData) => {
+    console.log('调用创建入住记录API:', checkInData)
+    return apiClient.post('/api/check-in', checkInData)
+      .then(response => {
+        console.log('创建入住记录API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '创建入住记录失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('创建入住记录API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 获取入住详情
+  getCheckInDetail: (id) => {
+    console.log('调用获取入住详情API:', id)
+    return apiClient.get(`/api/check-in/${id}`)
+      .then(response => {
+        console.log('获取入住详情API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取入住详情失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取入住详情API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 查询入住记录列表
+  getCheckInList: (params = {}) => {
+    console.log('调用查询入住记录列表API:', params)
+    return apiClient.get('/api/check-in/current', { params })
+      .then(response => {
+        console.log('查询入住记录列表API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '查询入住记录列表失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('查询入住记录列表API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 变更房间
+  changeRoom: (id, changeRoomData) => {
+    console.log('调用变更房间API:', id, changeRoomData)
+    return apiClient.post(`/api/check-in/${id}/change-room`, changeRoomData)
+      .then(response => {
+        console.log('变更房间API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '变更房间失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('变更房间API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 更新入住信息
+  updateCheckIn: (id, updateData) => {
+    console.log('调用更新入住信息API:', id, updateData)
+    return apiClient.put(`/api/check-in/${id}`, updateData)
+      .then(response => {
+        console.log('更新入住信息API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '更新入住信息失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('更新入住信息API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  }
+};
+
+// 退房相关API
+export const checkOutApi = {
+  // 办理退房
+  createCheckOut: (checkOutData) => {
+    console.log('调用办理退房API:', checkOutData)
+    return apiClient.post('/api/check-out', checkOutData)
+      .then(response => {
+        console.log('办理退房API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '办理退房失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('办理退房API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 获取退房详情
+  getCheckOutDetail: (id) => {
+    console.log('调用获取退房详情API:', id)
+    return apiClient.get(`/api/check-out/${id}`)
+      .then(response => {
+        console.log('获取退房详情API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取退房详情失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取退房详情API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 查询退房历史记录
+  getCheckOutHistory: (params = {}) => {
+    console.log('调用查询退房历史记录API:', params)
+    return apiClient.get('/api/check-out/history', { params })
+      .then(response => {
+        console.log('查询退房历史记录API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '查询退房历史记录失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('查询退房历史记录API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  }
+};
+
 // 导出API客户端，方便直接使用
 export default apiClient;
