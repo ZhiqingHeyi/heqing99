@@ -212,7 +212,7 @@ public class UserServiceImpl implements UserService {
 
     @Override
     public List<User> getAllActiveStaff() {
-        return userRepository.findByRoleAndEnabledTrue(User.UserRole.CLEANER);
+        return userRepository.findAllActiveStaff();
     }
 
     @Override

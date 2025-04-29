@@ -1,14 +1,21 @@
 package com.hotel.controller;
 
 import com.hotel.dto.MembershipDTO;
+import com.hotel.dto.PointsHistoryDTO;
 import com.hotel.entity.MemberLevel;
 import com.hotel.entity.User;
+import com.hotel.service.PointsHistoryService;
 import com.hotel.service.UserService;
+import com.hotel.util.UserContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Sort;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -20,6 +27,9 @@ public class MembershipController {
 
     @Autowired
     private UserService userService;
+    
+    @Autowired
+    private PointsHistoryService pointsHistoryService;
 
     /**
      * 获取用户会员信息
@@ -36,6 +46,32 @@ public class MembershipController {
         } catch (Exception e) {
             System.err.println("获取会员信息失败: " + e.getMessage());
             e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取会员信息失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    /**
+     * 获取当前用户的会员信息
+     */
+    @GetMapping("/info")
+    public ResponseEntity<?> getCurrentUserMembershipInfo() {
+        try {
+            // 获取当前登录用户ID
+            Long userId = UserContextHolder.getCurrentUserId();
+            User user = userService.getUserById(userId);
+            MembershipDTO memberInfo = MembershipDTO.fromUser(user);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", memberInfo);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "获取会员信息失败: " + e.getMessage());
@@ -182,7 +218,7 @@ public class MembershipController {
     }
     
     /**
-     * 计算会员等级
+     * 获取所有会员等级及其权益
      */
     @GetMapping("/levels")
     public ResponseEntity<?> getMembershipLevels() {
@@ -198,38 +234,73 @@ public class MembershipController {
                 }
                 
                 Map<String, Object> levelInfo = new HashMap<>();
+                levelInfo.put("id", level.name().toLowerCase());
                 levelInfo.put("name", level.getDisplayName());
-                levelInfo.put("code", level.name());
                 levelInfo.put("discount", level.getDiscount());
                 
-                // 设置阈值
+                // 设置积分率和阈值
                 int threshold = 0;
+                double pointRate = 0;
+                String nextLevel = null;
+                Integer nextLevelThreshold = null;
+                List<String> privileges = new ArrayList<>();
+                
                 switch (level) {
                     case BRONZE:
                         threshold = 1500;
-                        levelInfo.put("pointsRate", 100);
+                        pointRate = 1.0;
+                        nextLevel = "银牌会员";
+                        nextLevelThreshold = 5000;
+                        privileges.add("基础折扣9.8折");
+                        privileges.add("积分兑换");
                         break;
                     case SILVER:
                         threshold = 5000;
-                        levelInfo.put("pointsRate", 120);
+                        pointRate = 1.2;
+                        nextLevel = "金牌会员";
+                        nextLevelThreshold = 10000;
+                        privileges.add("折扣9.5折");
+                        privileges.add("预订免押金");
+                        privileges.add("生日礼遇");
                         break;
                     case GOLD:
                         threshold = 10000;
-                        levelInfo.put("pointsRate", 150);
+                        pointRate = 1.5;
+                        nextLevel = "钻石会员";
+                        nextLevelThreshold = 30000;
+                        privileges.add("折扣9折");
+                        privileges.add("预订免押金");
+                        privileges.add("生日礼遇");
+                        privileges.add("专属客服");
                         break;
                     case DIAMOND:
                         threshold = 30000;
-                        levelInfo.put("pointsRate", 200);
+                        pointRate = 2.0;
+                        nextLevel = null;
+                        nextLevelThreshold = null;
+                        privileges.add("折扣8.5折");
+                        privileges.add("预订免押金");
+                        privileges.add("生日礼遇");
+                        privileges.add("专属客服");
+                        privileges.add("机场接送");
+                        privileges.add("免费升级房型");
                         break;
                 }
                 
+                levelInfo.put("pointRate", pointRate);
                 levelInfo.put("threshold", threshold);
+                levelInfo.put("nextLevel", nextLevel);
+                levelInfo.put("nextLevelThreshold", nextLevelThreshold);
+                levelInfo.put("privileges", privileges);
+                
                 levels.add(levelInfo);
             }
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("levels", levels);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", levels);
             
             System.out.println("返回会员等级列表成功");
             return ResponseEntity.ok(response);
@@ -239,6 +310,106 @@ public class MembershipController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
             response.put("message", "获取会员等级信息失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * 获取积分变动历史
+     */
+    @GetMapping("/points/history")
+    public ResponseEntity<?> getPointsHistory(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize) {
+        try {
+            // 获取当前登录用户ID
+            Long userId = UserContextHolder.getCurrentUserId();
+            
+            // 构建分页对象
+            org.springframework.data.domain.Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+            
+            // 获取积分历史
+            Page<PointsHistoryDTO> historyPage = pointsHistoryService.getUserPointsHistory(userId, pageable);
+            
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("total", historyPage.getTotalElements());
+            responseData.put("list", historyPage.getContent());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", responseData);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取积分历史失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    /**
+     * 根据会员等级计算折扣后的价格
+     */
+    @PostMapping("/calculate-discount")
+    public ResponseEntity<?> calculateDiscount(
+            @RequestParam BigDecimal originalPrice) {
+        try {
+            // 获取当前登录用户ID
+            Long userId = UserContextHolder.getCurrentUserId();
+            User user = userService.getUserById(userId);
+            
+            // 获取折扣率
+            double discountRate = user.getDiscountRate();
+            
+            // 计算折扣价格
+            BigDecimal discountPrice = originalPrice.multiply(BigDecimal.valueOf(discountRate)).setScale(2, RoundingMode.HALF_UP);
+            BigDecimal discountAmount = originalPrice.subtract(discountPrice).setScale(2, RoundingMode.HALF_UP);
+            
+            // 计算预计获得的积分
+            int pointsRate = 0;
+            switch (user.getMemberLevel()) {
+                case BRONZE:
+                    pointsRate = 100;
+                    break;
+                case SILVER:
+                    pointsRate = 120;
+                    break;
+                case GOLD:
+                    pointsRate = 150;
+                    break;
+                case DIAMOND:
+                    pointsRate = 200;
+                    break;
+                default:
+                    pointsRate = 0;
+            }
+            
+            int estimatedPoints = discountPrice.multiply(BigDecimal.valueOf(pointsRate))
+                    .divide(BigDecimal.valueOf(100), RoundingMode.FLOOR)
+                    .intValue();
+            
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("originalPrice", originalPrice);
+            responseData.put("discountRate", discountRate);
+            responseData.put("discountPrice", discountPrice);
+            responseData.put("discountAmount", discountAmount);
+            responseData.put("memberLevel", user.getMemberLevel().getDisplayName());
+            responseData.put("estimatedPoints", estimatedPoints);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "计算成功");
+            response.put("data", responseData);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "计算折扣价格失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
