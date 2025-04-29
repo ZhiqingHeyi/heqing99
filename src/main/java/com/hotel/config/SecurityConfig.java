@@ -58,6 +58,8 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .antMatchers(HttpMethod.POST, "/admin/login").permitAll()
                 .antMatchers(HttpMethod.GET, "/admin/login").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/auth/login").permitAll()
+                // 刷新Token接口
+                .antMatchers(HttpMethod.POST, "/refresh-token").permitAll()
                 // 用户相关API
                 .antMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/users/login").permitAll()
@@ -76,7 +78,7 @@ public class SecurityConfig extends WebSecurityConfigurerAdapter {
                 .permitAll()
             .and()
                 .logout()
-                .logoutUrl("/admin/logout")
+                .logoutUrl("/logout")
                 .logoutSuccessUrl("/admin/login")
                 .permitAll();
                 

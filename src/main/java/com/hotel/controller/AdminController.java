@@ -62,12 +62,19 @@ public class AdminController {
             }
             
             if (isValid) {
-                // 生成token
-                String token = "token-" + username + "-" + System.currentTimeMillis();
+                // 生成JWT token
+                String token = JwtUtil.generateToken(username, role);
+                
+                // 生成refresh token
+                String refreshToken = JwtUtil.generateRefreshToken(username, role);
+                
+                // 获取token过期时间（秒）
+                long expiresIn = JwtUtil.getExpirationDuration();
                 
                 // 构建响应
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", true);
+                response.put("code", 200);
                 response.put("message", "登录成功");
                 
                 Map<String, Object> data = new HashMap<>();
@@ -76,6 +83,19 @@ public class AdminController {
                 data.put("role", role);
                 data.put("name", userName);
                 data.put("token", token);
+                data.put("refreshToken", refreshToken);
+                data.put("expiresIn", expiresIn);
+                
+                Map<String, Object> staffInfo = new HashMap<>();
+                staffInfo.put("id", userId.toString());
+                staffInfo.put("username", username);
+                staffInfo.put("realName", userName);
+                staffInfo.put("role", role);
+                staffInfo.put("phone", "");
+                staffInfo.put("email", "");
+                staffInfo.put("department", role.equals("admin") ? "管理部" : (role.equals("receptionist") ? "前台部" : "清洁部"));
+                
+                data.put("staffInfo", staffInfo);
                 
                 response.put("data", data);
                 
@@ -84,17 +104,19 @@ public class AdminController {
             } else {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
+                response.put("code", 401);
                 response.put("message", "用户名或密码错误");
                 System.out.println("登录失败: " + response);
-                return ResponseEntity.ok(response);
+                return ResponseEntity.status(401).body(response);
             }
         } catch (Exception e) {
             e.printStackTrace();
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
+            response.put("code", 500);
             response.put("message", "服务器错误: " + e.getMessage());
             System.out.println("登录异常: " + e.getMessage());
-            return ResponseEntity.ok(response);
+            return ResponseEntity.status(500).body(response);
         }
     }
 }

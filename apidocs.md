@@ -1780,17 +1780,254 @@ Authorization: Bearer {token}
 }
 ```
 
-## 入住和退房
+## 消费记录
 
-> **标签:** `入住` `退房` `前台` `客房`
+> **标签:** `消费` `会员` `用户`
 
-### 1. 前台办理入住
+### 1. 获取用户消费记录
 
-**接口描述**：前台为客人办理入住手续
+**接口描述**：获取用户的消费记录列表
+
+**请求方法**：GET
+
+**接口URL**：`/api/consumption-records/user/{userId}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| userId | Long | 是 | 用户ID |
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| page | Integer | 否 | 页码，默认0 |
+| size | Integer | 否 | 每页条数，默认10 |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "content": [
+      {
+        "id": 1001,
+        "amount": 1299.00,
+        "discountedAmount": 1169.10,
+        "discountRate": 0.9,
+        "pointsEarned": 1169,
+        "type": "房费",
+        "description": "豪华大床房两晚",
+        "reservationId": 5001,
+        "roomId": 301,
+        "consumptionTime": "2023-07-01T12:00:00"
+      },
+      {
+        "id": 1002,
+        "amount": 258.00,
+        "discountedAmount": 232.20,
+        "discountRate": 0.9,
+        "pointsEarned": 232,
+        "type": "餐饮",
+        "description": "西餐厅晚餐",
+        "reservationId": 5001,
+        "roomId": 301,
+        "consumptionTime": "2023-07-01T19:30:00"
+      }
+      // ...更多记录
+    ],
+    "pageable": {
+      "pageNumber": 0,
+      "pageSize": 10,
+      "totalPages": 3,
+      "totalElements": 28
+    }
+  }
+}
+```
+
+### 2. 获取消费记录详情
+
+**接口描述**：获取特定消费记录的详细信息
+
+**请求方法**：GET
+
+**接口URL**：`/api/consumption-records/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 消费记录ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 1001,
+    "userId": 2001,
+    "userName": "张三",
+    "amount": 1299.00,
+    "discountedAmount": 1169.10,
+    "discountRate": 0.9,
+    "pointsEarned": 1169,
+    "type": "房费",
+    "description": "豪华大床房两晚",
+    "reservationId": 5001,
+    "roomId": 301,
+    "roomNumber": "301",
+    "roomType": "豪华大床房",
+    "consumptionTime": "2023-07-01T12:00:00",
+    "paymentMethod": "信用卡",
+    "invoiceNo": "INV202307010001",
+    "operatorId": 3001,
+    "operatorName": "李四",
+    "remarks": "会员9折优惠"
+  }
+}
+```
+
+### 3. 按时间范围查询消费记录
+
+**接口描述**：获取指定时间范围内的消费记录
+
+**请求方法**：GET
+
+**接口URL**：`/api/consumption-records/user/{userId}/time-range`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| userId | Long | 是 | 用户ID |
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| start | String | 是 | 开始日期(YYYY-MM-DD) |
+| end | String | 是 | 结束日期(YYYY-MM-DD) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": 1001,
+      "amount": 1299.00,
+      "discountedAmount": 1169.10,
+      "discountRate": 0.9,
+      "pointsEarned": 1169,
+      "type": "房费",
+      "description": "豪华大床房两晚",
+      "consumptionTime": "2023-07-01T12:00:00"
+    },
+    {
+      "id": 1002,
+      "amount": 258.00,
+      "discountedAmount": 232.20,
+      "discountRate": 0.9,
+      "pointsEarned": 232,
+      "type": "餐饮",
+      "description": "西餐厅晚餐",
+      "consumptionTime": "2023-07-01T19:30:00"
+    }
+    // ...更多记录
+  ]
+}
+```
+
+### 4. 按消费类型查询记录
+
+**接口描述**：获取指定类型的消费记录
+
+**请求方法**：GET
+
+**接口URL**：`/api/consumption-records/user/{userId}/type/{type}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| userId | Long | 是 | 用户ID |
+| type | String | 是 | 消费类型(房费/餐饮/会议室/SPA等) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": 1001,
+      "amount": 1299.00,
+      "discountedAmount": 1169.10,
+      "discountRate": 0.9,
+      "pointsEarned": 1169,
+      "type": "房费",
+      "description": "豪华大床房两晚",
+      "consumptionTime": "2023-07-01T12:00:00"
+    },
+    {
+      "id": 1005,
+      "amount": 1499.00,
+      "discountedAmount": 1349.10,
+      "discountRate": 0.9,
+      "pointsEarned": 1349,
+      "type": "房费",
+      "description": "家庭套房一晚",
+      "consumptionTime": "2023-07-15T14:00:00"
+    }
+    // ...更多记录
+  ]
+}
+```
+
+### 5. 创建消费记录
+
+**接口描述**：为用户创建新的消费记录
 
 **请求方法**：POST
 
-**接口URL**：`/api/admin/checkin`
+**接口URL**：`/api/consumption-records`
 
 **请求头**：
 
@@ -1800,21 +2037,171 @@ Authorization: Bearer {token}
 
 **请求参数**：
 
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| userId | Long | 是 | 用户ID |
+| amount | BigDecimal | 是 | 消费金额 |
+| type | String | 是 | 消费类型 |
+| description | String | 否 | 消费描述 |
+| reservationId | Long | 否 | 关联的预订ID |
+| roomId | Long | 否 | 关联的房间ID |
+
+**成功响应**：
+
 ```json
 {
-  "bookingId": 1001,     // 可选，有预订时关联
-  "roomId": 105,
-  "guestName": "李明",
-  "guestIdType": "身份证",
-  "guestIdNumber": "110101199001011234",
-  "guestMobile": "13800138000",
-  "checkInDate": "2023-07-01",
-  "checkOutDate": "2023-07-03",
-  "guestCount": 2,
-  "deposit": 500,
-  "paymentMethod": "CASH",
-  "specialRequests": "希望有安静的房间",
-  "remarks": "客人提前到店"
+  "success": true,
+  "code": 200,
+  "message": "创建成功",
+  "data": {
+    "id": 1010,
+    "userId": 2001,
+    "amount": 580.00,
+    "discountedAmount": 522.00,
+    "discountRate": 0.9,
+    "pointsEarned": 522,
+    "type": "餐饮",
+    "description": "中餐厅午餐",
+    "reservationId": 5001,
+    "roomId": 301,
+    "consumptionTime": "2023-07-03T13:15:00"
+  }
+}
+```
+
+### 6. : 获取消费统计数据
+
+**接口描述**：获取用户的消费统计数据
+
+**请求方法**：GET
+
+**接口URL**：`/api/consumption-records/user/{userId}/statistics`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| userId | Long | 是 | 用户ID |
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| period | String | 否 | 统计周期(month/quarter/year)，默认month |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "totalAmount": 6788.50,
+    "totalDiscountedAmount": 6109.65,
+    "totalPointsEarned": 6110,
+    "totalSavings": 678.85,
+    "byType": [
+      {
+        "type": "房费",
+        "amount": 4998.00,
+        "percentage": 73.62
+      },
+      {
+        "type": "餐饮",
+        "amount": 1250.50,
+        "percentage": 18.42
+      },
+      {
+        "type": "SPA",
+        "amount": 540.00,
+        "percentage": 7.96
+      }
+    ],
+    "byMonth": [
+      {
+        "month": "2023-04",
+        "amount": 2100.00
+      },
+      {
+        "month": "2023-05",
+        "amount": 1980.50
+      },
+      {
+        "month": "2023-06",
+        "amount": 2708.00
+      }
+    ],
+    "averageConsumption": 2262.83,
+    "consumptionCount": 12
+  }
+}
+```
+
+## 入住和退房
+
+> **标签:** `入住` `退房` `前台` `客房`
+
+### 1. 办理入住
+
+**接口描述**：为预订客人办理入住手续
+
+**请求方法**：POST
+
+**接口URL**：`/api/check-in`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**请求参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| reservationId | Long | 是 | 预订ID |
+| guestIdInfo | Object | 是 | 客人身份信息 |
+| guestIdInfo.idType | String | 是 | 证件类型(身份证/护照/驾照等) |
+| guestIdInfo.idNumber | String | 是 | 证件号码 |
+| guestIdInfo.name | String | 是 | 证件姓名 |
+| roomId | Long | 是 | 分配的房间ID |
+| checkInTime | String | 是 | 入住时间(YYYY-MM-DDTHH:MM:SS) |
+| estimatedCheckOutTime | String | 是 | 预计退房时间(YYYY-MM-DDTHH:MM:SS) |
+| depositAmount | BigDecimal | 是 | 押金金额 |
+| depositMethod | String | 是 | 押金方式(现金/信用卡预授权) |
+| remarks | String | 否 | 备注信息 |
+| additionalGuests | Array | 否 | 其他入住人信息 |
+
+**请求示例**：
+
+```json
+{
+  "reservationId": 5001,
+  "guestIdInfo": {
+    "idType": "身份证",
+    "idNumber": "110101199001011234",
+    "name": "张三"
+  },
+  "roomId": 301,
+  "checkInTime": "2023-07-01T14:00:00",
+  "estimatedCheckOutTime": "2023-07-03T12:00:00",
+  "depositAmount": 1000.00,
+  "depositMethod": "信用卡预授权",
+  "remarks": "客人要求高层安静房间",
+  "additionalGuests": [
+    {
+      "idType": "身份证",
+      "idNumber": "110101199001011235",
+      "name": "李四"
+    }
+  ]
 }
 ```
 
@@ -1823,40 +2210,33 @@ Authorization: Bearer {token}
 ```json
 {
   "success": true,
-  "message": "入住登记成功",
+  "code": 200,
+  "message": "入住办理成功",
   "data": {
-    "id": 2001,
-    "checkInNumber": "CI202307010001",
-    "bookingId": 1001,
-    "roomId": 105,
-    "roomNumber": "308",
+    "checkInId": 6001,
+    "reservationId": 5001,
+    "guestName": "张三",
+    "roomNumber": "301",
     "roomType": "豪华大床房",
-    "guestName": "李明",
-    "guestIdType": "身份证",
-    "guestIdNumber": "110101199001011234",
-    "guestMobile": "13800138000",
-    "checkInDate": "2023-07-01",
-    "checkOutDate": "2023-07-03",
-    "actualCheckInTime": "2023-07-01T14:30:00",
-    "guestCount": 2,
-    "deposit": 500,
-    "paymentMethod": "CASH",
-    "status": "CHECKED_IN",
-    "totalAmount": 998.00,
-    "operatorId": 5001,
-    "operatorName": "张经理",
-    "createTime": "2023-07-01T14:30:00"
+    "checkInTime": "2023-07-01T14:00:00",
+    "estimatedCheckOutTime": "2023-07-03T12:00:00",
+    "actualCheckOutTime": null,
+    "depositAmount": 1000.00,
+    "depositMethod": "信用卡预授权",
+    "checkInStatus": "已入住",
+    "operatorId": 3001,
+    "operatorName": "前台-李四"
   }
 }
 ```
 
 ### 2. 获取入住详情
 
-**接口描述**：获取指定入住记录的详细信息
+**接口描述**：获取入住记录详情
 
 **请求方法**：GET
 
-**接口URL**：`/api/admin/checkin/{id}`
+**接口URL**：`/api/check-in/{id}`
 
 **请求头**：
 
@@ -1875,53 +2255,77 @@ Authorization: Bearer {token}
 ```json
 {
   "success": true,
+  "code": 200,
+  "message": "获取成功",
   "data": {
-    "id": 2001,
-    "checkInNumber": "CI202307010001",
-    "bookingId": 1001,
-    "booking": {
-      "id": 1001,
-      "bookingNumber": "B202306120001"
+    "checkInId": 6001,
+    "reservationId": 5001,
+    "guestInfo": {
+      "userId": 2001,
+      "name": "张三",
+      "idType": "身份证",
+      "idNumber": "110101199001011234",
+      "phone": "13800138000",
+      "email": "zhangsan@example.com",
+      "memberLevel": "银牌会员"
     },
-    "room": {
-      "id": 105,
-      "roomNumber": "308",
+    "roomInfo": {
+      "roomId": 301,
+      "roomNumber": "301",
+      "roomType": "豪华大床房",
       "floor": 3,
-      "roomType": {
-        "id": 1,
-        "name": "豪华大床房"
-      }
+      "building": "主楼"
     },
-    "guestName": "李明",
-    "guestIdType": "身份证",
-    "guestIdNumber": "110101199001011234",
-    "guestMobile": "13800138000",
-    "checkInDate": "2023-07-01",
-    "checkOutDate": "2023-07-03",
-    "actualCheckInTime": "2023-07-01T14:30:00",
+    "checkInTime": "2023-07-01T14:00:00",
+    "estimatedCheckOutTime": "2023-07-03T12:00:00",
     "actualCheckOutTime": null,
-    "guestCount": 2,
-    "deposit": 500,
-    "paymentMethod": "CASH",
-    "status": "CHECKED_IN",
-    "totalAmount": 998.00,
-    "additionalCharges": [],
-    "remarks": "客人提前到店",
-    "operatorId": 5001,
-    "operatorName": "张经理",
-    "createTime": "2023-07-01T14:30:00",
-    "updateTime": "2023-07-01T14:30:00"
+    "depositAmount": 1000.00,
+    "depositMethod": "信用卡预授权",
+    "depositStatus": "已收取",
+    "depositRefundStatus": null,
+    "checkInStatus": "已入住",
+    "additionalGuests": [
+      {
+        "name": "李四",
+        "idType": "身份证",
+        "idNumber": "110101199001011235"
+      }
+    ],
+    "consumptionRecords": [
+      {
+        "id": 1001,
+        "amount": 1299.00,
+        "type": "房费",
+        "description": "豪华大床房两晚",
+        "consumptionTime": "2023-07-01T12:00:00"
+      },
+      {
+        "id": 1002,
+        "amount": 258.00,
+        "type": "餐饮",
+        "description": "西餐厅晚餐",
+        "consumptionTime": "2023-07-01T19:30:00"
+      }
+    ],
+    "totalConsumption": 1557.00,
+    "discountedTotalConsumption": 1401.30,
+    "operatorInfo": {
+      "operatorId": 3001,
+      "operatorName": "前台-李四",
+      "operationTime": "2023-07-01T14:00:00"
+    },
+    "remarks": "客人要求高层安静房间"
   }
 }
 ```
 
-### 3. 获取入住记录列表
+### 3. 查询当前入住客人列表
 
-**接口描述**：获取入住记录列表（管理员或前台权限）
+**接口描述**：获取当前所有入住客人列表
 
 **请求方法**：GET
 
-**接口URL**：`/api/admin/checkin`
+**接口URL**：`/api/check-in/current`
 
 **请求头**：
 
@@ -1933,138 +2337,59 @@ Authorization: Bearer {token}
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| status | String | 否 | 入住状态(CHECKED_IN/CHECKED_OUT) |
-| roomNumber | String | 否 | 房间号 |
-| guestName | String | 否 | 客人姓名关键词 |
-| guestMobile | String | 否 | 客人手机号 |
-| startDate | String | 否 | 入住日期起始(YYYY-MM-DD) |
-| endDate | String | 否 | 入住日期结束(YYYY-MM-DD) |
-| page | Integer | 否 | 页码(默认1) |
-| size | Integer | 否 | 每页记录数(默认10) |
+| page | Integer | 否 | 页码，默认0 |
+| size | Integer | 否 | 每页条数，默认10 |
+| sortBy | String | 否 | 排序字段(checkInTime/roomNumber/guestName等) |
+| direction | String | 否 | 排序方向(asc/desc)，默认desc |
 
 **成功响应**：
 
 ```json
 {
   "success": true,
+  "code": 200,
+  "message": "获取成功",
   "data": {
     "content": [
       {
-        "id": 2001,
-        "checkInNumber": "CI202307010001",
-        "roomNumber": "308",
+        "checkInId": 6001,
+        "guestName": "张三",
+        "roomNumber": "301",
         "roomType": "豪华大床房",
-        "guestName": "李明",
-        "guestMobile": "13800138000",
-        "checkInDate": "2023-07-01",
-        "checkOutDate": "2023-07-03",
-        "actualCheckInTime": "2023-07-01T14:30:00",
-        "status": "CHECKED_IN",
-        "deposit": 500,
-        "operatorName": "张经理",
-        "createTime": "2023-07-01T14:30:00"
+        "checkInTime": "2023-07-01T14:00:00",
+        "estimatedCheckOutTime": "2023-07-03T12:00:00",
+        "memberLevel": "银牌会员",
+        "phone": "13800138000"
       },
-      // 更多入住记录
+      {
+        "checkInId": 6002,
+        "guestName": "王五",
+        "roomNumber": "305",
+        "roomType": "行政套房",
+        "checkInTime": "2023-07-01T16:30:00",
+        "estimatedCheckOutTime": "2023-07-05T12:00:00",
+        "memberLevel": "金牌会员",
+        "phone": "13900139000"
+      }
+      // ...更多记录
     ],
     "pageable": {
       "pageNumber": 0,
       "pageSize": 10,
       "totalPages": 5,
-      "totalElements": 45
+      "totalElements": 42
     }
   }
 }
 ```
 
-### 4. 办理退房
+### 4. 查询客房入住状态
 
-**接口描述**：为客人办理退房手续
-
-**请求方法**：POST
-
-**接口URL**：`/api/admin/checkout/{checkInId}`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| checkInId | Long | 是 | 入住记录ID |
-
-**请求参数**：
-
-```json
-{
-  "additionalCharges": [
-    {
-      "type": "MINIBAR",
-      "description": "迷你吧消费",
-      "amount": 78.00
-    },
-    {
-      "type": "ROOM_SERVICE",
-      "description": "客房送餐服务",
-      "amount": 120.00
-    }
-  ],
-  "returnDeposit": 350.00,
-  "remarks": "客人提前1天退房",
-  "paymentMethod": "CASH"
-}
-```
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "message": "退房成功",
-  "data": {
-    "id": 2001,
-    "checkInNumber": "CI202307010001",
-    "roomNumber": "308",
-    "guestName": "李明",
-    "checkInDate": "2023-07-01",
-    "checkOutDate": "2023-07-03",
-    "actualCheckInTime": "2023-07-01T14:30:00",
-    "actualCheckOutTime": "2023-07-02T10:15:00",
-    "deposit": 500.00,
-    "returnDeposit": 350.00,
-    "additionalCharges": [
-      {
-        "type": "MINIBAR",
-        "description": "迷你吧消费",
-        "amount": 78.00
-      },
-      {
-        "type": "ROOM_SERVICE",
-        "description": "客房送餐服务",
-        "amount": 120.00
-      }
-    ],
-    "totalAdditionalAmount": 198.00,
-    "totalAmount": 998.00,
-    "finalAmount": 697.00,  // 总房费 + 额外消费 - 押金退还 (499*1天 + 198 - 0)
-    "status": "CHECKED_OUT",
-    "operatorId": 5001,
-    "operatorName": "张经理",
-    "checkoutTime": "2023-07-02T10:15:00"
-  }
-}
-```
-
-### 5. 获取今日入住/退房统计
-
-**接口描述**：获取今日入住和退房的统计数据
+**接口描述**：获取酒店所有客房的入住状态
 
 **请求方法**：GET
 
-**接口URL**：`/api/admin/checkin/today-stats`
+**接口URL**：`/api/rooms/status`
 
 **请求头**：
 
@@ -2072,114 +2397,76 @@ Authorization: Bearer {token}
 Authorization: Bearer {token}
 ```
 
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "data": {
-    "todayCheckin": {
-      "total": 15,
-      "completed": 10,
-      "pending": 5,
-      "list": [
-        {
-          "id": 2010,
-          "checkInNumber": "CI202307030001",
-          "roomNumber": "505",
-          "guestName": "王小明",
-          "checkInDate": "2023-07-03",
-          "checkOutDate": "2023-07-05",
-          "status": "CHECKED_IN",
-          "actualCheckInTime": "2023-07-03T14:10:00"
-        },
-        // 更多入住记录
-      ]
-    },
-    "todayCheckout": {
-      "total": 12,
-      "completed": 8,
-      "pending": 4,
-      "list": [
-        {
-          "id": 2005,
-          "checkInNumber": "CI202307010005",
-          "roomNumber": "510",
-          "guestName": "张雪",
-          "checkInDate": "2023-07-01",
-          "checkOutDate": "2023-07-03",
-          "status": "CHECKED_OUT",
-          "actualCheckOutTime": "2023-07-03T11:30:00"
-        },
-        // 更多退房记录
-      ]
-    },
-    "occupancyRate": 75.5,
-    "availableRooms": 25
-  }
-}
-```
-
-### 6. 添加额外消费记录
-
-**接口描述**：为入住客人添加额外消费记录
-
-**请求方法**：POST
-
-**接口URL**：`/api/admin/checkin/{checkInId}/charges`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
+**查询参数**：
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| checkInId | Long | 是 | 入住记录ID |
-
-**请求参数**：
-
-```json
-{
-  "type": "ROOM_SERVICE",
-  "description": "客房送餐服务",
-  "amount": 120.00,
-  "paymentMethod": "ROOM_CHARGE",
-  "notes": "房客点的晚餐"
-}
-```
+| floor | Integer | 否 | 楼层过滤 |
+| building | String | 否 | 楼栋过滤 |
+| roomType | String | 否 | 房型过滤 |
+| status | String | 否 | 状态过滤(空闲/已预订/已入住/清扫中/维修中) |
 
 **成功响应**：
 
 ```json
 {
   "success": true,
-  "message": "额外消费添加成功",
+  "code": 200,
+  "message": "获取成功",
   "data": {
-    "id": 3001,
-    "checkInId": 2001,
-    "type": "ROOM_SERVICE",
-    "description": "客房送餐服务",
-    "amount": 120.00,
-    "paymentMethod": "ROOM_CHARGE",
-    "notes": "房客点的晚餐",
-    "createTime": "2023-07-01T19:30:00",
-    "operatorId": 5001,
-    "operatorName": "张经理"
+    "totalRooms": 120,
+    "occupiedRooms": 85,
+    "availableRooms": 25,
+    "cleaningRooms": 7,
+    "maintenanceRooms": 3,
+    "occupancyRate": 70.8,
+    "rooms": [
+      {
+        "roomId": 301,
+        "roomNumber": "301",
+        "roomType": "豪华大床房",
+        "floor": 3,
+        "building": "主楼",
+        "status": "已入住",
+        "guestName": "张三",
+        "checkInTime": "2023-07-01T14:00:00",
+        "checkOutTime": "2023-07-03T12:00:00"
+      },
+      {
+        "roomId": 302,
+        "roomNumber": "302",
+        "roomType": "豪华大床房",
+        "floor": 3,
+        "building": "主楼",
+        "status": "空闲",
+        "guestName": null,
+        "checkInTime": null,
+        "checkOutTime": null
+      },
+      {
+        "roomId": 303,
+        "roomNumber": "303",
+        "roomType": "豪华双床房",
+        "floor": 3,
+        "building": "主楼",
+        "status": "清扫中",
+        "guestName": null,
+        "checkInTime": null,
+        "checkOutTime": null
+      }
+      // ...更多房间
+    ]
   }
 }
 ```
 
-### 7. 延长入住时间
+### 5. 更新入住信息
 
-**接口描述**：延长客人的入住时间
+**接口描述**：更新入住客人的信息
 
 **请求方法**：PUT
 
-**接口URL**：`/api/admin/checkin/{checkInId}/extend`
+**接口URL**：`/api/check-in/{id}`
 
 **请求头**：
 
@@ -2191,14 +2478,34 @@ Authorization: Bearer {token}
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| checkInId | Long | 是 | 入住记录ID |
+| id | Long | 是 | 入住记录ID |
 
 **请求参数**：
 
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| estimatedCheckOutTime | String | 否 | 更新预计退房时间 |
+| remarks | String | 否 | 更新备注信息 |
+| additionalGuests | Array | 否 | 更新其他入住人信息 |
+
+**请求示例**：
+
 ```json
 {
-  "newCheckOutDate": "2023-07-05",
-  "remarks": "客人申请延长入住2天"
+  "estimatedCheckOutTime": "2023-07-04T12:00:00",
+  "remarks": "客人延长入住一天",
+  "additionalGuests": [
+    {
+      "idType": "身份证",
+      "idNumber": "110101199001011235",
+      "name": "李四"
+    },
+    {
+      "idType": "身份证",
+      "idNumber": "110101199001011236",
+      "name": "王五"
+    }
+  ]
 }
 ```
 
@@ -2207,18 +2514,3340 @@ Authorization: Bearer {token}
 ```json
 {
   "success": true,
-  "message": "入住时间已延长",
+  "code": 200,
+  "message": "更新成功",
   "data": {
-    "id": 2001,
-    "checkInNumber": "CI202307010001",
-    "originalCheckOutDate": "2023-07-03",
-    "newCheckOutDate": "2023-07-05",
-    "additionalNights": 2,
-    "additionalAmount": 998.00,
-    "totalAmount": 1996.00,
-    "updateTime": "2023-07-02T10:30:00",
-    "operatorId": 5001,
-    "operatorName": "张经理"
+    "checkInId": 6001,
+    "guestName": "张三",
+    "roomNumber": "301",
+    "checkInTime": "2023-07-01T14:00:00",
+    "estimatedCheckOutTime": "2023-07-04T12:00:00",
+    "remarks": "客人延长入住一天",
+    "additionalGuests": [
+      {
+        "name": "李四",
+        "idType": "身份证",
+        "idNumber": "110101199001011235"
+      },
+      {
+        "name": "王五",
+        "idType": "身份证",
+        "idNumber": "110101199001011236"
+      }
+    ]
   }
 }
 ```
+
+### 6. 变更房间
+
+**接口描述**：为已入住客人更换房间
+
+**请求方法**：POST
+
+**接口URL**：`/api/check-in/{id}/change-room`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 入住记录ID |
+
+**请求参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| newRoomId | Long | 是 | 新房间ID |
+| reason | String | 是 | 换房原因 |
+| additionalCharge | BigDecimal | 否 | 额外费用(升级房型时) |
+| remarks | String | 否 | 备注信息 |
+
+**请求示例**：
+
+```json
+{
+  "newRoomId": 401,
+  "reason": "客人投诉空调噪音",
+  "additionalCharge": 0,
+  "remarks": "免费升级以安抚客人"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "换房成功",
+  "data": {
+    "checkInId": 6001,
+    "guestName": "张三",
+    "oldRoomNumber": "301",
+    "newRoomNumber": "401",
+    "newRoomType": "豪华大床房",
+    "changeTime": "2023-07-01T20:30:00",
+    "reason": "客人投诉空调噪音",
+    "additionalCharge": 0,
+    "remarks": "免费升级以安抚客人",
+    "operatorId": 3002,
+    "operatorName": "前台-王五"
+  }
+}
+```
+
+### 7. 办理退房
+
+**接口描述**：为入住客人办理退房手续
+
+**请求方法**：POST
+
+**接口URL**：`/api/check-out`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**请求参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| checkInId | Long | 是 | 入住记录ID |
+| checkOutTime | String | 是 | 退房时间(YYYY-MM-DDTHH:MM:SS) |
+| paymentMethod | String | 是 | 结算方式(现金/信用卡/支付宝/微信等) |
+| depositRefund | BigDecimal | 是 | 退还押金金额 |
+| remarks | String | 否 | 备注信息 |
+
+**请求示例**：
+
+```json
+{
+  "checkInId": 6001,
+  "checkOutTime": "2023-07-03T11:30:00",
+  "paymentMethod": "信用卡",
+  "depositRefund": 1000.00,
+  "remarks": "房间设施完好，全额退还押金"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "退房成功",
+  "data": {
+    "checkOutId": 7001,
+    "checkInId": 6001,
+    "guestName": "张三",
+    "roomNumber": "301",
+    "checkInTime": "2023-07-01T14:00:00",
+    "checkOutTime": "2023-07-03T11:30:00",
+    "stayDuration": "2天",
+    "depositAmount": 1000.00,
+    "depositRefund": 1000.00,
+    "totalConsumption": 1557.00,
+    "discountedAmount": 1401.30,
+    "paymentMethod": "信用卡",
+    "billDetails": [
+      {
+        "type": "房费",
+        "description": "豪华大床房两晚",
+        "amount": 1299.00,
+        "discountedAmount": 1169.10
+      },
+      {
+        "type": "餐饮",
+        "description": "西餐厅晚餐",
+        "amount": 258.00,
+        "discountedAmount": 232.20
+      }
+    ],
+    "discount": {
+      "rate": 0.9,
+      "type": "会员折扣",
+      "description": "银牌会员9折"
+    },
+    "pointsEarned": 1401,
+    "operatorId": 3002,
+    "operatorName": "前台-王五",
+    "invoiceNo": "INV202307030001",
+    "remarks": "房间设施完好，全额退还押金"
+  }
+}
+```
+
+### 8. 获取退房详情
+
+**接口描述**：获取退房记录详情
+
+**请求方法**：GET
+
+**接口URL**：`/api/check-out/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 退房记录ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutId": 7001,
+    "checkInId": 6001,
+    "guestInfo": {
+      "userId": 2001,
+      "name": "张三",
+      "idType": "身份证",
+      "idNumber": "110101199001011234",
+      "phone": "13800138000",
+      "email": "zhangsan@example.com",
+      "memberLevel": "银牌会员"
+    },
+    "roomInfo": {
+      "roomId": 301,
+      "roomNumber": "301",
+      "roomType": "豪华大床房",
+      "floor": 3,
+      "building": "主楼"
+    },
+    "checkInTime": "2023-07-01T14:00:00",
+    "checkOutTime": "2023-07-03T11:30:00",
+    "stayDuration": "2天",
+    "depositAmount": 1000.00,
+    "depositRefund": 1000.00,
+    "depositMethod": "信用卡预授权",
+    "totalConsumption": 1557.00,
+    "discountedAmount": 1401.30,
+    "discountSavings": 155.70,
+    "paymentMethod": "信用卡",
+    "billDetails": [
+      {
+        "type": "房费",
+        "description": "豪华大床房两晚",
+        "amount": 1299.00,
+        "discountedAmount": 1169.10
+      },
+      {
+        "type": "餐饮",
+        "description": "西餐厅晚餐",
+        "amount": 258.00,
+        "discountedAmount": 232.20
+      }
+    ],
+    "discount": {
+      "rate": 0.9,
+      "type": "会员折扣",
+      "description": "银牌会员9折"
+    },
+    "pointsEarned": 1401,
+    "operatorInfo": {
+      "operatorId": 3002,
+      "operatorName": "前台-王五",
+      "operationTime": "2023-07-03T11:30:00"
+    },
+    "invoiceInfo": {
+      "invoiceNo": "INV202307030001",
+      "invoiceType": "增值税普通发票",
+      "invoiceTitle": "张三",
+      "invoiceAmount": 1401.30,
+      "issuedTime": "2023-07-03T11:35:00"
+    },
+    "remarks": "房间设施完好，全额退还押金"
+  }
+}
+```
+
+### 9. 查询退房历史
+
+**接口描述**：查询历史退房记录
+
+**请求方法**：GET
+
+**接口URL**：`/api/check-out/history`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| startDate | String | 否 | 开始日期(YYYY-MM-DD) |
+| endDate | String | 否 | 结束日期(YYYY-MM-DD) |
+| guestName | String | 否 | 客人姓名(模糊查询) |
+| roomNumber | String | 否 | 房间号 |
+| page | Integer | 否 | 页码，默认0 |
+| size | Integer | 否 | 每页条数，默认10 |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "content": [
+      {
+        "checkOutId": 7001,
+        "checkInId": 6001,
+        "guestName": "张三",
+        "roomNumber": "301",
+        "checkInTime": "2023-07-01T14:00:00",
+        "checkOutTime": "2023-07-03T11:30:00",
+        "stayDuration": "2天",
+        "totalConsumption": 1557.00,
+        "discountedAmount": 1401.30,
+        "memberLevel": "银牌会员"
+      },
+      {
+        "checkOutId": 7002,
+        "checkInId": 6002,
+        "guestName": "王五",
+        "roomNumber": "305",
+        "checkInTime": "2023-07-01T16:30:00",
+        "checkOutTime": "2023-07-05T10:00:00",
+        "stayDuration": "4天",
+        "totalConsumption": 5280.00,
+        "discountedAmount": 4488.00,
+        "memberLevel": "金牌会员"
+      }
+      // ...更多记录
+    ],
+    "pageable": {
+      "pageNumber": 0,
+      "pageSize": 10,
+      "totalPages": 12,
+      "totalElements": 115
+    }
+  }
+}
+```
+
+## 预订管理
+
+> **标签:** `预订` `客房` `前台`
+
+### 1. 获取预订列表
+
+**接口描述**：获取所有预订记录
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| page | Integer | 否 | 页码，默认1 |
+| pageSize | Integer | 否 | 每页条数，默认10 |
+| status | String | 否 | 状态过滤(待确认/已确认/已取消/已完成) |
+| roomType | String | 否 | 房间类型过滤 |
+| guestName | String | 否 | 客人姓名关键词 |
+| startDate | String | 否 | 预订日期起始(YYYY-MM-DD) |
+| endDate | String | 否 | 预订日期结束(YYYY-MM-DD) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "total": 100,
+    "list": [
+      {
+        "id": 1001,
+        "bookingNumber": "B202306120001",
+        "roomType": "豪华大床房",
+        "guestName": "张三",
+        "checkInDate": "2023-07-01",
+        "checkOutDate": "2023-07-03",
+        "status": "待确认",
+        "totalAmount": 998.00,
+        "operatorId": 5001,
+        "operatorName": "张经理",
+        "createTime": "2023-06-12 10:00:00"
+      },
+      {
+        "id": 1002,
+        "bookingNumber": "B202306130001",
+        "roomType": "行政套房",
+        "guestName": "李四",
+        "checkInDate": "2023-07-02",
+        "checkOutDate": "2023-07-04",
+        "status": "已确认",
+        "totalAmount": 1498.00,
+        "operatorId": 5002,
+        "operatorName": "前台-王五",
+        "createTime": "2023-06-13 11:00:00"
+      }
+      // ...更多预订
+    ]
+  }
+}
+```
+
+### 2. 创建预订
+
+**接口描述**：为用户创建新的预订
+
+**请求方法**：POST
+
+**接口URL**：`/api/reservations`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**请求参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| roomType | String | 是 | 房间类型 |
+| guestName | String | 是 | 客人姓名 |
+| checkInDate | String | 是 | 入住日期(YYYY-MM-DD) |
+| checkOutDate | String | 是 | 离店日期(YYYY-MM-DD) |
+| roomCount | Integer | 是 | 房间数量 |
+| contactName | String | 是 | 联系人姓名 |
+| phone | String | 是 | 联系人手机号 |
+| remarks | String | 否 | 备注信息 |
+| totalAmount | BigDecimal | 是 | 总金额 |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "预订创建成功",
+  "data": {
+    "id": 1003,
+    "bookingNumber": "B202306140001",
+    "roomType": "豪华大床房",
+    "guestName": "张三",
+    "checkInDate": "2023-07-01",
+    "checkOutDate": "2023-07-03",
+    "status": "待确认",
+    "totalAmount": 998.00,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-14 12:00:00"
+  }
+}
+```
+
+### 3. 获取预订详情
+
+**接口描述**：获取特定预订记录的详细信息
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "id": 1001,
+    "bookingNumber": "B202306120001",
+    "roomType": "豪华大床房",
+    "guestName": "张三",
+    "checkInDate": "2023-07-01",
+    "checkOutDate": "2023-07-03",
+    "status": "待确认",
+    "totalAmount": 998.00,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 4. 更新预订状态
+
+**接口描述**：更新预订状态
+
+**请求方法**：PUT
+
+**接口URL**：`/api/reservations/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**请求参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| status | String | 是 | 状态(待确认/已确认/已取消/已完成) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "状态更新成功",
+  "data": {
+    "id": 1001,
+    "bookingNumber": "B202306120001",
+    "roomType": "豪华大床房",
+    "guestName": "张三",
+    "checkInDate": "2023-07-01",
+    "checkOutDate": "2023-07-03",
+    "status": "已确认",
+    "totalAmount": 998.00,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 5. 取消预订
+
+**接口描述**：取消特定预订
+
+**请求方法**：DELETE
+
+**接口URL**：`/api/reservations/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "预订取消成功",
+  "data": null
+}
+```
+
+### 6. 确认预订
+
+**接口描述**：确认特定预订
+
+**请求方法**：PUT
+
+**接口URL**：`/api/reservations/{id}/confirm`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "预订确认成功",
+  "data": null
+}
+```
+
+### 7. 完成预订
+
+**接口描述**：完成特定预订
+
+**请求方法**：PUT
+
+**接口URL**：`/api/reservations/{id}/complete`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "预订完成成功",
+  "data": null
+}
+```
+
+### 8. 获取预订统计数据
+
+**接口描述**：获取预订统计数据
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/statistics`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| period | String | 否 | 统计周期(month/quarter/year)，默认month |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "totalReservations": 100,
+    "totalConfirmed": 80,
+    "totalCanceled": 10,
+    "totalCompleted": 10,
+    "byStatus": [
+      {
+        "status": "待确认",
+        "count": 20
+      },
+      {
+        "status": "已确认",
+        "count": 60
+      },
+      {
+        "status": "已取消",
+        "count": 10
+      },
+      {
+        "status": "已完成",
+        "count": 10
+      }
+    ],
+    "byRoomType": [
+      {
+        "roomType": "豪华大床房",
+        "count": 50
+      },
+      {
+        "roomType": "行政套房",
+        "count": 30
+      },
+      {
+        "roomType": "豪华双床房",
+        "count": 20
+      }
+    ],
+    "byDate": [
+      {
+        "date": "2023-06",
+        "count": 100
+      },
+      {
+        "date": "2023-07",
+        "count": 100
+      }
+    ]
+  }
+}
+```
+
+### 9. 获取预订详情统计
+
+**接口描述**：获取特定预订的详细统计信息
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 10. 获取预订详情统计（按房间类型）
+
+**接口描述**：获取特定预订的详细统计信息（按房间类型）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-room-type`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "roomType": "豪华大床房",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 11. 获取预订详情统计（按入住日期）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 12. 获取预订详情统计（按离店日期）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 13. 获取预订详情统计（按客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 14. 获取预订详情统计（按联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 15. 获取预订详情统计（按联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 16. 获取预订详情统计（按房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 17. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 18. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 19. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 20. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 21. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 22. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 23. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 24. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 25. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 26. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 27. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 28. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 29. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 30. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 31. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 32. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 33. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 34. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 35. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 36. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 37. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 38. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 39. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 40. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 41. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 42. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 43. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 44. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 45. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 46. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 47. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 48. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 49. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 50. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 51. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 52. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 53. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 54. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 55. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 56. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 57. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 58. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 59. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 60. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 61. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 62. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 63. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 64. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 65. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 66. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 67. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 68. 获取预订详情统计（按离店日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按离店日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-out-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkOutDate": "2023-07-03",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 69. 获取预订详情统计（按入住日期和客人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和客人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-guest-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "guestName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 70. 获取预订详情统计（按入住日期和联系人姓名）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人姓名）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-name`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactName": "张三",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 71. 获取预订详情统计（按入住日期和联系人手机号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和联系人手机号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-contact-phone`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "contactPhone": "13800138000",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 72. 获取预订详情统计（按入住日期和房间号）
+
+**接口描述**：获取特定预订的详细统计信息（按入住日期和房间号）
+
+**请求方法**：GET
+
+**接口URL**：`/api/reservations/{id}/statistics-by-check-in-date-and-room-number`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 预订ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "checkInDate": "2023-07-01",
+    "roomNumber": "301",
+    "totalAmount": 998.00,
+    "discountedAmount": 900.00,
+    "discountRate": 0.9,
+    "pointsEarned": 900,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-06-12 10:00:00"
+  }
+}
+```
+
+### 73. 获取预订详情统计（按离店日期和房间号）
