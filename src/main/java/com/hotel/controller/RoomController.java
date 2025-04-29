@@ -1,10 +1,14 @@
 package com.hotel.controller;
 
+import com.hotel.dto.RoomFilterDTO;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
 import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -13,10 +17,19 @@ import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+
+import com.fasterxml.jackson.core.type.TypeReference;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.math.BigDecimal;
+import java.time.DayOfWeek;
+import java.util.Collections;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -36,6 +49,33 @@ public class RoomController {
     public ResponseEntity<List<Room>> getAllRooms() {
         List<Room> rooms = roomService.getAllRooms();
         return ResponseEntity.ok(rooms);
+    }
+
+    /**
+     * 获取房间列表（带筛选条件）
+     */
+    @GetMapping("/filter")
+    public ResponseEntity<?> getRoomsWithFilters(RoomFilterDTO filter) {
+        try {
+            Pageable pageable = PageRequest.of(filter.getPage(), filter.getSize());
+            
+            // 获取房间列表，应用筛选条件
+            Page<Room> roomsPage = roomService.getRoomsWithFilters(
+                filter.getFloor(), filter.getRoomTypeId(), filter.getStatus(), filter.getKeyword(), pageable);
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("content", roomsPage.getContent());
+            result.put("totalElements", roomsPage.getTotalElements());
+            result.put("totalPages", roomsPage.getTotalPages());
+            result.put("size", roomsPage.getSize());
+            result.put("number", roomsPage.getNumber());
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            Map<String, String> errorResponse = new HashMap<>();
+            errorResponse.put("message", "获取房间列表失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
     /**
@@ -235,31 +275,52 @@ public class RoomController {
                 Map<String, Object> roomTypeData = new HashMap<>();
                 roomTypeData.put("id", type.getId());
                 roomTypeData.put("name", type.getName());
-                roomTypeData.put("price", type.getBasePrice());
+                roomTypeData.put("basePrice", type.getBasePrice());
                 roomTypeData.put("capacity", type.getCapacity());
-                roomTypeData.put("size", 0); // 假设没有size字段，默认为0
+                roomTypeData.put("bedType", type.getBedType());
+                roomTypeData.put("area", type.getArea());
+                
+                // 处理设施列表
+                List<String> amenitiesList = new ArrayList<>();
+                if (type.getAmenities() != null && !type.getAmenities().isEmpty()) {
+                    amenitiesList = Arrays.asList(type.getAmenities().split(","));
+                }
+                roomTypeData.put("amenities", amenitiesList);
+                
                 roomTypeData.put("description", type.getDescription());
-                roomTypeData.put("image", ""); // 假设没有image字段，使用空字符串
+                
+                // 处理图片列表
+                List<String> imagesList = new ArrayList<>();
+                if (type.getImages() != null && !type.getImages().isEmpty()) {
+                    try {
+                        // 假设images字段存储了JSON数组格式的图片URL列表
+                        ObjectMapper mapper = new ObjectMapper();
+                        imagesList = mapper.readValue(type.getImages(), new TypeReference<List<String>>() {});
+                    } catch (Exception e) {
+                        // 解析失败时使用空列表
+                        imagesList = new ArrayList<>();
+                    }
+                }
+                roomTypeData.put("images", imagesList);
                 
                 // 获取该类型当前可用房间数量
                 long availableCount = roomService.countAvailableRoomsByType(type.getId());
                 roomTypeData.put("availableCount", availableCount);
-                
-                // 添加房间特性列表
-                String[] features = type.getAmenities() != null ? type.getAmenities().split(",") : new String[0];
-                roomTypeData.put("features", features);
                 
                 return roomTypeData;
             }).collect(Collectors.toList());
             
             return ResponseEntity.ok(new HashMap<String, Object>() {{
                 put("success", true);
+                put("code", 200);
+                put("message", "获取成功");
                 put("data", result);
             }});
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new HashMap<String, Object>() {{
                 put("success", false);
+                put("code", 500);
                 put("message", "获取房间类型失败: " + e.getMessage());
             }});
         }
@@ -268,43 +329,84 @@ public class RoomController {
     /**
      * 获取单个房间类型详情
      */
-    @GetMapping("/type/{id}")
-    public ResponseEntity<?> getRoomTypeDetail(@PathVariable Long id) {
+    @GetMapping("/types/{typeId}")
+    public ResponseEntity<?> getRoomTypeDetail(@PathVariable Long typeId) {
         try {
-            RoomType roomType = roomService.getRoomTypeById(id);
+            RoomType roomType = roomService.getRoomTypeById(typeId);
             if (roomType == null) {
-                return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<String, Object>() {{
                     put("success", false);
+                    put("code", 404);
                     put("message", "房间类型不存在");
                 }});
             }
             
             // 转换为前端需要的数据格式
-            Map<String, Object> roomTypeData = new HashMap<>();
-            roomTypeData.put("id", roomType.getId());
-            roomTypeData.put("name", roomType.getName());
-            roomTypeData.put("price", roomType.getBasePrice());
-            roomTypeData.put("capacity", roomType.getCapacity());
-            roomTypeData.put("size", 0); // 假设没有size字段，默认为0
-            roomTypeData.put("description", roomType.getDescription());
-            roomTypeData.put("image", ""); // 假设没有image字段，使用空字符串
+            Map<String, Object> data = new HashMap<>();
+            data.put("id", roomType.getId());
+            data.put("name", roomType.getName());
+            data.put("basePrice", roomType.getBasePrice());
+            data.put("weekendPrice", roomType.getWeekendPrice());
+            data.put("holidayPrice", roomType.getHolidayPrice());
+            data.put("capacity", roomType.getCapacity());
+            data.put("maxCapacity", roomType.getMaxCapacity());
+            data.put("extraBedPrice", roomType.getExtraBedPrice());
+            data.put("bedType", roomType.getBedType());
+            data.put("bedSize", roomType.getBedSize());
+            data.put("area", roomType.getArea());
+            data.put("floor", roomType.getFloor());
+            
+            // 处理设施列表
+            List<String> amenitiesList = new ArrayList<>();
+            if (roomType.getAmenities() != null && !roomType.getAmenities().isEmpty()) {
+                amenitiesList = Arrays.asList(roomType.getAmenities().split(","));
+            }
+            data.put("amenities", amenitiesList);
+            
+            data.put("description", roomType.getDescription());
+            data.put("longDescription", roomType.getLongDescription());
+            
+            // 处理图片信息
+            List<Map<String, String>> imagesList = new ArrayList<>();
+            if (roomType.getImages() != null && !roomType.getImages().isEmpty()) {
+                try {
+                    // 假设images字段存储了JSON格式的图片信息数组
+                    ObjectMapper mapper = new ObjectMapper();
+                    imagesList = mapper.readValue(roomType.getImages(), new TypeReference<List<Map<String, String>>>() {});
+                } catch (Exception e) {
+                    // 解析失败时使用空列表
+                }
+            }
+            data.put("images", imagesList);
+            
+            // 处理政策信息
+            Map<String, String> policiesMap = new HashMap<>();
+            if (roomType.getPolicies() != null && !roomType.getPolicies().isEmpty()) {
+                try {
+                    // 假设policies字段存储了JSON格式的政策信息
+                    ObjectMapper mapper = new ObjectMapper();
+                    policiesMap = mapper.readValue(roomType.getPolicies(), new TypeReference<Map<String, String>>() {});
+                } catch (Exception e) {
+                    // 解析失败时使用空Map
+                }
+            }
+            data.put("policies", policiesMap);
             
             // 获取该类型当前可用房间数量
             long availableCount = roomService.countAvailableRoomsByType(roomType.getId());
-            roomTypeData.put("availableCount", availableCount);
-            
-            // 添加房间特性列表
-            String[] features = roomType.getAmenities() != null ? roomType.getAmenities().split(",") : new String[0];
-            roomTypeData.put("features", features);
+            data.put("availableCount", availableCount);
             
             return ResponseEntity.ok(new HashMap<String, Object>() {{
                 put("success", true);
-                put("data", roomTypeData);
+                put("code", 200);
+                put("message", "获取成功");
+                put("data", data);
             }});
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new HashMap<String, Object>() {{
                 put("success", false);
+                put("code", 500);
                 put("message", "获取房间类型详情失败: " + e.getMessage());
             }});
         }
@@ -316,14 +418,16 @@ public class RoomController {
      */
     @GetMapping("/availability")
     public ResponseEntity<?> checkRoomAvailability(
-            @RequestParam(required = false) Long roomTypeId,
+            @RequestParam(required = false) String roomType,
             @RequestParam String checkIn,
-            @RequestParam String checkOut) {
+            @RequestParam String checkOut,
+            @RequestParam(required = false, defaultValue = "1") Integer guests) {
         try {
             final LocalDateTime[] checkInOutDates = parseCheckInOutDates(checkIn, checkOut);
             if (checkInOutDates == null) {
-                return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<String, Object>() {{
                     put("success", false);
+                    put("code", 400);
                     put("message", "日期格式无效");
                 }});
             }
@@ -331,60 +435,107 @@ public class RoomController {
             final LocalDateTime checkInDate = checkInOutDates[0];
             final LocalDateTime checkOutDate = checkInOutDates[1];
             
-            Map<String, Object> result = new HashMap<>();
-            
-            if (roomTypeId != null) {
-                // 检查特定房型可用性
-                RoomType roomType = roomService.getRoomTypeById(roomTypeId);
-                if (roomType == null) {
-                    return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
-                        put("success", false);
-                        put("message", "房间类型不存在");
-                    }});
-                }
-                
-                // 获取该类型可用房间数量
-                int availableCount = roomService.getAvailableRoomsCountByTypeAndDateRange(
-                        roomTypeId, checkInDate, checkOutDate);
-                
-                Map<String, Object> typeAvailability = new HashMap<>();
-                typeAvailability.put("id", roomType.getId());
-                typeAvailability.put("name", roomType.getName());
-                typeAvailability.put("availableCount", availableCount);
-                typeAvailability.put("isAvailable", availableCount > 0);
-                
-                result.put("roomType", typeAvailability);
-            } else {
-                // 检查所有房型可用性
-                List<RoomType> allRoomTypes = roomService.getAllRoomTypes();
-                List<Map<String, Object>> availabilityList = allRoomTypes.stream().map(type -> {
-                    int availableCount = roomService.getAvailableRoomsCountByTypeAndDateRange(
-                            type.getId(), checkInDate, checkOutDate);
-                    
-                    Map<String, Object> typeAvailability = new HashMap<>();
-                    typeAvailability.put("id", type.getId());
-                    typeAvailability.put("name", type.getName());
-                    typeAvailability.put("price", type.getBasePrice());
-                    typeAvailability.put("availableCount", availableCount);
-                    typeAvailability.put("isAvailable", availableCount > 0);
-                    
-                    return typeAvailability;
-                }).collect(Collectors.toList());
-                
-                result.put("roomTypes", availabilityList);
+            // 检查日期范围是否合理
+            if (checkInDate.isAfter(checkOutDate) || checkInDate.equals(checkOutDate)) {
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(new HashMap<String, Object>() {{
+                    put("success", false);
+                    put("code", 400);
+                    put("message", "入住日期必须早于离店日期");
+                }});
             }
             
-            result.put("checkIn", checkIn);
-            result.put("checkOut", checkOut);
+            List<Map<String, Object>> availabilityList = new ArrayList<>();
+            List<RoomType> roomTypes;
             
-            return ResponseEntity.ok(new HashMap<String, Object>() {{
-                put("success", true);
-                put("data", result);
-            }});
+            // 如果指定了房型，则只查询该房型
+            if (roomType != null && !roomType.isEmpty()) {
+                RoomType type = roomService.getRoomTypeById(Long.parseLong(roomType));
+                if (type == null) {
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(new HashMap<String, Object>() {{
+                        put("success", false);
+                        put("code", 404);
+                        put("message", "指定的房间类型不存在");
+                    }});
+                }
+                roomTypes = Collections.singletonList(type);
+            } else {
+                // 否则查询所有房型
+                roomTypes = roomService.getAllRoomTypes();
+            }
+            
+            // 计算日期范围内的所有日期
+            List<LocalDate> dateRange = new ArrayList<>();
+            LocalDate startDate = checkInDate.toLocalDate();
+            LocalDate endDate = checkOutDate.toLocalDate();
+            while (!startDate.isEqual(endDate)) {
+                dateRange.add(startDate);
+                startDate = startDate.plusDays(1);
+            }
+            
+            // 遍历所有房型，计算可用性和价格
+            for (RoomType type : roomTypes) {
+                Map<String, Object> typeAvailability = new HashMap<>();
+                int availableCount = roomService.getAvailableRoomsCountByTypeAndDateRange(
+                        type.getId(), checkInDate, checkOutDate);
+                
+                typeAvailability.put("typeId", type.getId());
+                typeAvailability.put("typeName", type.getName());
+                typeAvailability.put("basePrice", type.getBasePrice());
+                typeAvailability.put("available", availableCount > 0);
+                typeAvailability.put("availableCount", availableCount);
+                
+                // 计算每日价格
+                List<Map<String, Object>> dailyPrices = new ArrayList<>();
+                BigDecimal totalPrice = BigDecimal.ZERO;
+                
+                for (LocalDate date : dateRange) {
+                    Map<String, Object> dailyPrice = new HashMap<>();
+                    dailyPrice.put("date", date.toString());
+                    
+                    BigDecimal price;
+                    // 判断是否为周末 (星期六或星期日)
+                    DayOfWeek dayOfWeek = date.getDayOfWeek();
+                    boolean isWeekend = dayOfWeek == DayOfWeek.SATURDAY || dayOfWeek == DayOfWeek.SUNDAY;
+                    
+                    // 判断是否为节假日 (这里简化处理，实际应有节假日判断逻辑)
+                    boolean isHoliday = false; // 假设没有节假日
+                    
+                    if (isHoliday && type.getHolidayPrice() != null) {
+                        price = type.getHolidayPrice();
+                    } else if (isWeekend && type.getWeekendPrice() != null) {
+                        price = type.getWeekendPrice();
+                    } else {
+                        price = type.getBasePrice();
+                    }
+                    
+                    dailyPrice.put("price", price);
+                    
+                    // 检查该日期是否有可用房间
+                    boolean dailyAvailable = true; // 简化处理，假设所有日期均可预订
+                    dailyPrice.put("available", dailyAvailable);
+                    
+                    dailyPrices.add(dailyPrice);
+                    totalPrice = totalPrice.add(price);
+                }
+                
+                typeAvailability.put("dailyPrices", dailyPrices);
+                typeAvailability.put("totalPrice", totalPrice);
+                
+                availabilityList.add(typeAvailability);
+            }
+            
+            Map<String, Object> result = new HashMap<>();
+            result.put("success", true);
+            result.put("code", 200);
+            result.put("message", "查询成功");
+            result.put("data", availabilityList);
+            
+            return ResponseEntity.ok(result);
         } catch (Exception e) {
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(new HashMap<String, Object>() {{
                 put("success", false);
+                put("code", 500);
                 put("message", "检查房间可用性失败: " + e.getMessage());
             }});
         }

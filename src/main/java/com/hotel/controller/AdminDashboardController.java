@@ -15,6 +15,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -136,9 +137,31 @@ public class AdminDashboardController {
      * 获取所有房间类型
      */
     @GetMapping("/roomtypes")
-    public ResponseEntity<List<RoomType>> getAllRoomTypes() {
-        List<RoomType> roomTypes = roomService.getAllRoomTypes();
-        return ResponseEntity.ok(roomTypes);
+    public ResponseEntity<?> getAllRoomTypes() {
+        try {
+            List<RoomType> roomTypes = roomService.getAllRoomTypes();
+            
+            // 转换为前端期望的数据格式
+            List<Map<String, Object>> formattedRoomTypes = roomTypes.stream()
+                    .map(this::convertRoomTypeToMap)
+                    .collect(Collectors.toList());
+            
+            // 构建响应对象
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取房型列表成功");
+            response.put("data", formattedRoomTypes);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "获取房型列表失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 
     /**
@@ -148,26 +171,22 @@ public class AdminDashboardController {
     public ResponseEntity<?> createRoomType(@RequestBody RoomType roomType) {
         try {
             RoomType savedRoomType = roomService.addRoomType(roomType);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedRoomType);
+            
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "添加房型成功");
+            response.put("data", convertRoomTypeToMap(savedRoomType));
+            
+            return ResponseEntity.status(HttpStatus.CREATED).body(response);
         } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "创建房间类型失败: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
-    }
-
-    /**
-     * 添加新房间
-     */
-    @PostMapping("/rooms")
-    public ResponseEntity<?> createRoom(@RequestBody Room room) {
-        try {
-            Room savedRoom = roomService.addRoom(room);
-            return ResponseEntity.status(HttpStatus.CREATED).body(savedRoom);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "创建房间失败: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "添加房型失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
@@ -213,5 +232,21 @@ public class AdminDashboardController {
             errorResponse.put("message", "创建员工失败: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
         }
+    }
+
+    /**
+     * 将RoomType实体转换为Map
+     */
+    private Map<String, Object> convertRoomTypeToMap(RoomType roomType) {
+        Map<String, Object> roomTypeMap = new HashMap<>();
+        roomTypeMap.put("id", roomType.getId());
+        roomTypeMap.put("name", roomType.getName());
+        roomTypeMap.put("basePrice", roomType.getBasePrice());
+        roomTypeMap.put("capacity", roomType.getCapacity());
+        roomTypeMap.put("amenities", roomType.getAmenities());
+        roomTypeMap.put("description", roomType.getDescription());
+        // 可以根据需要添加更多属性
+        
+        return roomTypeMap;
     }
 } 

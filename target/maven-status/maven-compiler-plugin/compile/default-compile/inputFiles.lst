@@ -91,7 +91,9 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\HotelInfo.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\dto\TaskDTO.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\PointsExchangeRecordServiceImpl.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\security\CustomUserDetails.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\AdminRoomController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\RoomController.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\dto\RoomFilterDTO.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Reservation.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\repository\PointsExpiryRecordRepository.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\RoomService.java

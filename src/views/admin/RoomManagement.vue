@@ -335,7 +335,7 @@ const loadRooms = async () => {
   loading.value = true;
   try {
     // 获取所有房间
-    const response = await axios.get('/api/rooms');
+    const response = await axios.get('/api/admin/rooms');
     rooms.value = response.data;
     totalRooms.value = rooms.value.length;
     
@@ -352,7 +352,7 @@ const loadRooms = async () => {
 // 加载房型列表
 const loadRoomTypes = async () => {
   try {
-    const response = await axios.get('/api/admin/roomtypes');
+    const response = await axios.get('/api/admin/rooms/types');
     roomTypes.value = response.data;
   } catch (error) {
     console.error('加载房型失败:', error);
@@ -432,7 +432,7 @@ const confirmDeleteRoom = (room) => {
 const deleteRoom = async (roomId) => {
   loading.value = true;
   try {
-    await axios.delete(`/api/rooms/${roomId}`);
+    await axios.delete(`/api/admin/rooms/${roomId}`);
     ElMessage.success('删除房间成功');
     await loadRooms();
   } catch (error) {
@@ -460,11 +460,11 @@ const submitRoomForm = async () => {
         
         if (isEditing.value) {
           // 更新房间
-          await axios.put(`/api/rooms/${roomForm.id}`, roomData);
+          await axios.put(`/api/admin/rooms/${roomForm.id}`, roomData);
           ElMessage.success('更新房间成功');
         } else {
           // 添加新房间
-          await axios.post('/api/rooms', roomData);
+          await axios.post('/api/admin/rooms', roomData);
           ElMessage.success('添加房间成功');
         }
         
@@ -494,7 +494,7 @@ const submitRoomTypeForm = async () => {
           ElMessage.success('更新房型成功');
         } else {
           // 添加新房型
-          await axios.post('/api/admin/roomtypes', roomTypeForm);
+          await axios.post('/api/admin/rooms/types', roomTypeForm);
           ElMessage.success('添加房型成功');
         }
         

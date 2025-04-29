@@ -1,11 +1,15 @@
 package com.hotel.controller;
 
+import com.hotel.common.ApiResponse;
 import com.hotel.entity.User;
 import com.hotel.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeFormatter;
+import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -17,6 +21,188 @@ public class UserController {
     @Autowired
     private UserService userService;
 
+    /**
+     * 用户注册接口
+     */
+    @PostMapping("/register")
+    public ResponseEntity<?> register(@RequestBody Map<String, String> registerData) {
+        try {
+            System.out.println("===== 接收到用户注册请求 =====");
+            System.out.println("请求数据: " + registerData);
+            
+            // 验证必要的字段
+            if (registerData == null) {
+                throw new RuntimeException("注册数据为空");
+            }
+            
+            // 验证用户名
+            String username = registerData.get("username");
+            if (username == null || username.trim().isEmpty()) {
+                throw new RuntimeException("用户名不能为空");
+            }
+            
+            // 验证密码
+            String password = registerData.get("password");
+            if (password == null || password.trim().isEmpty()) {
+                throw new RuntimeException("密码不能为空");
+            }
+            
+            // 验证确认密码
+            String confirmPassword = registerData.get("confirmPassword");
+            if (confirmPassword == null || confirmPassword.trim().isEmpty()) {
+                throw new RuntimeException("确认密码不能为空");
+            }
+            
+            // 验证密码一致性
+            if (!password.equals(confirmPassword)) {
+                throw new RuntimeException("两次输入的密码不一致");
+            }
+            
+            // 验证姓名
+            String name = registerData.get("name");
+            if (name == null || name.trim().isEmpty()) {
+                throw new RuntimeException("姓名不能为空");
+            }
+            
+            // 验证手机号码
+            String phone = registerData.get("phone");
+            if (phone == null || phone.trim().isEmpty()) {
+                throw new RuntimeException("手机号码不能为空");
+            }
+            
+            // 创建用户对象
+            User user = new User();
+            user.setUsername(username);
+            user.setPassword(password); 
+            user.setName(name);
+            user.setPhone(phone);
+            
+            // 处理可选字段：邮箱
+            String email = registerData.get("email");
+            if (email != null && !email.trim().isEmpty()) {
+                user.setEmail(email);
+            }
+            
+            // 处理可选字段：性别
+            String gender = registerData.get("gender");
+            if (gender != null && !gender.trim().isEmpty()) {
+                if (gender.equalsIgnoreCase("male") || 
+                    gender.equalsIgnoreCase("female") || 
+                    gender.equalsIgnoreCase("unknown")) {
+                    user.setGender(gender.toLowerCase());
+                } else {
+                    throw new RuntimeException("性别值无效，应为male、female或unknown");
+                }
+            }
+            
+            // 处理可选字段：生日
+            String birthdayStr = registerData.get("birthday");
+            if (birthdayStr != null && !birthdayStr.trim().isEmpty()) {
+                try {
+                    LocalDate birthday = LocalDate.parse(birthdayStr, DateTimeFormatter.ISO_DATE);
+                    user.setBirthday(birthday);
+                } catch (DateTimeParseException e) {
+                    throw new RuntimeException("生日格式错误，应为YYYY-MM-DD格式");
+                }
+            }
+            
+            // 设置为普通用户角色
+            user.setRole(User.UserRole.CUSTOMER);
+            
+            System.out.println("创建的用户对象: " + user);
+            
+            // 调用用户服务进行注册
+            User registeredUser = userService.register(user);
+            
+            System.out.println("注册成功，返回的用户ID: " + registeredUser.getId());
+            
+            // 按API文档格式构建响应
+            Map<String, Object> resultData = new HashMap<>();
+            resultData.put("userId", registeredUser.getId().toString());
+            resultData.put("username", registeredUser.getUsername());
+            
+            // 使用API响应工具类返回统一格式
+            ApiResponse<Map<String, Object>> response = ApiResponse.success("注册成功", resultData);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("===== 用户注册失败 =====");
+            System.err.println("异常类型: " + e.getClass().getName());
+            System.err.println("异常消息: " + e.getMessage());
+            e.printStackTrace();
+            
+            // 使用API响应工具类返回错误信息
+            ApiResponse<?> errorResponse = ApiResponse.fail("注册失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * 检查用户名是否可用
+     */
+    @GetMapping("/check-username")
+    public ResponseEntity<?> checkUsername(@RequestParam String username) {
+        try {
+            System.out.println("检查用户名是否可用: " + username);
+            boolean exists = false;
+            
+            try {
+                userService.getUserByUsername(username);
+                exists = true;
+            } catch (RuntimeException e) {
+                exists = false;
+            }
+            
+            Map<String, Boolean> resultData = new HashMap<>();
+            resultData.put("available", !exists);
+            
+            // 使用API响应工具类返回统一格式
+            ApiResponse<Map<String, Boolean>> response = ApiResponse.success(resultData);
+            
+            System.out.println("用户名 " + username + " 可用性: " + !exists);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // 如果是找不到用户的异常，说明用户名可用
+            System.out.println("检查用户名发生异常，默认用户名可用: " + e.getMessage());
+            
+            Map<String, Boolean> resultData = new HashMap<>();
+            resultData.put("available", true);
+            
+            // 使用API响应工具类返回统一格式
+            ApiResponse<Map<String, Boolean>> response = ApiResponse.success(resultData);
+            return ResponseEntity.ok(response);
+        }
+    }
+    
+    /**
+     * 检查手机号是否已被注册
+     */
+    @GetMapping("/check-phone")
+    public ResponseEntity<?> checkPhone(@RequestParam String phone) {
+        try {
+            System.out.println("检查手机号是否已被注册: " + phone);
+            
+            boolean exists = userService.existsByPhone(phone);
+            
+            Map<String, Boolean> resultData = new HashMap<>();
+            resultData.put("available", !exists);
+            
+            // 使用API响应工具类返回统一格式
+            ApiResponse<Map<String, Boolean>> response = ApiResponse.success(resultData);
+            
+            System.out.println("手机号 " + phone + " 可用性: " + !exists);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.out.println("检查手机号发生异常: " + e.getMessage());
+            
+            Map<String, Boolean> resultData = new HashMap<>();
+            resultData.put("available", true);
+            
+            // 使用API响应工具类返回统一格式
+            ApiResponse<Map<String, Boolean>> response = ApiResponse.success(resultData);
+            return ResponseEntity.ok(response);
+        }
+    }
 
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
@@ -76,9 +262,8 @@ public class UserController {
             // 移除敏感信息
             user.setPassword(null);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", user);
+            // 使用API响应工具类返回统一格式
+            ApiResponse<User> response = ApiResponse.success(user);
             
             System.out.println("返回用户信息成功, userId: " + id);
             return ResponseEntity.ok(response);
@@ -86,10 +271,9 @@ public class UserController {
             System.err.println("获取用户信息失败: " + e.getMessage());
             e.printStackTrace();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取用户信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 使用API响应工具类返回错误信息
+            ApiResponse<?> errorResponse = ApiResponse.fail("获取用户信息失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 
@@ -102,9 +286,8 @@ public class UserController {
             // 移除敏感信息
             user.setPassword(null);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", user);
+            // 使用API响应工具类返回统一格式
+            ApiResponse<User> response = ApiResponse.success(user);
             
             System.out.println("返回用户信息成功, username: " + username);
             return ResponseEntity.ok(response);
@@ -112,27 +295,39 @@ public class UserController {
             System.err.println("获取用户信息失败: " + e.getMessage());
             e.printStackTrace();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取用户信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 使用API响应工具类返回错误信息
+            ApiResponse<?> errorResponse = ApiResponse.fail("获取用户信息失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User user) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userUpdate) {
         try {
             System.out.println("接收到更新用户信息请求, userId: " + id);
+            
+            // 获取当前用户信息
+            User existingUser = userService.getUserById(id);
+            
+            // 只更新允许的字段
+            User user = new User();
             user.setId(id);
+            user.setName(userUpdate.getName());
+            user.setPhone(userUpdate.getPhone());
+            user.setEmail(userUpdate.getEmail());
+            user.setGender(userUpdate.getGender());
+            user.setBirthday(userUpdate.getBirthday());
+            
+            // 保持原有的角色和其他字段不变
+            user.setRole(existingUser.getRole());
+            
             User updatedUser = userService.updateUser(user);
             
             // 移除敏感信息
             updatedUser.setPassword(null);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "用户信息更新成功");
-            response.put("data", updatedUser);
+            // 使用API响应工具类返回统一格式
+            ApiResponse<User> response = ApiResponse.success("用户信息更新成功", updatedUser);
             
             System.out.println("用户信息更新成功, userId: " + id);
             return ResponseEntity.ok(response);
@@ -140,10 +335,9 @@ public class UserController {
             System.err.println("更新用户信息失败: " + e.getMessage());
             e.printStackTrace();
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "更新用户信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 使用API响应工具类返回错误信息
+            ApiResponse<?> errorResponse = ApiResponse.fail("更新用户信息失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(errorResponse);
         }
     }
 

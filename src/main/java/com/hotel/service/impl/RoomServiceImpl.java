@@ -8,19 +8,34 @@ import com.hotel.service.RoomService;
 import com.hotel.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.context.ApplicationContext;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageImpl;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.EntityManager;
+import javax.persistence.PersistenceContext;
+import javax.persistence.TypedQuery;
+import javax.persistence.criteria.CriteriaBuilder;
+import javax.persistence.criteria.CriteriaQuery;
+import javax.persistence.criteria.Predicate;
+import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
 import java.util.List;
 import java.util.Optional;
 import java.util.ArrayList;
 
 @Service
+@Transactional
 public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
     private final RoomTypeRepository roomTypeRepository;
     private final ApplicationContext applicationContext;
+    
+    @PersistenceContext
+    private EntityManager entityManager;
     
     @Autowired
     public RoomServiceImpl(RoomRepository roomRepository, 
@@ -34,6 +49,67 @@ public class RoomServiceImpl implements RoomService {
     // 懒加载ReservationService以避免循环依赖
     private ReservationService getReservationService() {
         return applicationContext.getBean(ReservationService.class);
+    }
+
+    @Override
+    public Page<Room> getRoomsWithFilters(Integer floor, String roomTypeId, String status, String keyword, Pageable pageable) {
+        CriteriaBuilder cb = entityManager.getCriteriaBuilder();
+        CriteriaQuery<Room> query = cb.createQuery(Room.class);
+        Root<Room> root = query.from(Room.class);
+        
+        List<Predicate> predicates = new ArrayList<>();
+        
+        // 按楼层筛选
+        if (floor != null) {
+            predicates.add(cb.equal(root.get("floor"), floor));
+        }
+        
+        // 按房间类型筛选
+        if (roomTypeId != null && !roomTypeId.isEmpty()) {
+            try {
+                Long typeId = Long.parseLong(roomTypeId);
+                predicates.add(cb.equal(root.get("roomType").get("id"), typeId));
+            } catch (NumberFormatException e) {
+                // 忽略无效的房间类型ID
+            }
+        }
+        
+        // 按状态筛选
+        if (status != null && !status.isEmpty()) {
+            try {
+                Room.RoomStatus roomStatus = Room.RoomStatus.valueOf(status);
+                predicates.add(cb.equal(root.get("status"), roomStatus));
+            } catch (IllegalArgumentException e) {
+                // 忽略无效的状态值
+            }
+        }
+        
+        // 关键词搜索(房间号)
+        if (keyword != null && !keyword.isEmpty()) {
+            predicates.add(cb.like(root.get("roomNumber"), "%" + keyword + "%"));
+        }
+        
+        // 组合所有条件
+        if (!predicates.isEmpty()) {
+            query.where(cb.and(predicates.toArray(new Predicate[0])));
+        }
+        
+        // 计算总记录数
+        CriteriaQuery<Long> countQuery = cb.createQuery(Long.class);
+        Root<Room> countRoot = countQuery.from(Room.class);
+        countQuery.select(cb.count(countRoot));
+        if (!predicates.isEmpty()) {
+            countQuery.where(cb.and(predicates.toArray(new Predicate[0])));
+        }
+        Long total = entityManager.createQuery(countQuery).getSingleResult();
+        
+        // 获取分页数据
+        TypedQuery<Room> typedQuery = entityManager.createQuery(query);
+        typedQuery.setFirstResult((int) pageable.getOffset());
+        typedQuery.setMaxResults(pageable.getPageSize());
+        List<Room> rooms = typedQuery.getResultList();
+        
+        return new PageImpl<>(rooms, pageable, total);
     }
 
     @Override

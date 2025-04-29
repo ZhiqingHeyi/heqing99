@@ -3,22 +3,27 @@
 ## 目录
 
 1. [API概述](#api概述)
-2. [认证与授权](#认证与授权)
-3. [通用数据结构](#通用数据结构)
-4. [用户管理](#用户管理)
-5. [会员系统](#会员系统)
-6. [房间管理](#房间管理)
-7. [预订管理](#预订管理)
-8. [入住和退房](#入住和退房)
-9. [清洁管理](#清洁管理)
-10. [统计数据](#统计数据)
+2. [版本控制](#版本控制)
+3. [环境信息](#环境信息)
+4. [API调用示例](#api调用示例)
+5. [认证与授权](#认证与授权)
+6. [安全策略](#安全策略)
+7. [通用数据结构](#通用数据结构)
+8. [用户管理](#用户管理)
+9. [会员系统](#会员系统)
+10. [房间管理](#房间管理)
+11. [预订管理](#预订管理)
+12. [入住和退房](#入住和退房)
+13. [清洁管理](#清洁管理)
+14. [统计数据](#统计数据)
+15. [API变更日志](#api变更日志)
 
 ## API概述
 
 ### 基础URL
 
 ```
-https://api.hotelmanagement.com/api
+https://api.hotelmanagement.com/api/v1
 ```
 
 ### 请求格式
@@ -55,11 +60,429 @@ Authorization: Bearer {token}
 | 状态码 | 描述 |
 | ------ | ---- |
 | 200 | 成功 |
-| 400 | 请求错误 |
-| 401 | 未授权 |
-| 403 | 禁止访问 |
-| 404 | 资源不存在 |
-| 500 | 服务器错误 |
+| 400 | 请求错误 - 通常是参数验证失败 |
+| 401 | 未授权 - 用户未登录或Token已过期 |
+| 403 | 禁止访问 - 用户无权限访问此资源 |
+| 404 | 资源不存在 - 请求的资源未找到 |
+| 409 | 冲突 - 例如创建已存在的资源 |
+| 422 | 请求格式正确，但语义错误导致无法处理 |
+| 429 | 请求过于频繁 - 超过API调用频率限制 |
+| 500 | 服务器内部错误 - 服务器处理请求时出错 |
+| 503 | 服务不可用 - 服务器暂时无法处理请求 |
+
+### 错误码详细说明
+
+API除了返回HTTP状态码，还会在响应体中包含更具体的业务错误码和消息：
+
+| 错误码 | 描述 | 可能原因 |
+| ------ | ---- | -------- |
+| 10001 | 用户名或密码错误 | 登录时提供的凭证无效 |
+| 10002 | 用户不存在 | 尝试访问不存在的用户 |
+| 10003 | 用户已存在 | 注册时用户名已被占用 |
+| 10004 | 密码错误 | 修改密码时旧密码验证失败 |
+| 10005 | 用户已禁用 | 尝试访问已被管理员禁用的账号 |
+| 20001 | 预订不存在 | 尝试访问不存在的预订 |
+| 20002 | 无法取消预订 | 预订已确认或已过取消期限 |
+| 20003 | 房间不可用 | 预订时所选房间已满 |
+| 20004 | 预订时间无效 | 入住/退房日期无效或冲突 |
+| 30001 | 会员级别不存在 | 尝试访问不存在的会员级别 |
+| 40001 | 权限不足 | 尝试访问无权限的资源 |
+| 40002 | Token已过期 | 认证Token已过期，需要刷新 |
+| 40003 | Token无效 | 提供的Token格式错误或已被撤销 |
+| 50001 | 服务器内部错误 | 服务器处理请求时遇到意外错误 |
+
+### 错误响应示例
+
+```json
+{
+  "success": false,
+  "message": "用户名或密码错误",
+  "code": 10001
+}
+```
+
+## 版本控制
+
+API使用URL路径版本控制方式，所有API请求路径以`/api/v{version}`开头，其中`{version}`表示API版本号。
+
+### 当前版本
+
+当前API版本为v1，完整基础URL为：
+```
+https://api.hotelmanagement.com/api/v1
+```
+
+### 版本策略
+
+- 主要版本号（v1, v2等）：表示不向后兼容的变更
+- API变更将在[API变更日志](#api变更日志)中记录
+- 废弃的API将至少保留6个月，并在文档中明确标注为"已废弃"
+
+## 环境信息
+
+系统提供以下环境的API访问：
+
+### 开发环境
+
+- 基础URL: `https://dev-api.hotelmanagement.com/api/v1`
+- 说明: 用于开发和测试，数据随时可能重置
+- 访问限制: 仅内部网络可访问
+
+### 测试环境
+
+- 基础URL: `https://test-api.hotelmanagement.com/api/v1`
+- 说明: 用于集成测试和验收测试
+- 访问限制: 需要特定的测试账号
+
+### 生产环境
+
+- 基础URL: `https://api.hotelmanagement.com/api/v1`
+- 说明: 正式环境，访问真实数据
+- 访问限制: 需要正式授权
+
+## API调用示例
+
+本节提供常见编程语言的API调用示例，帮助开发人员快速集成本系统。
+
+### JavaScript (Axios)
+
+#### 用户登录
+
+```javascript
+import axios from 'axios';
+
+// 创建API请求客户端
+const apiClient = axios.create({
+  baseURL: 'https://api.hotelmanagement.com/api/v1',
+  headers: {
+    'Content-Type': 'application/json'
+  }
+});
+
+// 用户登录
+async function login(username, password) {
+  try {
+    const response = await apiClient.post('/users/login', {
+      username,
+      password
+    });
+    
+    // 登录成功，保存token
+    if (response.data.success) {
+      localStorage.setItem('token', response.data.token);
+      return response.data;
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    console.error('登录失败:', error.message);
+    throw error;
+  }
+}
+
+// 使用示例
+login('john', 'password123')
+  .then(data => console.log('登录成功:', data))
+  .catch(error => console.error('登录失败:', error.message));
+```
+
+#### 获取用户预订列表
+
+```javascript
+// 添加带认证的请求拦截器
+apiClient.interceptors.request.use(
+  config => {
+    const token = localStorage.getItem('token');
+    if (token) {
+      config.headers['Authorization'] = `Bearer ${token}`;
+    }
+    return config;
+  },
+  error => Promise.reject(error)
+);
+
+// 获取用户预订列表
+async function getUserReservations(userId) {
+  try {
+    const response = await apiClient.get(`/reservations/user/${userId}`);
+    
+    if (response.data.success) {
+      return response.data.data;
+    } else {
+      throw new Error(response.data.message);
+    }
+  } catch (error) {
+    console.error('获取预订列表失败:', error.message);
+    throw error;
+  }
+}
+
+// 使用示例
+getUserReservations(1001)
+  .then(reservations => console.log('用户预订列表:', reservations))
+  .catch(error => console.error('获取失败:', error.message));
+```
+
+### Java (Spring RestTemplate)
+
+#### 用户登录
+
+```java
+import org.springframework.http.*;
+import org.springframework.web.client.RestTemplate;
+
+public class HotelApiClient {
+    private final String baseUrl = "https://api.hotelmanagement.com/api/v1";
+    private final RestTemplate restTemplate;
+    private String token;
+    
+    public HotelApiClient() {
+        this.restTemplate = new RestTemplate();
+    }
+    
+    public boolean login(String username, String password) {
+        try {
+            // 创建请求体
+            HttpHeaders headers = new HttpHeaders();
+            headers.setContentType(MediaType.APPLICATION_JSON);
+            
+            String requestJson = String.format("{\"username\":\"%s\",\"password\":\"%s\"}", username, password);
+            HttpEntity<String> request = new HttpEntity<>(requestJson, headers);
+            
+            // 发送登录请求
+            ResponseEntity<LoginResponse> response = restTemplate.postForEntity(
+                baseUrl + "/users/login",
+                request,
+                LoginResponse.class
+            );
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                LoginResponse loginResponse = response.getBody();
+                if (loginResponse.isSuccess()) {
+                    // 保存token
+                    this.token = loginResponse.getToken();
+                    return true;
+                }
+            }
+            return false;
+        } catch (Exception e) {
+            System.err.println("登录失败: " + e.getMessage());
+            return false;
+        }
+    }
+    
+    // 创建带Token的请求头
+    private HttpHeaders createAuthHeaders() {
+        HttpHeaders headers = new HttpHeaders();
+        headers.setContentType(MediaType.APPLICATION_JSON);
+        if (token != null) {
+            headers.set("Authorization", "Bearer " + token);
+        }
+        return headers;
+    }
+    
+    // 响应类
+    private static class LoginResponse {
+        private boolean success;
+        private String message;
+        private String token;
+        
+        public boolean isSuccess() {
+            return success;
+        }
+        
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+        
+        public String getMessage() {
+            return message;
+        }
+        
+        public void setMessage(String message) {
+            this.message = message;
+        }
+        
+        public String getToken() {
+            return token;
+        }
+        
+        public void setToken(String token) {
+            this.token = token;
+        }
+    }
+}
+```
+
+#### 创建预订
+
+```java
+public class HotelApiClient {
+    // ... 前面的代码 ...
+    
+    public Reservation createReservation(ReservationRequest request) {
+        try {
+            HttpHeaders headers = createAuthHeaders();
+            HttpEntity<ReservationRequest> requestEntity = new HttpEntity<>(request, headers);
+            
+            ResponseEntity<ReservationResponse> response = restTemplate.postForEntity(
+                baseUrl + "/reservations",
+                requestEntity,
+                ReservationResponse.class
+            );
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                ReservationResponse reservationResponse = response.getBody();
+                if (reservationResponse.isSuccess()) {
+                    System.out.println("预订创建成功: ID=" + reservationResponse.getReservationId());
+                    
+                    // 返回预订详情
+                    return getReservation(reservationResponse.getReservationId());
+                } else {
+                    throw new RuntimeException("创建预订失败: " + reservationResponse.getMessage());
+                }
+            }
+            throw new RuntimeException("创建预订失败: 服务器响应异常");
+        } catch (Exception e) {
+            System.err.println("创建预订失败: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+    
+    public Reservation getReservation(Long id) {
+        try {
+            HttpHeaders headers = createAuthHeaders();
+            HttpEntity<String> requestEntity = new HttpEntity<>(headers);
+            
+            ResponseEntity<GetReservationResponse> response = restTemplate.exchange(
+                baseUrl + "/reservations/" + id,
+                HttpMethod.GET,
+                requestEntity,
+                GetReservationResponse.class
+            );
+            
+            if (response.getStatusCode() == HttpStatus.OK && response.getBody() != null) {
+                GetReservationResponse reservationResponse = response.getBody();
+                if (reservationResponse.isSuccess()) {
+                    return reservationResponse.getData();
+                } else {
+                    throw new RuntimeException("获取预订失败: " + reservationResponse.getMessage());
+                }
+            }
+            throw new RuntimeException("获取预订失败: 服务器响应异常");
+        } catch (Exception e) {
+            System.err.println("获取预订失败: " + e.getMessage());
+            throw new RuntimeException(e);
+        }
+    }
+    
+    // 请求和响应类
+    // ... 其他类定义 ...
+}
+```
+
+### Python (Requests)
+
+```python
+import requests
+
+class HotelApiClient:
+    def __init__(self):
+        self.base_url = "https://api.hotelmanagement.com/api/v1"
+        self.token = None
+    
+    def login(self, username, password):
+        """用户登录并获取token"""
+        url = f"{self.base_url}/users/login"
+        payload = {
+            "username": username,
+            "password": password
+        }
+        
+        try:
+            response = requests.post(url, json=payload)
+            data = response.json()
+            
+            if data.get("success"):
+                self.token = data.get("token")
+                print(f"登录成功，用户: {data.get('username')}")
+                return True
+            else:
+                print(f"登录失败: {data.get('message')}")
+                return False
+        except Exception as e:
+            print(f"登录出错: {str(e)}")
+            return False
+    
+    def get_headers(self):
+        """获取带认证的请求头"""
+        headers = {"Content-Type": "application/json"}
+        if self.token:
+            headers["Authorization"] = f"Bearer {self.token}"
+        return headers
+    
+    def get_user_info(self, user_id):
+        """获取用户信息"""
+        url = f"{self.base_url}/users/{user_id}"
+        
+        try:
+            response = requests.get(url, headers=self.get_headers())
+            data = response.json()
+            
+            if data.get("success"):
+                return data.get("data")
+            else:
+                print(f"获取用户信息失败: {data.get('message')}")
+                return None
+        except Exception as e:
+            print(f"获取用户信息出错: {str(e)}")
+            return None
+    
+    def create_reservation(self, reservation_data):
+        """创建预订"""
+        url = f"{self.base_url}/reservations"
+        
+        try:
+            response = requests.post(url, json=reservation_data, headers=self.get_headers())
+            data = response.json()
+            
+            if data.get("success"):
+                print(f"预订创建成功，ID: {data.get('reservationId')}")
+                return data
+            else:
+                print(f"创建预订失败: {data.get('message')}")
+                return None
+        except Exception as e:
+            print(f"创建预订出错: {str(e)}")
+            return None
+
+# 使用示例
+if __name__ == "__main__":
+    client = HotelApiClient()
+    
+    # 登录
+    client.login("john", "password123")
+    
+    # 获取用户信息
+    user_info = client.get_user_info(1001)
+    print(f"用户信息: {user_info}")
+    
+    # 创建预订
+    reservation_data = {
+        "userId": 1001,
+        "roomType": 1,
+        "checkIn": "2023-06-10T14:00:00",
+        "checkOut": "2023-06-12T12:00:00",
+        "roomCount": 1,
+        "contactName": "张三",
+        "phone": "13800138000",
+        "remarks": "希望有安静的房间",
+        "totalAmount": 998
+    }
+    
+    result = client.create_reservation(reservation_data)
+    print(f"预订结果: {result}")
+```
 
 ## 认证与授权
 
@@ -69,13 +492,13 @@ Authorization: Bearer {token}
 
 **请求方法**：POST
 
-**接口URL**：`/login`
+**接口URL**：`/api/users/login`
 
 **请求参数**：
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| username | String | 是 | 用户名 |
+| username | String | 是 | 用户名或手机号 |
 | password | String | 是 | 密码 |
 
 **成功响应**：
@@ -87,18 +510,10 @@ Authorization: Bearer {token}
   "message": "登录成功",
   "data": {
     "token": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "refreshToken": "eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9...",
-    "expiresIn": 3600,
-    "userInfo": {
-      "id": "1001",
-      "username": "john",
-      "realName": "张三",
-      "role": "user",
-      "phone": "13800138000",
-      "email": "zhangsan@example.com",
-      "level": "银牌会员",
-      "points": 1200
-    }
+    "userId": "1001",
+    "username": "john",
+    "name": "张三",
+    "role": "USER"
   }
 }
 ```
@@ -108,9 +523,7 @@ Authorization: Bearer {token}
 ```json
 {
   "success": false,
-  "code": 401,
-  "message": "用户名或密码错误",
-  "data": null
+  "message": "登录失败: 用户名或密码错误"
 }
 ```
 
@@ -206,427 +619,86 @@ Authorization: Bearer {token}
 }
 ```
 
-## 用户管理
+## 安全策略
 
-### 1. 用户注册
+### 数据加密
 
-**接口描述**：新用户注册
+所有API通信必须使用HTTPS协议，确保传输数据的安全性。敏感信息（如密码）在传输前应进行加密处理。
 
-**请求方法**：POST
+### 密码安全
 
-**接口URL**：`/users/register`
+- 密码在服务器端使用BCrypt算法加密存储
+- 密码复杂度要求：至少8个字符，包含字母、数字和特殊字符
+- 密码在传输过程中不能以明文形式出现
 
-**请求参数**：
+### 访问控制
 
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| username | String | 是 | 用户名 |
-| password | String | 是 | 密码 |
-| confirmPassword | String | 是 | 确认密码 |
-| realName | String | 是 | 真实姓名 |
-| phone | String | 是 | 手机号码 |
-| email | String | 否 | 电子邮箱 |
-| gender | String | 否 | 性别(male/female/unknown) |
-| birthday | String | 否 | 生日(YYYY-MM-DD) |
+API使用基于角色的访问控制（RBAC）机制：
 
-**成功响应**：
+| 角色 | 权限范围 |
+| ---- | -------- |
+| 游客(GUEST) | 浏览公开信息，注册账号 |
+| 用户(USER) | 管理个人资料，预订房间，查看历史记录 |
+| 前台(RECEPTION) | 处理入住/退房，管理预订，处理客户请求 |
+| 保洁人员(CLEANING) | 查看和更新房间清洁状态 |
+| 管理员(ADMIN) | 完全访问权限，包括用户管理、报表等 |
 
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "注册成功",
-  "data": {
-    "userId": "1001",
-    "username": "john"
-  }
-}
-```
+特定权限的控制逻辑：
 
-### 2. 获取用户信息
+- 个人用户仅能访问自己的资源（预订、账户信息等）
+- 前台可以查看预订信息并处理入住/退房
+- 保洁人员只能访问房间清洁相关功能
+- 管理员可以访问所有API功能和数据
 
-**接口描述**：获取当前登录用户信息
+### Token安全
 
-**请求方法**：GET
+- JWT令牌过期时间为1小时
+- 刷新令牌过期时间为7天
+- 令牌必须通过HTTPS传输
+- 敏感操作(修改密码、修改账户信息等)可能需要重新验证身份
 
-**接口URL**：`/users/profile`
+### 频率限制
 
-**请求头**：
+为防止滥用，API实施了请求频率限制：
 
-```
-Authorization: Bearer {token}
-```
+- 普通用户: 100次请求/分钟
+- 管理员: 300次请求/分钟
 
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "id": "1001",
-    "username": "john",
-    "realName": "张三",
-    "phone": "13800138000",
-    "email": "zhangsan@example.com",
-    "gender": "male",
-    "birthday": "1990-01-01",
-    "registerTime": "2023-01-01 12:00:00",
-    "level": "银牌会员",
-    "points": 1200,
-    "totalSpent": 5000,
-    "nextLevel": "金牌会员",
-    "nextLevelProgress": 60
-  }
-}
-```
-
-### 3. 更新用户信息
-
-**接口描述**：更新当前登录用户的基本信息
-
-**请求方法**：PUT
-
-**接口URL**：`/users/profile`
-
-**请求头**：
+超过限制时会返回`429 Too Many Requests`状态码，响应头包含：
 
 ```
-Authorization: Bearer {token}
+Retry-After: 60
 ```
 
-**请求参数**：
+表示需要等待60秒后再尝试请求。
 
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| realName | String | 否 | 真实姓名 |
-| phone | String | 否 | 手机号码 |
-| email | String | 否 | 电子邮箱 |
-| gender | String | 否 | 性别 |
-| birthday | String | 否 | 生日(YYYY-MM-DD) |
+### CORS策略
 
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "更新成功",
-  "data": {
-    "id": "1001",
-    "username": "john",
-    "realName": "张三",
-    "phone": "13800138000",
-    "email": "zhangsan@example.com",
-    "gender": "male",
-    "birthday": "1990-01-01"
-  }
-}
-```
-
-### 4. 修改密码
-
-**接口描述**：修改当前登录用户的密码
-
-**请求方法**：PUT
-
-**接口URL**：`/users/password`
-
-**请求头**：
+API支持跨域资源共享（CORS），允许以下来源的请求：
 
 ```
-Authorization: Bearer {token}
+https://hotelmanagement.com
+https://*.hotelmanagement.com
 ```
 
-**请求参数**：
+针对不同HTTP方法的CORS处理：
 
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| oldPassword | String | 是 | 旧密码 |
-| newPassword | String | 是 | 新密码 |
-| confirmPassword | String | 是 | 确认新密码 |
+- GET请求：支持跨域
+- POST/PUT/DELETE请求：需要进行预检请求(OPTIONS)
 
-**成功响应**：
+### 日志审计
 
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "密码修改成功",
-  "data": null
-}
-```
+所有API调用都会被记录，包括：
 
-### 5. 管理员获取用户列表
+- 调用者IP地址
+- 用户标识(如果已登录)
+- 请求的API和方法
+- 请求时间
+- 操作结果
 
-**接口描述**：管理员获取所有用户列表
+敏感操作(修改用户信息、支付相关等)会记录更详细的日志，用于审计和安全监控。
 
-**请求方法**：GET
-
-**接口URL**：`/admin/users`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| page | Integer | 否 | 页码，默认1 |
-| pageSize | Integer | 否 | 每页条数，默认10 |
-| keyword | String | 否 | 搜索关键词(用户名/手机号) |
-| level | String | 否 | 会员等级 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 100,
-    "list": [
-      {
-        "id": "1001",
-        "username": "john",
-        "realName": "张三",
-        "phone": "13800138000",
-        "email": "zhangsan@example.com",
-        "level": "银牌会员",
-        "points": 1200,
-        "totalSpent": 5000,
-        "registerTime": "2023-01-01 12:00:00",
-        "lastLoginTime": "2023-05-01 12:00:00",
-        "status": "active"
-      },
-      // ...更多用户
-    ]
-  }
-}
-```
-
-## 会员系统
-
-### 1. 获取会员信息
-
-**接口描述**：获取当前用户的会员信息
-
-**请求方法**：GET
-
-**接口URL**：`/membership/info`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "userId": "1001",
-    "level": "银牌会员",
-    "points": 1200,
-    "totalSpent": 5000,
-    "discount": 0.9,
-    "nextLevel": "金牌会员",
-    "nextLevelThreshold": 8000,
-    "progress": 62.5,
-    "registerTime": "2023-01-01",
-    "specialPrivileges": [
-      "预订免押金",
-      "生日礼遇",
-      "延迟退房"
-    ]
-  }
-}
-```
-
-### 2. 获取会员等级列表
-
-**接口描述**：获取所有会员等级及其权益
-
-**请求方法**：GET
-
-**接口URL**：`/membership/levels`
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": [
-    {
-      "id": "bronze",
-      "name": "铜牌会员",
-      "discount": 0.95,
-      "pointRate": 1,
-      "threshold": 0,
-      "nextLevel": "银牌会员",
-      "nextLevelThreshold": 3000,
-      "privileges": [
-        "基础折扣9.5折",
-        "积分兑换"
-      ]
-    },
-    {
-      "id": "silver",
-      "name": "银牌会员",
-      "discount": 0.9,
-      "pointRate": 1.2,
-      "threshold": 3000,
-      "nextLevel": "金牌会员",
-      "nextLevelThreshold": 8000,
-      "privileges": [
-        "折扣9折",
-        "预订免押金",
-        "生日礼遇"
-      ]
-    },
-    {
-      "id": "gold",
-      "name": "金牌会员",
-      "discount": 0.85,
-      "pointRate": 1.5,
-      "threshold": 8000,
-      "nextLevel": "钻石会员",
-      "nextLevelThreshold": 20000,
-      "privileges": [
-        "折扣8.5折",
-        "预订免押金",
-        "生日礼遇",
-        "专属客服"
-      ]
-    },
-    {
-      "id": "diamond",
-      "name": "钻石会员",
-      "discount": 0.8,
-      "pointRate": 2,
-      "threshold": 20000,
-      "nextLevel": null,
-      "nextLevelThreshold": null,
-      "privileges": [
-        "折扣8折",
-        "预订免押金",
-        "生日礼遇",
-        "专属客服",
-        "机场接送",
-        "免费升级房型"
-      ]
-    }
-  ]
-}
-```
-
-### 3. 获取积分历史记录
-
-**接口描述**：获取用户积分变动历史
-
-**请求方法**：GET
-
-**接口URL**：`/membership/points/history`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| page | Integer | 否 | 页码，默认1 |
-| pageSize | Integer | 否 | 每页条数，默认10 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 50,
-    "list": [
-      {
-        "id": "1",
-        "userId": "1001",
-        "points": 200,
-        "type": "earn",
-        "description": "预订入住",
-        "orderNo": "BO2023050100001",
-        "balance": 1200,
-        "createTime": "2023-05-01 12:00:00"
-      },
-      {
-        "id": "2",
-        "userId": "1001",
-        "points": -100,
-        "type": "redeem",
-        "description": "积分兑换优惠券",
-        "orderNo": null,
-        "balance": 1000,
-        "createTime": "2023-04-01 12:00:00"
-      }
-      // ...更多记录
-    ]
-  }
-}
-```
-
-### 4. 计算会员折扣价格
-
-**接口描述**：根据会员等级计算折扣后的价格
-
-**请求方法**：POST
-
-**接口URL**：`/membership/calculate-discount`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| originalPrice | Number | 是 | 原始价格 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "计算成功",
-  "data": {
-    "originalPrice": 1000,
-    "discountRate": 0.9,
-    "discountPrice": 900,
-    "discountAmount": 100,
-    "memberLevel": "银牌会员",
-    "estimatedPoints": 900
-  }
-}
-```
-
-## 房间管理
+## 通用数据结构
 
 ### 1. 获取房间类型列表
 
@@ -1069,75 +1141,58 @@ Authorization: Bearer {token}
 }
 ```
 
-## 预订管理
+## 用户管理
 
-### 1. 创建预订
+> **标签:** `用户` `认证`
 
-**接口描述**：用户创建新预订
+### 1. 用户注册
+
+**接口描述**：新用户注册
 
 **请求方法**：POST
 
-**接口URL**：`/reservations`
-
-**请求头**：
-
-```
-Authorization: Bearer {token} (可选，登录用户提供)
-```
+**接口URL**：`/api/users/register`
 
 **请求参数**：
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| checkIn | String | 是 | 入住日期(YYYY-MM-DD) |
-| checkOut | String | 是 | 离店日期(YYYY-MM-DD) |
-| roomType | String | 是 | 房间类型ID |
-| roomCount | Integer | 是 | 预订房间数量 |
-| contactName | String | 是 | 联系人姓名 |
-| phone | String | 是 | 联系电话 |
+| username | String | 是 | 用户名 |
+| password | String | 是 | 密码 |
+| confirmPassword | String | 是 | 确认密码 |
+| name | String | 是 | 真实姓名 |
+| phone | String | 是 | 手机号码 |
 | email | String | 否 | 电子邮箱 |
-| guestCount | Integer | 是 | 客人数量 |
-| remarks | String | 否 | 备注 |
-| paymentMethod | Integer | 是 | 支付方式(1:在线支付,2:到店支付) |
-| depositType | Integer | 否 | 预付类型(1:全额,2:30%,3:免预付) |
+| gender | String | 否 | 性别(male/female/unknown) |
+| birthday | String | 否 | 生日(YYYY-MM-DD) |
 
 **成功响应**：
 
 ```json
 {
   "success": true,
-  "code": 200,
-  "message": "预订成功",
-  "data": {
-    "reservationId": "BO2023060100001",
-    "checkIn": "2023-06-10",
-    "checkOut": "2023-06-12",
-    "roomType": "豪华间",
-    "roomCount": 1,
-    "nightCount": 2,
-    "guestCount": 2,
-    "contactName": "张三",
-    "phone": "13800138000",
-    "totalAmount": 998,
-    "discountAmount": 100,
-    "finalAmount": 898,
-    "depositAmount": 269.4,
-    "paymentMethod": 1,
-    "paymentStatus": "pending",
-    "status": "pending",
-    "createTime": "2023-06-01 12:00:00",
-    "paymentUrl": "https://payment.example.com/pay/BO2023060100001"
-  }
+  "message": "注册成功",
+  "userId": "1001",
+  "username": "john"
 }
 ```
 
-### 2. 获取预订详情
+**错误响应**：
 
-**接口描述**：获取预订详细信息
+```json
+{
+  "success": false,
+  "message": "注册失败: 用户名已存在"
+}
+```
+
+### 2. 获取用户信息
+
+**接口描述**：获取指定用户的信息
 
 **请求方法**：GET
 
-**接口URL**：`/reservations/{reservationId}`
+**接口URL**：`/api/users/{id}`
 
 **请求头**：
 
@@ -1149,67 +1204,494 @@ Authorization: Bearer {token}
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| reservationId | String | 是 | 预订ID |
+| id | Long | 是 | 用户ID |
 
 **成功响应**：
 
 ```json
 {
   "success": true,
-  "code": 200,
-  "message": "获取成功",
   "data": {
-    "id": "BO2023060100001",
-    "userId": "1001",
-    "checkIn": "2023-06-10",
-    "checkOut": "2023-06-12",
-    "roomType": {
-      "id": "deluxe",
-      "name": "豪华间",
-      "basePrice": 499
-    },
-    "roomCount": 1,
-    "nightCount": 2,
-    "guestCount": 2,
-    "contactName": "张三",
+    "id": 1001,
+    "username": "john",
+    "name": "张三",
     "phone": "13800138000",
     "email": "zhangsan@example.com",
-    "remarks": "希望有安静的房间",
-    "totalAmount": 998,
-    "discountAmount": 100,
-    "finalAmount": 898,
-    "depositAmount": 269.4,
-    "paymentMethod": 1,
-    "paymentStatus": "paid",
-    "status": "confirmed",
-    "createTime": "2023-06-01 12:00:00",
-    "updateTime": "2023-06-01 12:30:00",
-    "confirmTime": "2023-06-01 14:00:00",
-    "cancelTime": null,
-    "cancelReason": null,
-    "assignedRooms": [
-      {
-        "roomNumber": "503",
-        "floor": 5,
-        "roomType": "豪华间"
-      }
-    ],
-    "member": {
-      "level": "银牌会员",
+    "gender": "male",
+    "birthday": "1990-01-01",
+    "registerTime": "2023-01-01 12:00:00",
+    "role": "USER"
+  }
+}
+```
+
+**错误响应**：
+
+```json
+{
+  "success": false,
+  "message": "获取用户信息失败: 用户不存在"
+}
+```
+
+### 3. 通过用户名获取用户信息
+
+**接口描述**：通过用户名获取用户信息
+
+**请求方法**：GET
+
+**接口URL**：`/api/users/username/{username}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| username | String | 是 | 用户名 |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "id": 1001,
+    "username": "john",
+    "name": "张三",
+    "phone": "13800138000",
+    "email": "zhangsan@example.com",
+    "gender": "male",
+    "birthday": "1990-01-01",
+    "registerTime": "2023-01-01 12:00:00",
+    "role": "USER"
+  }
+}
+```
+
+### 4. 更新用户信息
+
+**接口描述**：更新用户的基本信息
+
+**请求方法**：PUT
+
+**接口URL**：`/api/users/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 用户ID |
+
+**请求体参数**：
+
+```json
+{
+  "name": "张三",
+  "phone": "13800138000",
+  "email": "zhangsan@example.com",
+  "gender": "male",
+  "birthday": "1990-01-01"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "用户信息更新成功",
+  "data": {
+    "id": 1001,
+    "username": "john",
+    "name": "张三",
+    "phone": "13800138000",
+    "email": "zhangsan@example.com",
+    "gender": "male",
+    "birthday": "1990-01-01"
+  }
+}
+```
+
+### 5. 修改密码
+
+**接口描述**：修改用户的密码
+
+**请求方法**：PUT
+
+**接口URL**：`/api/users/{id}/password`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 用户ID |
+
+**请求参数**：
+
+```json
+{
+  "oldPassword": "旧密码",
+  "newPassword": "新密码"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "密码修改成功"
+}
+```
+
+### 6. 删除用户
+
+**接口描述**：删除指定用户
+
+**请求方法**：DELETE
+
+**接口URL**：`/api/users/{id}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 用户ID |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "用户已删除"
+}
+```
+
+### 7. 获取所有用户
+
+**接口描述**：获取所有用户的列表（管理员权限）
+
+**请求方法**：GET
+
+**接口URL**：`/api/users`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1001,
+      "username": "john",
+      "name": "张三",
+      "phone": "13800138000",
+      "email": "zhangsan@example.com",
+      "role": "USER",
+      "registerTime": "2023-01-01 12:00:00"
+    },
+    // ... 更多用户
+  ]
+}
+```
+
+### 8. 按角色获取用户
+
+**接口描述**：获取指定角色的所有用户（管理员权限）
+
+**请求方法**：GET
+
+**接口URL**：`/api/users/role/{role}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| role | UserRole | 是 | 用户角色(USER/ADMIN/RECEPTION/CLEANING) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 1001,
+      "username": "john",
+      "name": "张三",
+      "phone": "13800138000",
+      "email": "zhangsan@example.com",
+      "role": "USER",
+      "registerTime": "2023-01-01 12:00:00"
+    },
+    // ... 更多用户
+  ]
+}
+```
+
+### 9. 切换用户状态
+
+**接口描述**：启用或禁用用户账号（管理员权限）
+
+**请求方法**：PUT
+
+**接口URL**：`/api/users/{id}/status?enabled={enabled}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| id | Long | 是 | 用户ID |
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| enabled | Boolean | 是 | 是否启用账号 |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "用户状态已更新"
+}
+```
+
+### 10. 获取活跃员工
+
+**接口描述**：获取所有活跃的员工（管理员权限）
+
+**请求方法**：GET
+
+**接口URL**：`/api/users/staff/active`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": [
+    {
+      "id": 2001,
+      "username": "reception1",
+      "name": "李四",
+      "phone": "13900139000",
+      "email": "lisi@example.com",
+      "role": "RECEPTION",
+      "registerTime": "2023-01-01 12:00:00"
+    },
+    // ... 更多员工
+  ]
+}
+```
+
+### 11. 获取特定角色的用户数量
+
+**接口描述**：获取特定角色的用户数量（管理员权限）
+
+**请求方法**：GET
+
+**接口URL**：`/api/users/count/{role}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| role | UserRole | 是 | 用户角色(USER/ADMIN/RECEPTION/CLEANING) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": 50
+}
+```
+
+## 会员系统
+
+> **标签:** `会员` `用户` `积分`
+
+### 1. 获取会员信息
+
+**接口描述**：获取当前用户的会员信息
+
+**请求方法**：GET
+
+**接口URL**：`/membership/info`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": {
+    "userId": "1001",
+    "level": "银牌会员",
+    "points": 1200,
+    "totalSpent": 5000,
+    "discount": 0.9,
+    "nextLevel": "金牌会员",
+    "nextLevelThreshold": 8000,
+    "progress": 62.5,
+    "registerTime": "2023-01-01",
+    "specialPrivileges": [
+      "预订免押金",
+      "生日礼遇",
+      "延迟退房"
+    ]
+  }
+}
+```
+
+### 2. 获取会员等级列表
+
+**接口描述**：获取所有会员等级及其权益
+
+**请求方法**：GET
+
+**接口URL**：`/membership/levels`
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "code": 200,
+  "message": "获取成功",
+  "data": [
+    {
+      "id": "bronze",
+      "name": "铜牌会员",
+      "discount": 0.95,
+      "pointRate": 1,
+      "threshold": 0,
+      "nextLevel": "银牌会员",
+      "nextLevelThreshold": 3000,
+      "privileges": [
+        "基础折扣9.5折",
+        "积分兑换"
+      ]
+    },
+    {
+      "id": "silver",
+      "name": "银牌会员",
       "discount": 0.9,
-      "points": 898
+      "pointRate": 1.2,
+      "threshold": 3000,
+      "nextLevel": "金牌会员",
+      "nextLevelThreshold": 8000,
+      "privileges": [
+        "折扣9折",
+        "预订免押金",
+        "生日礼遇"
+      ]
+    },
+    {
+      "id": "gold",
+      "name": "金牌会员",
+      "discount": 0.85,
+      "pointRate": 1.5,
+      "threshold": 8000,
+      "nextLevel": "钻石会员",
+      "nextLevelThreshold": 20000,
+      "privileges": [
+        "折扣8.5折",
+        "预订免押金",
+        "生日礼遇",
+        "专属客服"
+      ]
+    },
+    {
+      "id": "diamond",
+      "name": "钻石会员",
+      "discount": 0.8,
+      "pointRate": 2,
+      "threshold": 20000,
+      "nextLevel": null,
+      "nextLevelThreshold": null,
+      "privileges": [
+        "折扣8折",
+        "预订免押金",
+        "生日礼遇",
+        "专属客服",
+        "机场接送",
+        "免费升级房型"
+      ]
     }
-  }
+  ]
 }
 ```
 
-### 3. 获取用户预订列表
+### 3. 获取积分历史记录
 
-**接口描述**：获取当前用户的所有预订
+**接口描述**：获取用户积分变动历史
 
 **请求方法**：GET
 
-**接口URL**：`/reservations/user`
+**接口URL**：`/membership/points/history`
 
 **请求头**：
 
@@ -1223,649 +1705,6 @@ Authorization: Bearer {token}
 | ------ | ---- | ---- | ---- |
 | page | Integer | 否 | 页码，默认1 |
 | pageSize | Integer | 否 | 每页条数，默认10 |
-| status | String | 否 | 预订状态(pending/confirmed/checked-in/cancelled/completed) |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 5,
-    "list": [
-      {
-        "id": "BO2023060100001",
-        "checkIn": "2023-06-10",
-        "checkOut": "2023-06-12",
-        "roomType": "豪华间",
-        "roomCount": 1,
-        "nightCount": 2,
-        "totalAmount": 898,
-        "status": "confirmed",
-        "createTime": "2023-06-01 12:00:00"
-      },
-      {
-        "id": "BO2023050100001",
-        "checkIn": "2023-05-15",
-        "checkOut": "2023-05-17",
-        "roomType": "标准间",
-        "roomCount": 1,
-        "nightCount": 2,
-        "totalAmount": 598,
-        "status": "completed",
-        "createTime": "2023-05-01 12:00:00"
-      }
-      // ...更多预订
-    ]
-  }
-}
-```
-
-### 4. 取消预订
-
-**接口描述**：取消现有预订
-
-**请求方法**：POST
-
-**接口URL**：`/reservations/{reservationId}/cancel`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| reservationId | String | 是 | 预订ID |
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| reason | String | 否 | 取消原因 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "取消成功",
-  "data": {
-    "id": "BO2023060100001",
-    "status": "cancelled",
-    "cancelTime": "2023-06-02 10:00:00",
-    "cancelReason": "行程变更",
-    "refundAmount": 269.4,
-    "refundStatus": "processing"
-  }
-}
-```
-
-### 5. 管理员获取所有预订
-
-**接口描述**：管理员或前台获取所有预订
-
-**请求方法**：GET
-
-**接口URL**：`/admin/reservations`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| page | Integer | 否 | 页码，默认1 |
-| pageSize | Integer | 否 | 每页条数，默认10 |
-| status | String | 否 | 预订状态 |
-| bookingNo | String | 否 | 预订号 |
-| customerName | String | 否 | 客户姓名 |
-| phone | String | 否 | 手机号 |
-| dateRange | Array | 否 | 入住日期范围 [开始日期, 结束日期] |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 100,
-    "list": [
-      {
-        "id": "BO2023060100001",
-        "bookingNo": "BO2023060100001",
-        "userId": "1001",
-        "customerName": "张三",
-        "phone": "13800138000",
-        "roomType": "豪华间",
-        "roomNumber": "503",
-        "roomPrice": 499,
-        "checkInDate": "2023-06-10",
-        "checkOutDate": "2023-06-12",
-        "nightCount": 2,
-        "totalAmount": 898,
-        "paymentStatus": "paid",
-        "status": "confirmed",
-        "createTime": "2023-06-01 12:00:00"
-      },
-      // ...更多预订
-    ]
-  }
-}
-```
-
-### 6. 管理员确认预订
-
-**接口描述**：管理员或前台确认预订并分配房间
-
-**请求方法**：POST
-
-**接口URL**：`/admin/reservations/{reservationId}/confirm`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| reservationId | String | 是 | 预订ID |
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| roomNumbers | Array | 否 | 分配的房间号数组 |
-| notes | String | 否 | 备注 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "确认成功",
-  "data": {
-    "id": "BO2023060100001",
-    "status": "confirmed",
-    "confirmTime": "2023-06-02 10:00:00",
-    "confirmedBy": "admin",
-    "assignedRooms": [
-      {
-        "roomNumber": "503",
-        "floor": 5,
-        "roomType": "豪华间"
-      }
-    ],
-    "notes": "已通知客人"
-  }
-}
-```
-
-### 7. 管理员取消预订
-
-**接口描述**：管理员或前台取消预订
-
-**请求方法**：POST
-
-**接口URL**：`/admin/reservations/{reservationId}/cancel`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| reservationId | String | 是 | 预订ID |
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| reason | String | 是 | 取消原因 |
-| refundAmount | Number | 否 | 退款金额 |
-| notes | String | 否 | 备注 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "取消成功",
-  "data": {
-    "id": "BO2023060100001",
-    "status": "cancelled",
-    "cancelTime": "2023-06-02 10:00:00",
-    "cancelReason": "客户要求取消",
-    "cancelledBy": "admin",
-    "refundAmount": 269.4,
-    "refundStatus": "processing",
-    "notes": "已通知客人"
-  }
-}
-```
-
-### 8. 管理员创建预订
-
-**接口描述**：管理员或前台创建新预订
-
-**请求方法**：POST
-
-**接口URL**：`/admin/reservations`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| userId | String | 否 | 用户ID(如果是会员) |
-| checkIn | String | 是 | 入住日期(YYYY-MM-DD) |
-| checkOut | String | 是 | 离店日期(YYYY-MM-DD) |
-| roomType | String | 是 | 房间类型ID |
-| roomCount | Integer | 是 | 预订房间数量 |
-| contactName | String | 是 | 联系人姓名 |
-| phone | String | 是 | 联系电话 |
-| email | String | 否 | 电子邮箱 |
-| guestCount | Integer | 是 | 客人数量 |
-| remarks | String | 否 | 备注 |
-| paymentMethod | Integer | 是 | 支付方式(1:在线支付,2:到店支付) |
-| paymentStatus | String | 是 | 支付状态(unpaid/paid) |
-| status | String | 是 | 预订状态(pending/confirmed) |
-| roomNumbers | Array | 否 | 分配的房间号 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "预订成功",
-  "data": {
-    "reservationId": "BO2023060100003",
-    "checkIn": "2023-06-15",
-    "checkOut": "2023-06-17",
-    "roomType": "豪华间",
-    "roomCount": 1,
-    "nightCount": 2,
-    "guestCount": 2,
-    "contactName": "李四",
-    "phone": "13900139000",
-    "totalAmount": 998,
-    "discountAmount": 0,
-    "finalAmount": 998,
-    "paymentMethod": 2,
-    "paymentStatus": "unpaid",
-    "status": "confirmed",
-    "createTime": "2023-06-01 12:00:00",
-    "createdBy": "admin",
-    "assignedRooms": [
-      {
-        "roomNumber": "505",
-        "floor": 5,
-        "roomType": "豪华间"
-      }
-    ]
-  }
-}
-```
-
-## 入住和退房
-
-### 1. 办理入住
-
-**接口描述**：前台办理入住手续
-
-**请求方法**：POST
-
-**接口URL**：`/admin/checkin`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| reservationId | String | 否 | 预订ID(有预订时) |
-| guestName | String | 是 | 客人姓名 |
-| idType | String | 是 | 证件类型 |
-| idNumber | String | 是 | 证件号码 |
-| phone | String | 是 | 联系电话 |
-| roomType | String | 否 | 房间类型ID(无预订时) |
-| roomNumber | String | 是 | 房间号 |
-| checkIn | String | 是 | 入住日期 |
-| checkOut | String | 是 | 预计退房日期 |
-| guestCount | Integer | 是 | 入住人数 |
-| paymentAmount | Number | 否 | 支付金额 |
-| paymentMethod | String | 是 | 支付方式 |
-| deposit | Number | 是 | 押金 |
-| remarks | String | 否 | 备注 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "入住成功",
-  "data": {
-    "id": "CI2023060100001",
-    "reservationId": "BO2023060100001",
-    "guestName": "张三",
-    "idType": "身份证",
-    "idNumber": "110101199001011234",
-    "phone": "13800138000",
-    "roomNumber": "503",
-    "roomType": "豪华间",
-    "checkIn": "2023-06-10",
-    "checkOut": "2023-06-12",
-    "actualCheckIn": "2023-06-10 14:30:00",
-    "guestCount": 2,
-    "paymentAmount": 898,
-    "paymentMethod": "信用卡",
-    "deposit": 500,
-    "remarks": "",
-    "status": "checked-in",
-    "createdBy": "reception",
-    "createTime": "2023-06-10 14:30:00"
-  }
-}
-```
-
-### 2. 查看入住记录
-
-**接口描述**：获取入住记录详情
-
-**请求方法**：GET
-
-**接口URL**：`/admin/checkin/{checkinId}`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| checkinId | String | 是 | 入住记录ID |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "id": "CI2023060100001",
-    "reservationId": "BO2023060100001",
-    "guestName": "张三",
-    "idType": "身份证",
-    "idNumber": "110101199001011234",
-    "phone": "13800138000",
-    "roomNumber": "503",
-    "roomType": "豪华间",
-    "checkIn": "2023-06-10",
-    "checkOut": "2023-06-12",
-    "actualCheckIn": "2023-06-10 14:30:00",
-    "actualCheckOut": null,
-    "guestCount": 2,
-    "paymentAmount": 898,
-    "paymentMethod": "信用卡",
-    "deposit": 500,
-    "totalAmount": 898,
-    "extraAmount": 0,
-    "refundAmount": 0,
-    "status": "checked-in",
-    "remarks": "",
-    "createdBy": "reception",
-    "createTime": "2023-06-10 14:30:00",
-    "additionalCharges": []
-  }
-}
-```
-
-### 3. 获取入住列表
-
-**接口描述**：获取入住记录列表
-
-**请求方法**：GET
-
-**接口URL**：`/admin/checkin`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| page | Integer | 否 | 页码，默认1 |
-| pageSize | Integer | 否 | 每页条数，默认10 |
-| status | String | 否 | 状态(checked-in/checked-out) |
-| guestName | String | 否 | 客人姓名 |
-| phone | String | 否 | 联系电话 |
-| roomNumber | String | 否 | 房间号 |
-| dateRange | Array | 否 | 入住日期范围 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 100,
-    "list": [
-      {
-        "id": "CI2023060100001",
-        "reservationId": "BO2023060100001",
-        "guestName": "张三",
-        "phone": "13800138000",
-        "roomNumber": "503",
-        "roomType": "豪华间",
-        "checkIn": "2023-06-10",
-        "checkOut": "2023-06-12",
-        "actualCheckIn": "2023-06-10 14:30:00",
-        "actualCheckOut": null,
-        "status": "checked-in",
-        "createTime": "2023-06-10 14:30:00"
-      },
-      // ...更多记录
-    ]
-  }
-}
-```
-
-### 4. 办理退房
-
-**接口描述**：前台办理退房手续
-
-**请求方法**：POST
-
-**接口URL**：`/admin/checkout/{checkinId}`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| checkinId | String | 是 | 入住记录ID |
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| additionalCharges | Array | 否 | 额外消费 |
-| damages | Array | 否 | 损坏物品 |
-| returnDeposit | Number | 是 | 返还押金 |
-| paymentMethod | String | 否 | 额外费用支付方式 |
-| remarks | String | 否 | 备注 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "退房成功",
-  "data": {
-    "id": "CI2023060100001",
-    "guestName": "张三",
-    "roomNumber": "503",
-    "checkIn": "2023-06-10",
-    "checkOut": "2023-06-12",
-    "actualCheckIn": "2023-06-10 14:30:00",
-    "actualCheckOut": "2023-06-12 11:45:00",
-    "deposit": 500,
-    "totalAmount": 898,
-    "additionalCharges": [
-      {
-        "type": "minibar",
-        "description": "迷你吧饮料",
-        "amount": 50
-      }
-    ],
-    "damages": [],
-    "extraAmount": 50,
-    "returnDeposit": 450,
-    "status": "checked-out",
-    "checkoutBy": "reception",
-    "checkoutTime": "2023-06-12 11:45:00"
-  }
-}
-```
-
-### 5. 获取今日入住/退房统计
-
-**接口描述**：获取今日入住和退房的统计数据
-
-**请求方法**：GET
-
-**接口URL**：`/admin/checkin/today-stats`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "todayCheckin": {
-      "total": 15,
-      "completed": 10,
-      "pending": 5,
-      "list": [
-        {
-          "id": "CI2023061200001",
-          "reservationId": "BO2023060500001",
-          "guestName": "张三",
-          "roomNumber": "503",
-          "checkIn": "2023-06-12",
-          "checkOut": "2023-06-15",
-          "status": "checked-in",
-          "actualCheckIn": "2023-06-12 14:10:00"
-        },
-        // ...更多入住
-      ]
-    },
-    "todayCheckout": {
-      "total": 12,
-      "completed": 8,
-      "pending": 4,
-      "list": [
-        {
-          "id": "CI2023061000001",
-          "reservationId": "BO2023060100001",
-          "guestName": "李四",
-          "roomNumber": "505",
-          "checkIn": "2023-06-10",
-          "checkOut": "2023-06-12",
-          "status": "checked-out",
-          "actualCheckOut": "2023-06-12 11:30:00"
-        },
-        // ...更多退房
-      ]
-    },
-    "occupancyRate": 75.5,
-    "availableRooms": 25
-  }
-}
-```
-
-## 清洁管理
-
-### 1. 获取清洁任务列表
-
-**接口描述**：获取清洁任务列表，保洁人员和管理员可访问
-
-**请求方法**：GET
-
-**接口URL**：`/admin/cleaning/tasks`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| page | Integer | 否 | 页码，默认1 |
-| pageSize | Integer | 否 | 每页条数，默认10 |
-| status | String | 否 | 任务状态(pending/processing/completed) |
-| priority | String | 否 | 优先级(high/medium/low) |
-| cleanerId | String | 否 | 保洁员ID |
-| date | String | 否 | 日期(YYYY-MM-DD) |
 
 **成功响应**：
 
@@ -1878,640 +1717,38 @@ Authorization: Bearer {token}
     "total": 50,
     "list": [
       {
-        "id": "CT2023061200001",
-        "roomNumber": "503",
-        "roomType": "豪华间",
-        "floor": 5,
-        "status": "pending",
-        "priority": "high",
-        "cleanerId": "3001",
-        "cleanerName": "王五",
-        "expectedTime": "14:00",
-        "assignTime": "2023-06-12 08:00:00",
-        "startTime": null,
-        "completeTime": null,
-        "notes": "客人已退房，请尽快处理"
+        "id": "1",
+        "userId": "1001",
+        "points": 200,
+        "type": "earn",
+        "description": "预订入住",
+        "orderNo": "BO2023050100001",
+        "balance": 1200,
+        "createTime": "2023-05-01 12:00:00"
       },
       {
-        "id": "CT2023061200002",
-        "roomNumber": "505",
-        "roomType": "标准间",
-        "floor": 5,
-        "status": "processing",
-        "priority": "medium",
-        "cleanerId": "3001",
-        "cleanerName": "王五",
-        "expectedTime": "15:00",
-        "assignTime": "2023-06-12 08:00:00",
-        "startTime": "2023-06-12 13:30:00",
-        "completeTime": null,
-        "notes": ""
-      },
-      // ...更多任务
-    ]
-  }
-}
-```
-
-### 2. 创建清洁任务
-
-**接口描述**：创建新的清洁任务，管理员可访问
-
-**请求方法**：POST
-
-**接口URL**：`/admin/cleaning/tasks`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| roomNumber | String | 是 | 房间号 |
-| cleanerId | String | 是 | 保洁员ID |
-| priority | String | 是 | 优先级(high/medium/low) |
-| expectedTime | String | 是 | 预计完成时间(HH:mm) |
-| notes | String | 否 | 备注 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "创建成功",
-  "data": {
-    "id": "CT2023061200003",
-    "roomNumber": "507",
-    "roomType": "豪华间",
-    "floor": 5,
-    "status": "pending",
-    "priority": "high",
-    "cleanerId": "3001",
-    "cleanerName": "王五",
-    "expectedTime": "16:00",
-    "assignTime": "2023-06-12 14:00:00",
-    "assignBy": "admin",
-    "notes": "客人16:30入住，请尽快处理"
-  }
-}
-```
-
-### 3. 开始清洁任务
-
-**接口描述**：保洁人员开始执行清洁任务
-
-**请求方法**：POST
-
-**接口URL**：`/admin/cleaning/tasks/{taskId}/start`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| taskId | String | 是 | 任务ID |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "任务已开始",
-  "data": {
-    "id": "CT2023061200001",
-    "roomNumber": "503",
-    "status": "processing",
-    "startTime": "2023-06-12 14:15:00",
-    "estimatedCompleteTime": "2023-06-12 14:45:00"
-  }
-}
-```
-
-### 4. 完成清洁任务
-
-**接口描述**：保洁人员标记清洁任务完成
-
-**请求方法**：POST
-
-**接口URL**：`/admin/cleaning/tasks/{taskId}/complete`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| taskId | String | 是 | 任务ID |
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| notes | String | 否 | 完成备注 |
-| items | Array | 否 | 补充的物品 |
-| issues | Array | 否 | 发现的问题 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "任务已完成",
-  "data": {
-    "id": "CT2023061200001",
-    "roomNumber": "503",
-    "status": "completed",
-    "startTime": "2023-06-12 14:15:00",
-    "completeTime": "2023-06-12 14:50:00",
-    "duration": 35,
-    "notes": "已完成清洁",
-    "items": [
-      {
-        "name": "毛巾",
-        "quantity": 2
-      },
-      {
-        "name": "矿泉水",
-        "quantity": 2
+        "id": "2",
+        "userId": "1001",
+        "points": -100,
+        "type": "redeem",
+        "description": "积分兑换优惠券",
+        "orderNo": null,
+        "balance": 1000,
+        "createTime": "2023-04-01 12:00:00"
       }
-    ],
-    "issues": []
-  }
-}
-```
-
-### 5. 获取清洁任务详情
-
-**接口描述**：获取单个清洁任务的详细信息
-
-**请求方法**：GET
-
-**接口URL**：`/admin/cleaning/tasks/{taskId}`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**路径参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| taskId | String | 是 | 任务ID |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "id": "CT2023061200001",
-    "roomNumber": "503",
-    "roomType": "豪华间",
-    "floor": 5,
-    "status": "completed",
-    "priority": "high",
-    "cleanerId": "3001",
-    "cleanerName": "王五",
-    "expectedTime": "14:00",
-    "assignTime": "2023-06-12 08:00:00",
-    "assignBy": "admin",
-    "startTime": "2023-06-12 14:15:00",
-    "completeTime": "2023-06-12 14:50:00",
-    "duration": 35,
-    "notes": "已完成清洁",
-    "beforeImages": [],
-    "afterImages": [],
-    "items": [
-      {
-        "name": "毛巾",
-        "quantity": 2
-      },
-      {
-        "name": "矿泉水",
-        "quantity": 2
-      }
-    ],
-    "issues": []
-  }
-}
-```
-
-### 6. 获取清洁任务统计
-
-**接口描述**：获取清洁任务统计数据
-
-**请求方法**：GET
-
-**接口URL**：`/admin/cleaning/stats`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| date | String | 否 | 日期(YYYY-MM-DD)，默认今天 |
-| cleanerId | String | 否 | 保洁员ID |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "date": "2023-06-12",
-    "summary": {
-      "total": 30,
-      "pending": 10,
-      "processing": 5,
-      "completed": 15,
-      "highPriority": 8,
-      "mediumPriority": 12,
-      "lowPriority": 10
-    },
-    "byCleaners": [
-      {
-        "cleanerId": "3001",
-        "cleanerName": "王五",
-        "totalTasks": 15,
-        "completedTasks": 10,
-        "pendingTasks": 3,
-        "processingTasks": 2,
-        "avgDuration": 30
-      },
-      {
-        "cleanerId": "3002",
-        "cleanerName": "赵六",
-        "totalTasks": 15,
-        "completedTasks": 5,
-        "pendingTasks": 7,
-        "processingTasks": 3,
-        "avgDuration": 35
-      }
-    ],
-    "byFloors": [
-      {
-        "floor": 3,
-        "totalRooms": 20,
-        "needCleaning": 5,
-        "inProgress": 2,
-        "completed": 13
-      },
-      {
-        "floor": 4,
-        "totalRooms": 20,
-        "needCleaning": 3,
-        "inProgress": 1,
-        "completed": 16
-      },
-      {
-        "floor": 5,
-        "totalRooms": 20,
-        "needCleaning": 2,
-        "inProgress": 2,
-        "completed": 16
-      }
-    ]
-  }
-}
-```
-
-### 7. 获取清洁记录历史
-
-**接口描述**：获取历史清洁记录
-
-**请求方法**：GET
-
-**接口URL**：`/admin/cleaning/records`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**请求参数**：
-
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| page | Integer | 否 | 页码，默认1 |
-| pageSize | Integer | 否 | 每页条数，默认10 |
-| roomNumber | String | 否 | 房间号 |
-| cleanerId | String | 否 | 保洁员ID |
-| dateRange | Array | 否 | 日期范围 |
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "total": 500,
-    "list": [
-      {
-        "id": "CR2023061200001",
-        "taskId": "CT2023061200001",
-        "roomNumber": "503",
-        "roomType": "豪华间",
-        "cleanerId": "3001",
-        "cleanerName": "王五",
-        "date": "2023-06-12",
-        "startTime": "2023-06-12 14:15:00",
-        "completeTime": "2023-06-12 14:50:00",
-        "duration": 35,
-        "items": ["毛巾", "矿泉水"],
-        "issues": []
-      },
       // ...更多记录
     ]
   }
 }
 ```
 
-## 统计数据
+### 4. 计算会员折扣价格
 
-### 1. 获取管理员仪表盘数据
+**接口描述**：根据会员等级计算折扣后的价格
 
-**接口描述**：获取管理员仪表盘所需的统计数据
+**请求方法**：POST
 
-**请求方法**：GET
-
-**接口URL**：`/admin/dashboard`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "overview": {
-      "occupancyRate": 75.5,
-      "todayRevenue": 12500,
-      "weekRevenue": 85000,
-      "monthRevenue": 350000,
-      "todayCheckins": 15,
-      "todayCheckouts": 12,
-      "newReservations": 20,
-      "pendingReservations": 8
-    },
-    "roomStatus": {
-      "total": 100,
-      "vacant": 25,
-      "occupied": 65,
-      "reserved": 5,
-      "maintenance": 3,
-      "cleaning": 2
-    },
-    "revenueChart": {
-      "labels": ["1月", "2月", "3月", "4月", "5月", "6月"],
-      "data": [300000, 320000, 350000, 330000, 340000, 350000]
-    },
-    "occupancyChart": {
-      "labels": ["周一", "周二", "周三", "周四", "周五", "周六", "周日"],
-      "data": [70, 75, 77, 80, 85, 90, 85]
-    },
-    "popularRooms": [
-      {
-        "typeId": "deluxe",
-        "typeName": "豪华间",
-        "bookingCount": 150,
-        "occupancyRate": 85,
-        "averagePrice": 499
-      },
-      {
-        "typeId": "standard",
-        "typeName": "标准间",
-        "bookingCount": 120,
-        "occupancyRate": 75,
-        "averagePrice": 299
-      }
-      // ...更多房型
-    ],
-    "recentBookings": [
-      {
-        "id": "BO2023061200001",
-        "customerName": "张三",
-        "roomType": "豪华间",
-        "checkIn": "2023-06-15",
-        "checkOut": "2023-06-17",
-        "status": "confirmed",
-        "createTime": "2023-06-12 10:00:00"
-      }
-      // ...更多预订
-    ]
-  }
-}
-```
-
-### 2. 获取前台仪表盘数据
-
-**接口描述**：获取前台人员仪表盘所需的统计数据
-
-**请求方法**：GET
-
-**接口URL**：`/admin/reception/dashboard`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "todayCheckins": {
-      "total": 15,
-      "completed": 10,
-      "pending": 5
-    },
-    "todayCheckouts": {
-      "total": 12,
-      "completed": 8,
-      "pending": 4
-    },
-    "pendingReservations": 8,
-    "roomAvailability": {
-      "total": 100,
-      "available": 25,
-      "occupied": 65,
-      "reserved": 5,
-      "other": 5
-    },
-    "todayTasks": [
-      {
-        "type": "check-in",
-        "roomNumber": "505",
-        "customerName": "李四",
-        "time": "14:00",
-        "status": "pending"
-      },
-      {
-        "type": "check-out",
-        "roomNumber": "507",
-        "customerName": "王五",
-        "time": "12:00",
-        "status": "pending"
-      }
-      // ...更多任务
-    ],
-    "recentActivity": [
-      {
-        "type": "check-in",
-        "roomNumber": "503",
-        "customerName": "张三",
-        "time": "2023-06-12 13:30:00",
-        "operator": "reception"
-      },
-      {
-        "type": "check-out",
-        "roomNumber": "501",
-        "customerName": "赵六",
-        "time": "2023-06-12 11:00:00",
-        "operator": "reception"
-      }
-      // ...更多活动
-    ]
-  }
-}
-```
-
-### 3. 获取保洁仪表盘数据
-
-**接口描述**：获取保洁人员仪表盘所需的统计数据
-
-**请求方法**：GET
-
-**接口URL**：`/admin/cleaning/dashboard`
-
-**请求头**：
-
-```
-Authorization: Bearer {token}
-```
-
-**成功响应**：
-
-```json
-{
-  "success": true,
-  "code": 200,
-  "message": "获取成功",
-  "data": {
-    "taskStats": [
-      {
-        "type": "pending",
-        "title": "待处理",
-        "count": 10,
-        "icon": "Clock"
-      },
-      {
-        "type": "processing",
-        "title": "进行中",
-        "count": 5,
-        "icon": "Loading"
-      },
-      {
-        "type": "completed",
-        "title": "已完成",
-        "count": 15,
-        "icon": "Check"
-      },
-      {
-        "type": "high-priority",
-        "title": "高优先级",
-        "count": 8,
-        "icon": "Warning"
-      }
-    ],
-    "myTasks": [
-      {
-        "id": "CT2023061200001",
-        "roomNumber": "503",
-        "roomType": "豪华间",
-        "floor": 5,
-        "status": "pending",
-        "priority": "high",
-        "expectedTime": "14:00",
-        "notes": "客人已退房，请尽快处理"
-      },
-      // ...更多任务
-    ],
-    "performance": {
-      "today": {
-        "completed": 10,
-        "totalAssigned": 15,
-        "completionRate": 66.7,
-        "avgDuration": 30
-      },
-      "thisWeek": {
-        "completed": 50,
-        "totalAssigned": 65,
-        "completionRate": 76.9,
-        "avgDuration": 32
-      }
-    },
-    "roomsByFloor": [
-      {
-        "floor": 3,
-        "needCleaning": 5,
-        "inProgress": 2,
-        "completed": 13
-      },
-      // ...更多楼层
-    ]
-  }
-}
-```
-
-### 4. 获取房间占用率统计
-
-**接口描述**：获取房间占用率和收入统计
-
-**请求方法**：GET
-
-**接口URL**：`/admin/stats/occupancy`
+**接口URL**：`/membership/calculate-discount`
 
 **请求头**：
 
@@ -2523,9 +1760,7 @@ Authorization: Bearer {token}
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| startDate | String | 否 | 开始日期(YYYY-MM-DD) |
-| endDate | String | 否 | 结束日期(YYYY-MM-DD) |
-| roomType | String | 否 | 房间类型ID |
+| originalPrice | Number | 是 | 原始价格 |
 
 **成功响应**：
 
@@ -2533,61 +1768,29 @@ Authorization: Bearer {token}
 {
   "success": true,
   "code": 200,
-  "message": "获取成功",
+  "message": "计算成功",
   "data": {
-    "period": {
-      "start": "2023-06-01",
-      "end": "2023-06-30"
-    },
-    "summary": {
-      "avgOccupancyRate": 75.5,
-      "totalRevenue": 350000,
-      "avgDailyRevenue": 11666.67,
-      "totalBookings": 250
-    },
-    "daily": [
-      {
-        "date": "2023-06-01",
-        "occupancyRate": 70,
-        "revenue": 10500,
-        "bookings": 8
-      },
-      {
-        "date": "2023-06-02",
-        "occupancyRate": 72,
-        "revenue": 11000,
-        "bookings": 9
-      }
-      // ...更多日期
-    ],
-    "byRoomType": [
-      {
-        "typeId": "deluxe",
-        "typeName": "豪华间",
-        "avgOccupancyRate": 85,
-        "totalRevenue": 150000,
-        "bookings": 100
-      },
-      {
-        "typeId": "standard",
-        "typeName": "标准间",
-        "avgOccupancyRate": 75,
-        "totalRevenue": 100000,
-        "bookings": 80
-      }
-      // ...更多房型
-    ]
+    "originalPrice": 1000,
+    "discountRate": 0.9,
+    "discountPrice": 900,
+    "discountAmount": 100,
+    "memberLevel": "银牌会员",
+    "estimatedPoints": 900
   }
 }
 ```
 
-### 5. 获取成员分析数据
+## 入住和退房
 
-**接口描述**：获取会员相关的分析数据
+> **标签:** `入住` `退房` `前台` `客房`
 
-**请求方法**：GET
+### 1. 前台办理入住
 
-**接口URL**：`/admin/stats/members`
+**接口描述**：前台为客人办理入住手续
+
+**请求方法**：POST
+
+**接口URL**：`/api/admin/checkin`
 
 **请求头**：
 
@@ -2597,98 +1800,63 @@ Authorization: Bearer {token}
 
 **请求参数**：
 
-| 参数名 | 类型 | 必填 | 描述 |
-| ------ | ---- | ---- | ---- |
-| period | String | 否 | 统计周期(month/quarter/year) |
+```json
+{
+  "bookingId": 1001,     // 可选，有预订时关联
+  "roomId": 105,
+  "guestName": "李明",
+  "guestIdType": "身份证",
+  "guestIdNumber": "110101199001011234",
+  "guestMobile": "13800138000",
+  "checkInDate": "2023-07-01",
+  "checkOutDate": "2023-07-03",
+  "guestCount": 2,
+  "deposit": 500,
+  "paymentMethod": "CASH",
+  "specialRequests": "希望有安静的房间",
+  "remarks": "客人提前到店"
+}
+```
 
 **成功响应**：
 
 ```json
 {
   "success": true,
-  "code": 200,
-  "message": "获取成功",
+  "message": "入住登记成功",
   "data": {
-    "totalMembers": 1000,
-    "newMembers": 50,
-    "activeMembers": 300,
-    "memberDistribution": [
-      {
-        "level": "铜牌会员",
-        "count": 600,
-        "percentage": 60
-      },
-      {
-        "level": "银牌会员",
-        "count": 300,
-        "percentage": 30
-      },
-      {
-        "level": "金牌会员",
-        "count": 80,
-        "percentage": 8
-      },
-      {
-        "level": "钻石会员",
-        "count": 20,
-        "percentage": 2
-      }
-    ],
-    "memberBookings": {
-      "totalBookings": 500,
-      "memberBookings": 300,
-      "percentage": 60,
-      "byLevel": [
-        {
-          "level": "铜牌会员",
-          "bookings": 100,
-          "revenue": 50000
-        },
-        {
-          "level": "银牌会员",
-          "bookings": 100,
-          "revenue": 60000
-        },
-        {
-          "level": "金牌会员",
-          "bookings": 70,
-          "revenue": 50000
-        },
-        {
-          "level": "钻石会员",
-          "bookings": 30,
-          "revenue": 40000
-        }
-      ]
-    },
-    "memberTrends": {
-      "labels": ["1月", "2月", "3月", "4月", "5月", "6月"],
-      "newMembers": [30, 35, 40, 45, 50, 50],
-      "activeMembers": [200, 220, 250, 270, 290, 300]
-    },
-    "topMembers": [
-      {
-        "userId": "1001",
-        "username": "zhang",
-        "realName": "张三",
-        "level": "钻石会员",
-        "totalSpent": 50000,
-        "bookingCount": 20,
-        "registerTime": "2022-01-01"
-      },
-      // ...更多会员
-    ]
+    "id": 2001,
+    "checkInNumber": "CI202307010001",
+    "bookingId": 1001,
+    "roomId": 105,
+    "roomNumber": "308",
+    "roomType": "豪华大床房",
+    "guestName": "李明",
+    "guestIdType": "身份证",
+    "guestIdNumber": "110101199001011234",
+    "guestMobile": "13800138000",
+    "checkInDate": "2023-07-01",
+    "checkOutDate": "2023-07-03",
+    "actualCheckInTime": "2023-07-01T14:30:00",
+    "guestCount": 2,
+    "deposit": 500,
+    "paymentMethod": "CASH",
+    "status": "CHECKED_IN",
+    "totalAmount": 998.00,
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-07-01T14:30:00"
   }
 }
 ```
 
-### 6. 获取营收报表
+### 2. 获取入住详情
 
-**接口描述**：获取营收相关的报表数据
+**接口描述**：获取指定入住记录的详细信息
 
 **请求方法**：GET
 
-**接口URL**：`/admin/stats/revenue`
+**接口URL**：`/api/admin/checkin/{id}`
 
 **请求头**：
 
@@ -2696,98 +1864,361 @@ Authorization: Bearer {token}
 Authorization: Bearer {token}
 ```
 
-**请求参数**：
+**路径参数**：
 
 | 参数名 | 类型 | 必填 | 描述 |
 | ------ | ---- | ---- | ---- |
-| startDate | String | 否 | 开始日期(YYYY-MM-DD) |
-| endDate | String | 否 | 结束日期(YYYY-MM-DD) |
-| groupBy | String | 否 | 分组方式(day/week/month) |
+| id | Long | 是 | 入住记录ID |
 
 **成功响应**：
 
 ```json
 {
   "success": true,
-  "code": 200,
-  "message": "获取成功",
   "data": {
-    "period": {
-      "start": "2023-01-01",
-      "end": "2023-06-30"
+    "id": 2001,
+    "checkInNumber": "CI202307010001",
+    "bookingId": 1001,
+    "booking": {
+      "id": 1001,
+      "bookingNumber": "B202306120001"
     },
-    "summary": {
-      "totalRevenue": 2000000,
-      "roomRevenue": 1800000,
-      "additionalRevenue": 200000,
-      "avgDailyRevenue": 11000,
-      "comparisonWithPrevPeriod": 8.5
-    },
-    "chart": {
-      "labels": ["1月", "2月", "3月", "4月", "5月", "6月"],
-      "revenue": [300000, 320000, 350000, 330000, 340000, 350000],
-      "roomRevenue": [270000, 290000, 320000, 300000, 310000, 320000],
-      "additionalRevenue": [30000, 30000, 30000, 30000, 30000, 30000]
-    },
-    "byRoomType": [
-      {
-        "typeId": "deluxe",
-        "typeName": "豪华间",
-        "revenue": 900000,
-        "percentage": 50,
-        "avgPrice": 499
-      },
-      {
-        "typeId": "standard",
-        "typeName": "标准间",
-        "revenue": 600000,
-        "percentage": 33.33,
-        "avgPrice": 299
-      },
-      // ...更多房型
-    ],
-    "byPaymentMethod": [
-      {
-        "method": "creditCard",
-        "name": "信用卡",
-        "amount": 1000000,
-        "percentage": 50
-      },
-      {
-        "method": "wechat",
-        "name": "微信支付",
-        "amount": 600000,
-        "percentage": 30
-      },
-      {
-        "method": "alipay",
-        "name": "支付宝",
-        "amount": 400000,
-        "percentage": 20
+    "room": {
+      "id": 105,
+      "roomNumber": "308",
+      "floor": 3,
+      "roomType": {
+        "id": 1,
+        "name": "豪华大床房"
       }
+    },
+    "guestName": "李明",
+    "guestIdType": "身份证",
+    "guestIdNumber": "110101199001011234",
+    "guestMobile": "13800138000",
+    "checkInDate": "2023-07-01",
+    "checkOutDate": "2023-07-03",
+    "actualCheckInTime": "2023-07-01T14:30:00",
+    "actualCheckOutTime": null,
+    "guestCount": 2,
+    "deposit": 500,
+    "paymentMethod": "CASH",
+    "status": "CHECKED_IN",
+    "totalAmount": 998.00,
+    "additionalCharges": [],
+    "remarks": "客人提前到店",
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "createTime": "2023-07-01T14:30:00",
+    "updateTime": "2023-07-01T14:30:00"
+  }
+}
+```
+
+### 3. 获取入住记录列表
+
+**接口描述**：获取入住记录列表（管理员或前台权限）
+
+**请求方法**：GET
+
+**接口URL**：`/api/admin/checkin`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**查询参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| status | String | 否 | 入住状态(CHECKED_IN/CHECKED_OUT) |
+| roomNumber | String | 否 | 房间号 |
+| guestName | String | 否 | 客人姓名关键词 |
+| guestMobile | String | 否 | 客人手机号 |
+| startDate | String | 否 | 入住日期起始(YYYY-MM-DD) |
+| endDate | String | 否 | 入住日期结束(YYYY-MM-DD) |
+| page | Integer | 否 | 页码(默认1) |
+| size | Integer | 否 | 每页记录数(默认10) |
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "content": [
+      {
+        "id": 2001,
+        "checkInNumber": "CI202307010001",
+        "roomNumber": "308",
+        "roomType": "豪华大床房",
+        "guestName": "李明",
+        "guestMobile": "13800138000",
+        "checkInDate": "2023-07-01",
+        "checkOutDate": "2023-07-03",
+        "actualCheckInTime": "2023-07-01T14:30:00",
+        "status": "CHECKED_IN",
+        "deposit": 500,
+        "operatorName": "张经理",
+        "createTime": "2023-07-01T14:30:00"
+      },
+      // 更多入住记录
     ],
+    "pageable": {
+      "pageNumber": 0,
+      "pageSize": 10,
+      "totalPages": 5,
+      "totalElements": 45
+    }
+  }
+}
+```
+
+### 4. 办理退房
+
+**接口描述**：为客人办理退房手续
+
+**请求方法**：POST
+
+**接口URL**：`/api/admin/checkout/{checkInId}`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| checkInId | Long | 是 | 入住记录ID |
+
+**请求参数**：
+
+```json
+{
+  "additionalCharges": [
+    {
+      "type": "MINIBAR",
+      "description": "迷你吧消费",
+      "amount": 78.00
+    },
+    {
+      "type": "ROOM_SERVICE",
+      "description": "客房送餐服务",
+      "amount": 120.00
+    }
+  ],
+  "returnDeposit": 350.00,
+  "remarks": "客人提前1天退房",
+  "paymentMethod": "CASH"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "退房成功",
+  "data": {
+    "id": 2001,
+    "checkInNumber": "CI202307010001",
+    "roomNumber": "308",
+    "guestName": "李明",
+    "checkInDate": "2023-07-01",
+    "checkOutDate": "2023-07-03",
+    "actualCheckInTime": "2023-07-01T14:30:00",
+    "actualCheckOutTime": "2023-07-02T10:15:00",
+    "deposit": 500.00,
+    "returnDeposit": 350.00,
     "additionalCharges": [
       {
-        "type": "minibar",
-        "name": "迷你吧",
-        "amount": 100000,
-        "percentage": 50
+        "type": "MINIBAR",
+        "description": "迷你吧消费",
+        "amount": 78.00
       },
       {
-        "type": "roomService",
-        "name": "客房服务",
-        "amount": 70000,
-        "percentage": 35
-      },
-      {
-        "type": "other",
-        "name": "其他",
-        "amount": 30000,
-        "percentage": 15
+        "type": "ROOM_SERVICE",
+        "description": "客房送餐服务",
+        "amount": 120.00
       }
-    ]
+    ],
+    "totalAdditionalAmount": 198.00,
+    "totalAmount": 998.00,
+    "finalAmount": 697.00,  // 总房费 + 额外消费 - 押金退还 (499*1天 + 198 - 0)
+    "status": "CHECKED_OUT",
+    "operatorId": 5001,
+    "operatorName": "张经理",
+    "checkoutTime": "2023-07-02T10:15:00"
   }
 }
 ```
 
-以上是基于前端页面分析的后端API接口文档。该文档涵盖了酒店管理系统所需的各种功能，包括用户认证、会员系统、房间管理、预订管理、入住退房流程、清洁管理以及各类统计数据接口。针对不同角色（管理员、前台接待、保洁人员和普通用户）提供了相应的API接口，以满足酒店运营的各种需求。接口设计遵循RESTful风格，使用JSON格式进行数据交换，并通过JWT令牌进行身份验证。 
+### 5. 获取今日入住/退房统计
+
+**接口描述**：获取今日入住和退房的统计数据
+
+**请求方法**：GET
+
+**接口URL**：`/api/admin/checkin/today-stats`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "data": {
+    "todayCheckin": {
+      "total": 15,
+      "completed": 10,
+      "pending": 5,
+      "list": [
+        {
+          "id": 2010,
+          "checkInNumber": "CI202307030001",
+          "roomNumber": "505",
+          "guestName": "王小明",
+          "checkInDate": "2023-07-03",
+          "checkOutDate": "2023-07-05",
+          "status": "CHECKED_IN",
+          "actualCheckInTime": "2023-07-03T14:10:00"
+        },
+        // 更多入住记录
+      ]
+    },
+    "todayCheckout": {
+      "total": 12,
+      "completed": 8,
+      "pending": 4,
+      "list": [
+        {
+          "id": 2005,
+          "checkInNumber": "CI202307010005",
+          "roomNumber": "510",
+          "guestName": "张雪",
+          "checkInDate": "2023-07-01",
+          "checkOutDate": "2023-07-03",
+          "status": "CHECKED_OUT",
+          "actualCheckOutTime": "2023-07-03T11:30:00"
+        },
+        // 更多退房记录
+      ]
+    },
+    "occupancyRate": 75.5,
+    "availableRooms": 25
+  }
+}
+```
+
+### 6. 添加额外消费记录
+
+**接口描述**：为入住客人添加额外消费记录
+
+**请求方法**：POST
+
+**接口URL**：`/api/admin/checkin/{checkInId}/charges`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| checkInId | Long | 是 | 入住记录ID |
+
+**请求参数**：
+
+```json
+{
+  "type": "ROOM_SERVICE",
+  "description": "客房送餐服务",
+  "amount": 120.00,
+  "paymentMethod": "ROOM_CHARGE",
+  "notes": "房客点的晚餐"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "额外消费添加成功",
+  "data": {
+    "id": 3001,
+    "checkInId": 2001,
+    "type": "ROOM_SERVICE",
+    "description": "客房送餐服务",
+    "amount": 120.00,
+    "paymentMethod": "ROOM_CHARGE",
+    "notes": "房客点的晚餐",
+    "createTime": "2023-07-01T19:30:00",
+    "operatorId": 5001,
+    "operatorName": "张经理"
+  }
+}
+```
+
+### 7. 延长入住时间
+
+**接口描述**：延长客人的入住时间
+
+**请求方法**：PUT
+
+**接口URL**：`/api/admin/checkin/{checkInId}/extend`
+
+**请求头**：
+
+```
+Authorization: Bearer {token}
+```
+
+**路径参数**：
+
+| 参数名 | 类型 | 必填 | 描述 |
+| ------ | ---- | ---- | ---- |
+| checkInId | Long | 是 | 入住记录ID |
+
+**请求参数**：
+
+```json
+{
+  "newCheckOutDate": "2023-07-05",
+  "remarks": "客人申请延长入住2天"
+}
+```
+
+**成功响应**：
+
+```json
+{
+  "success": true,
+  "message": "入住时间已延长",
+  "data": {
+    "id": 2001,
+    "checkInNumber": "CI202307010001",
+    "originalCheckOutDate": "2023-07-03",
+    "newCheckOutDate": "2023-07-05",
+    "additionalNights": 2,
+    "additionalAmount": 998.00,
+    "totalAmount": 1996.00,
+    "updateTime": "2023-07-02T10:30:00",
+    "operatorId": 5001,
+    "operatorName": "张经理"
+  }
+}
+```

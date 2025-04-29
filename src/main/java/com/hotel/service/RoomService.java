@@ -2,11 +2,24 @@ package com.hotel.service;
 
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
 
 public interface RoomService {
+    /**
+     * 根据筛选条件获取房间列表，支持分页
+     * @param floor 楼层
+     * @param roomTypeId 房间类型ID
+     * @param status 房间状态
+     * @param keyword 关键字搜索(房间号)
+     * @param pageable 分页信息
+     * @return 分页的房间列表
+     */
+    Page<Room> getRoomsWithFilters(Integer floor, String roomTypeId, String status, String keyword, Pageable pageable);
+
     /**
      * 添加新房间
      */
