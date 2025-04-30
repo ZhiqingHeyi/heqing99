@@ -16,10 +16,16 @@ import org.springframework.web.cors.CorsConfiguration;
 import org.springframework.web.cors.CorsConfigurationSource;
 import org.springframework.web.cors.UrlBasedCorsConfigurationSource;
 import java.util.Arrays;
+import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.security.config.http.SessionCreationPolicy;
+import org.springframework.security.web.authentication.UsernamePasswordAuthenticationFilter;
 
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
+
+    @Autowired
+    private JwtAuthenticationFilter jwtAuthenticationFilter;
 
     @Bean
     public AuthenticationManager authenticationManager(AuthenticationConfiguration authConfig) throws Exception {
@@ -40,10 +46,12 @@ public class SecurityConfig {
     
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        System.out.println("配置Security: 设置权限和请求规则");
+        System.out.println("配置Security (JWT): 设置权限和请求规则");
         http
             .cors().and()
             .csrf().disable()
+            .sessionManagement().sessionCreationPolicy(SessionCreationPolicy.STATELESS)
+            .and()
             .authorizeRequests()
                 // 静态资源和前端页面
                 .antMatchers("/*.html", "/*.js", "/*.css", "/*.ico", "/assets/**").permitAll()
@@ -64,25 +72,21 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.POST, "/api/users/register").permitAll()
                 .antMatchers(HttpMethod.POST, "/api/users/login").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/users/check-username").permitAll()
-                .antMatchers(HttpMethod.GET, "/api/users/{id}").authenticated()
+                .antMatchers(HttpMethod.GET, "/api/users/check-phone").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
                 .antMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
+                .antMatchers(HttpMethod.PUT, "/api/users/{id}/password").authenticated()
+                // 需要管理员权限的 API
+                .antMatchers("/api/admin/**").hasRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                .antMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("ADMIN")
                 // 添加OPTIONS请求支持，用于CORS预检
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()
                 .anyRequest().authenticated()
             .and()
-            .formLogin()
-                .loginPage("/admin/login")
-                .loginProcessingUrl("/admin/login/process")
-                .defaultSuccessUrl("/admin/dashboard")
-                .permitAll()
-            .and()
-                .logout()
-                .logoutUrl("/logout")
-                .logoutSuccessUrl("/admin/login")
-                .permitAll();
-                
-        System.out.println("Security配置完成");
+            .addFilterBefore(jwtAuthenticationFilter, UsernamePasswordAuthenticationFilter.class);
+
+        System.out.println("Security配置 (JWT) 完成");
         
         return http.build();
     }
@@ -93,7 +97,7 @@ public class SecurityConfig {
         CorsConfiguration configuration = new CorsConfiguration();
         configuration.setAllowedOrigins(Arrays.asList("http://localhost:3000", "http://127.0.0.1:3000"));
         configuration.setAllowedMethods(Arrays.asList("GET", "POST", "PUT", "DELETE", "OPTIONS"));
-        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token", "Origin", "Accept"));
+        configuration.setAllowedHeaders(Arrays.asList("authorization", "content-type", "x-auth-token", "Origin", "Accept", "Authorization"));
         configuration.setExposedHeaders(Arrays.asList("x-auth-token"));
         configuration.setAllowCredentials(true);
         configuration.setMaxAge(3600L);

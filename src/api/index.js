@@ -12,8 +12,8 @@ const apiClient = axios.create({
 // 请求拦截器 - 添加认证Token等
 apiClient.interceptors.request.use(
   config => {
-    // 从localStorage获取Token
-    const token = localStorage.getItem('userToken');
+    // 从localStorage获取管理员Token
+    const token = localStorage.getItem('adminToken');
     // 如果有Token，添加到请求头
     if (token) {
       config.headers['Authorization'] = `Bearer ${token}`;

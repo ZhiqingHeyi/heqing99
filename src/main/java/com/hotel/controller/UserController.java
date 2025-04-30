@@ -3,9 +3,18 @@ package com.hotel.controller;
 import com.hotel.common.ApiResponse;
 import com.hotel.entity.User;
 import com.hotel.service.UserService;
+import com.hotel.dto.LoginRequest;
+import com.hotel.dto.LoginResponse;
+import com.hotel.util.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
+import org.springframework.security.authentication.AuthenticationManager;
+import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -14,6 +23,7 @@ import java.time.format.DateTimeParseException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import org.springframework.http.HttpStatus;
 
 @RestController
 @RequestMapping("/api/users")
@@ -21,6 +31,12 @@ public class UserController {
 
     @Autowired
     private UserService userService;
+
+    @Autowired
+    private AuthenticationManager authenticationManager;
+
+    @Autowired
+    private JwtTokenProvider jwtTokenProvider;
 
     /**
      * 用户注册接口
@@ -205,52 +221,56 @@ public class UserController {
         }
     }
 
-    @PostMapping("/login")
-    public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
+    /**
+     * 用户登录接口 (使用 Spring Security 和 JWT)
+     */
+    @PostMapping("/api/users/login") // 确保路径正确
+    public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
-            String usernameOrPhone = credentials.get("username");
-            String password = credentials.get("password");
-            
-            System.out.println("接收到用户登录请求: " + usernameOrPhone);
-            
-            // 验证用户凭证并获取token
-            String token = userService.authenticate(usernameOrPhone, password);
-            
-            // 获取用户信息 - 尝试通过用户名查找
-            User user = null;
-            try {
-                // 首先尝试用户名查找
-                user = userService.getUserByUsername(usernameOrPhone);
-            } catch (RuntimeException e) {
-                // 如果用户名查找失败，尝试手机号查找
-                try {
-                    user = userService.getUserByPhone(usernameOrPhone);
-                } catch (RuntimeException e2) {
-                    System.err.println("无法找到用户信息: " + e2.getMessage());
-                    throw new RuntimeException("用户验证成功但无法获取用户信息");
-                }
-            }
-            
-            // 构建响应
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "登录成功");
-            response.put("token", token);
-            response.put("userId", user.getId());
-            response.put("username", user.getUsername());
-            response.put("name", user.getName());
-            response.put("role", user.getRole().toString());
-            
+            System.out.println("接收到登录请求: " + loginRequest.getUsername());
+
+            // 1. 使用 AuthenticationManager 进行认证
+            Authentication authentication = authenticationManager.authenticate(
+                    new UsernamePasswordAuthenticationToken(
+                            loginRequest.getUsername(),
+                            loginRequest.getPassword()
+                    )
+            );
+
+            // 2. 将认证信息设置到 SecurityContext
+            SecurityContextHolder.getContext().setAuthentication(authentication);
+
+            // 3. 从认证信息中获取 UserDetails
+            UserDetails userDetails = (UserDetails) authentication.getPrincipal();
+
+            // 4. 生成 JWT
+            String token = jwtTokenProvider.generateToken(authentication);
+
+            // 5. 获取用户详细信息 (从 UserDetails 或 userService)
+            User user = userService.getUserByUsername(userDetails.getUsername());
+
+            // 6. 构建响应
+            LoginResponse response = new LoginResponse(
+                    true,
+                    "登录成功",
+                    user.getId(),
+                    user.getUsername(),
+                    user.getRole().toString(),
+                    token
+            );
+
             System.out.println("用户登录成功, userId: " + user.getId() + ", username: " + user.getUsername());
             return ResponseEntity.ok(response);
+
+        } catch (AuthenticationException e) {
+            System.err.println("用户认证失败: " + e.getMessage());
+            LoginResponse response = new LoginResponse(false, "用户名或密码错误", null, null, null, null);
+            return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
         } catch (Exception e) {
-            System.err.println("用户登录失败: " + e.getMessage());
+            System.err.println("登录处理发生错误: " + e.getMessage());
             e.printStackTrace();
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "登录失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            LoginResponse response = new LoginResponse(false, "登录失败: " + e.getMessage(), null, null, null, null);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response);
         }
     }
 

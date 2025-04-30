@@ -28,6 +28,7 @@ public class AdminController {
         return ResponseEntity.ok(response);
     }
 
+    /* 移除冗余的登录端点，统一使用 /api/users/login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
@@ -118,5 +119,5 @@ public class AdminController {
             System.out.println("登录异常: " + e.getMessage());
             return ResponseEntity.status(500).body(response);
         }
-    }
+    }*/
 }

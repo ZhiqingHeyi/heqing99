@@ -117,39 +117,37 @@ const handleLogin = async () => {
     if (valid) {
       loading.value = true
       try {
-        // 使用管理员登录API
+        // 调用统一的用户登录API，不再传递 isAdmin
         const response = await userApi.login({
           username: loginForm.username,
-          password: loginForm.password,
-          isAdmin: true  // 标识这是管理员登录
+          password: loginForm.password
+          // isAdmin: true // 移除
         })
         
-        if (response.success && response.data) {
-          const userData = response.data;
-          
-          // 检查用户角色
-          if (userData.role !== 'ADMIN') {
-            ElMessage.error('非管理员账号不能登录管理后台');
-            return;
-          }
-          
-          // 保存登录状态
-          localStorage.setItem('adminToken', userData.token);
-          localStorage.setItem('adminId', userData.userId);
-          localStorage.setItem('adminName', userData.username);
-          localStorage.setItem('isAdmin', 'true');
+        // 直接检查响应的 success 状态和 role
+        if (response.success && response.role === 'ADMIN') { 
+          // 保存登录状态 (直接从 response 获取)
+          localStorage.setItem('adminToken', response.token); // 使用 response.token
+          localStorage.setItem('adminId', response.userId);   // 使用 response.userId
+          localStorage.setItem('adminName', response.username); // 使用 response.username
+          localStorage.setItem('isAdmin', 'true'); // 标记为管理员登录状态
           
           // 登录成功提示
           ElMessage.success('登录成功');
           
           // 跳转到管理后台首页
           router.push('/admin/dashboard');
+        } else if (response.success && response.role !== 'ADMIN') {
+          // 登录成功但不是管理员
+          ElMessage.error('非管理员账号不能登录管理后台');
         } else {
+          // 登录失败 (response.success 为 false)
           ElMessage.error(response?.message || '登录失败，请检查用户名和密码');
         }
       } catch (error) {
         console.error('管理员登录失败:', error);
-        ElMessage.error(error.message || '登录失败，请检查用户名和密码');
+        // 错误处理保持不变，axios 拦截器会处理错误消息
+        ElMessage.error(error.message || '登录失败，请检查网络连接或服务器状态');
       } finally {
         loading.value = false;
       }

@@ -66,6 +66,7 @@ public class ApiController {
         }
     }
 
+    /* 移除冗余的登录端点，统一使用 /api/users/login
     @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody Map<String, String> credentials) {
         try {
@@ -134,5 +135,5 @@ public class ApiController {
             System.out.println("API登录异常: " + e.getMessage());
             return ResponseEntity.ok(response);
         }
-    }
+    }*/
 }

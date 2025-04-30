@@ -142,146 +142,80 @@ const router = createRouter({
 
 // 全局路由守卫
 router.beforeEach((to, from, next) => {
-  console.log('路由守卫检查:', to.path)
-  
+  console.log(`路由守卫检查: 从 ${from.path} 到 ${to.path}`);
+
   // 如果访问员工注册页面，允许直接访问
   if (to.path === '/admin/register') {
-    console.log('访问员工注册页面')
-    next()
-    return
+    console.log('允许访问员工注册页面');
+    next();
+    return;
   }
-  
-  // 如果直接访问邀请码管理页面，特殊处理
-  if (to.path === '/admin/invite-codes') {
-    console.log('正在尝试访问邀请码管理页面')
-    const userRole = localStorage.getItem('userRole')
-    const token = localStorage.getItem('token')
-    const isLoggedIn = userRole !== null && token !== null
-    
-    if (isLoggedIn && userRole === 'admin') {
-      console.log('有权限访问邀请码管理页面')
-      next()
-      return
-    } else if (!isLoggedIn) {
-      next('/admin/login')
-      return
-    } else {
-      next('/admin/dashboard')
-      return
-    }
-  }
-  
-  // 获取用户角色和登录状态
-  const userRole = localStorage.getItem('userRole')
-  const token = localStorage.getItem('token')
-  const isLoggedIn = userRole !== null && token !== null
-  const userToken = localStorage.getItem('userToken')
-  const isUserLoggedIn = userToken !== null
-  
-  console.log('当前用户角色:', userRole, '管理员登录状态:', isLoggedIn, '后台Token:', token, '用户登录状态:', isUserLoggedIn)
 
-  // 检查是否需要用户登录
-  if (to.meta.requiresAuth && !isUserLoggedIn) {
-    console.log('需要用户登录，重定向到登录页')
-    
-    /* 注释掉调试代码
-    // 为了调试，模拟一个登录状态
-    if (to.path === '/user') {
-      console.log('调试模式：设置临时用户登录状态')
-      localStorage.setItem('userToken', 'temp-token')
-      localStorage.setItem('userName', '测试用户')
-      localStorage.setItem('userLevel', '普通用户')
-      localStorage.setItem('userPoints', '0')
-      localStorage.setItem('userTotalSpent', '0')
-      next()
-      return
+  // 获取登录状态 (管理员和普通用户)
+  const adminToken = localStorage.getItem('adminToken');
+  const isAdminFlagSet = localStorage.getItem('isAdmin') === 'true';
+  const isAdminAuthenticated = adminToken !== null && isAdminFlagSet;
+
+  const userToken = localStorage.getItem('userToken');
+  const isUserLoggedIn = userToken !== null;
+
+  console.log(`管理员登录状态: ${isAdminAuthenticated} (Token: ${adminToken ? '存在' : '不存在'}, Flag: ${isAdminFlagSet}), 普通用户登录状态: ${isUserLoggedIn}`);
+
+  // 如果直接访问邀请码管理页面，更新逻辑 (使用 isAdminAuthenticated)
+  if (to.path === '/admin/invite-codes') {
+    console.log('尝试访问邀请码管理页面');
+    if (isAdminAuthenticated) {
+      console.log('管理员已认证，允许访问');
+      next();
+    } else {
+      console.log('管理员未认证，重定向到登录页');
+      next({ path: '/admin/login', query: { redirect: to.fullPath } });
     }
-    */
-    
+    return; // 结束此路径的处理
+  }
+
+  // 检查是否需要普通用户登录
+  if (to.meta.requiresAuth && !isUserLoggedIn) {
+    console.log('目标路由需要普通用户认证，但用户未登录，重定向到 /login');
     next({
       path: '/login',
       query: { redirect: to.fullPath }
-    })
-    return
+    });
+    return;
   }
 
-  // 如果访问登录页
+  // 如果访问管理员登录页 (/admin/login)
   if (to.path === '/admin/login') {
-    if (isLoggedIn) {
-      // 已登录用户重定向到对应的首页
-      console.log('已登录，从登录页重定向到首页')
-      switch (userRole) {
-        case 'admin':
-          next('/admin/dashboard')
-          break
-        case 'receptionist':
-          next('/admin/reception/bookings')
-          break
-        case 'cleaner':
-          next('/admin/cleaning/tasks')
-          break
-        default:
-          next('/admin/login')
-      }
+    if (isAdminAuthenticated) {
+      // 管理员已登录，重定向到后台主页
+      console.log('管理员已登录，从登录页重定向到 /admin/dashboard');
+      next('/admin/dashboard');
     } else {
-      next()
+      // 管理员未登录，允许访问登录页
+      console.log('管理员未登录，允许访问登录页');
+      next();
     }
-    return
+    return; // 结束此路径的处理
   }
 
-  // 如果访问后台页面
-  if (to.path.startsWith('/admin') && to.path !== '/admin/login') {
-    if (!isLoggedIn) {
-      // 未登录用户重定向到登录页
-      console.log('未登录，重定向到登录页')
-      next('/admin/login')
-      return
+  // 如果访问后台页面 (除 /admin/login 和 /admin/register)
+  if (to.path.startsWith('/admin')) {
+    if (!isAdminAuthenticated) {
+      // 管理员未登录，重定向到登录页
+      console.log('访问后台页面，但管理员未认证，重定向到 /admin/login');
+      next({ path: '/admin/login', query: { redirect: to.fullPath } });
+    } else {
+      // 管理员已登录，允许访问
+      // 移除旧的基于角色的路径检查逻辑
+      console.log('管理员已认证，允许访问后台页面:', to.path);
+      next();
     }
-
-    // 根据角色验证访问权限
-    const adminPaths = ['/admin/dashboard', '/admin/users', '/admin/staff', '/admin/invite-codes', '/admin/rooms']
-    const receptionistPaths = ['/admin/reception/bookings', '/admin/reception/checkin', '/admin/reception/visitors', '/admin/reception/visitor-records']
-    const cleanerPaths = ['/admin/cleaning/tasks', '/admin/cleaning/records']
-
-    // 检查用户是否有权限访问该路径
-    let hasPermission = false
-    
-    if (userRole === 'admin' && (adminPaths.some(path => to.path === path || to.path.startsWith(path + '/')) || 
-        receptionistPaths.some(path => to.path === path || to.path.startsWith(path + '/')) || 
-        cleanerPaths.some(path => to.path === path || to.path.startsWith(path + '/')))) {
-      // 管理员可以访问任何后台页面
-      hasPermission = true
-    } else if (userRole === 'receptionist' && receptionistPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
-      // 前台只能访问前台相关页面
-      hasPermission = true
-    } else if (userRole === 'cleaner' && cleanerPaths.some(path => to.path === path || to.path.startsWith(path + '/'))) {
-      // 保洁只能访问保洁相关页面
-      hasPermission = true
-    }
-    
-    console.log('权限检查结果:', hasPermission, '路径:', to.path)
-
-    if (!hasPermission) {
-      // 无权限访问，重定向到对应的首页
-      console.log('无权限访问该页面，重定向到对应首页')
-      switch (userRole) {
-        case 'admin':
-          next('/admin/dashboard')
-          break
-        case 'receptionist':
-          next('/admin/reception/bookings')
-          break
-        case 'cleaner':
-          next('/admin/cleaning/tasks')
-          break
-        default:
-          next('/admin/login')
-      }
-      return
-    }
+    return; // 结束此路径的处理
   }
 
-  next()
-})
+  // 其他所有情况 (例如公共页面或普通用户已登录访问用户页面)
+  console.log('无需特殊处理或已处理，允许导航');
+  next();
+});
 
 export default router
