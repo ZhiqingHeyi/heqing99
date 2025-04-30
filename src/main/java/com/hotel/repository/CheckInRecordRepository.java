@@ -82,4 +82,10 @@ public interface CheckInRecordRepository extends JpaRepository<CheckInRecord, Lo
     // 查询今日已完成退房的记录
     @Query("SELECT c FROM CheckInRecord c WHERE c.checkOutDate = :date AND c.status = 'CHECKED_OUT'")
     List<CheckInRecord> findCompletedCheckOutByDate(@Param("date") LocalDate date);
+    
+    /**
+     * 查询指定时间范围内退房的记录，用于统计收入
+     */
+    @Query("SELECT c FROM CheckInRecord c WHERE c.actualCheckOutTime BETWEEN :start AND :end AND c.status = :status")
+    List<CheckInRecord> findByCheckOutTimeBetweenAndStatus(@Param("start") LocalDateTime start, @Param("end") LocalDateTime end, @Param("status") CheckInStatus status);
 }

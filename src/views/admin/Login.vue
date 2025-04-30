@@ -61,6 +61,7 @@ import { ref, reactive, onMounted } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
+import { userApi } from '@/api'
 
 const router = useRouter()
 const route = useRoute()
@@ -111,113 +112,49 @@ const loginRules = {
 
 const handleLogin = async () => {
   if (!loginFormRef.value) return
-
-  try {
-    await loginFormRef.value.validate()
-    loading.value = true
-
-    const loginData = {
-      username: loginForm.username,
-      password: loginForm.password,
-      role: loginForm.role
-    }
-    
-    console.log('正在提交登录信息:', loginData)
-
-    // 发送登录请求
-    // 根据当前环境确定API请求路径
-    const baseUrl = window.location.port === '3000' ? '' : '';
-    
-    // 添加额外调试信息
-    console.log('当前环境:', {
-      port: window.location.port,
-      baseUrl: baseUrl,
-      fullUrl: `${baseUrl}/api/auth/login`
-    });
-    
-    const response = await fetch(`${baseUrl}/api/auth/login`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json'
-      },
-      body: JSON.stringify(loginData)
-    })
-
-    console.log('服务器响应状态:', response.status)
-
-    // 获取响应文本
-    const responseText = await response.text()
-    console.log('服务器响应内容:', responseText)
-
-    if (!responseText) {
-      ElMessage.error('服务器返回空响应')
-      return
-    }
-
-    // 解析JSON
-    let data
-    try {
-      data = JSON.parse(responseText)
-      console.log('解析后的JSON数据:', data)
-    } catch (e) {
-      console.error('解析响应JSON失败:', e)
-      ElMessage.error('服务器响应格式错误：' + e.message)
-      return
-    }
-
-    if (data && data.success === true) {
-      // 存储用户信息
-      const userData = data.data || {}
-      console.log('用户数据:', userData)
-      
-      localStorage.setItem('token', userData.token || '')
-      localStorage.setItem('userRole', userData.role || '')
-      localStorage.setItem('username', userData.username || '')
-      localStorage.setItem('userId', userData.userId ? userData.userId.toString() : '')
-      if (userData.name) {
-        localStorage.setItem('name', userData.name)
-      }
-      
-      ElMessage.success(data.message || '登录成功')
-
-      // 根据角色跳转到不同的页面
-      const role = userData.role || ''
-      console.log('用户角色:', role)
-      
-      // 设置延迟，确保localStorage已经更新
-      setTimeout(() => {
-        try {
-          switch (role) {
-            case 'admin':
-              console.log('正在跳转到管理员面板...')
-              router.push('/admin/dashboard')
-              break
-            case 'receptionist':
-              console.log('正在跳转到前台面板...')
-              router.push('/admin/reception/bookings')
-              break
-            case 'cleaner':
-              console.log('正在跳转到清洁人员面板...')
-              router.push('/admin/cleaning/tasks')
-              break
-            default:
-              console.warn('未知角色:', role)
-              router.push('/admin/dashboard')
+  
+  await loginFormRef.value.validate(async (valid) => {
+    if (valid) {
+      loading.value = true
+      try {
+        // 使用管理员登录API
+        const response = await userApi.login({
+          username: loginForm.username,
+          password: loginForm.password,
+          isAdmin: true  // 标识这是管理员登录
+        })
+        
+        if (response.success && response.data) {
+          const userData = response.data;
+          
+          // 检查用户角色
+          if (userData.role !== 'ADMIN') {
+            ElMessage.error('非管理员账号不能登录管理后台');
+            return;
           }
-        } catch (error) {
-          console.error('路由跳转错误:', error)
+          
+          // 保存登录状态
+          localStorage.setItem('adminToken', userData.token);
+          localStorage.setItem('adminId', userData.userId);
+          localStorage.setItem('adminName', userData.username);
+          localStorage.setItem('isAdmin', 'true');
+          
+          // 登录成功提示
+          ElMessage.success('登录成功');
+          
+          // 跳转到管理后台首页
+          router.push('/admin/dashboard');
+        } else {
+          ElMessage.error(response?.message || '登录失败，请检查用户名和密码');
         }
-      }, 100)
-    } else {
-      console.error('登录失败:', data ? data.message : '未知错误')
-      ElMessage.error(data && data.message ? data.message : '登录失败')
+      } catch (error) {
+        console.error('管理员登录失败:', error);
+        ElMessage.error(error.message || '登录失败，请检查用户名和密码');
+      } finally {
+        loading.value = false;
+      }
     }
-  } catch (error) {
-    console.error('登录请求异常:', error)
-    ElMessage.error('登录请求失败: ' + error.message)
-  } finally {
-    loading.value = false
-  }
+  })
 }
 </script>
 

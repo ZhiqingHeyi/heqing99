@@ -7,6 +7,7 @@ import com.hotel.entity.Statistics;
 import com.hotel.service.UserService;
 import com.hotel.service.RoomService;
 import com.hotel.service.ReservationService;
+import com.hotel.service.CheckInService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -24,14 +25,17 @@ public class AdminDashboardController {
     private final UserService userService;
     private final RoomService roomService;
     private final ReservationService reservationService;
+    private final CheckInService checkInService;
 
     @Autowired
     public AdminDashboardController(UserService userService,
                                    RoomService roomService,
-                                   ReservationService reservationService) {
+                                   ReservationService reservationService,
+                                   CheckInService checkInService) {
         this.userService = userService;
         this.roomService = roomService;
         this.reservationService = reservationService;
+        this.checkInService = checkInService;
     }
 
     /**
@@ -47,16 +51,16 @@ public class AdminDashboardController {
         statistics.put("occupiedRooms", roomService.countByStatus(Room.RoomStatus.OCCUPIED));
         
         // 预订统计
-        statistics.put("todayReservations", 0); // 需要实现
-        statistics.put("upcomingReservations", 0); // 需要实现
+        statistics.put("todayReservations", reservationService.countTodayReservations());
+        statistics.put("upcomingReservations", reservationService.countUpcomingReservations());
         
         // 收入统计
-        statistics.put("todayRevenue", 0.0); // 需要实现
-        statistics.put("monthlyRevenue", 0.0); // 需要实现
+        statistics.put("todayRevenue", checkInService.calculateTodayRevenue());
+        statistics.put("monthlyRevenue", checkInService.calculateMonthlyRevenue());
         
         // 用户统计
         statistics.put("totalUsers", userService.countAllUsers());
-        statistics.put("newUsersThisMonth", 0); // 需要实现
+        statistics.put("newUsersThisMonth", userService.countNewUsersThisMonth());
         
         return ResponseEntity.ok(statistics);
     }

@@ -181,6 +181,7 @@
 import { ref, reactive } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Key, Lock, Unlock, Iphone } from '@element-plus/icons-vue'
+import { userApi } from '@/api'
 
 // 搜索表单
 const searchForm = reactive({
@@ -275,7 +276,7 @@ const resetPasswordRules = {
 // 搜索
 const handleSearch = () => {
   currentPage.value = 1
-  fetchUserList()
+  fetchUsers()
 }
 
 const resetSearch = () => {
@@ -286,15 +287,33 @@ const resetSearch = () => {
 }
 
 // 获取用户列表
-const fetchUserList = async () => {
+const fetchUsers = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端API获取用户列表
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    loading.value = false
+    // 使用更新的API调用，添加分页和过滤参数
+    const response = await userApi.getAllUsers(
+      pagination.currentPage,
+      pagination.pageSize,
+      filterForm
+    )
+    
+    if (response.success && response.data) {
+      // 更新用户列表
+      userList.value = response.data.users || []
+      
+      // 更新分页信息
+      pagination.total = response.data.total || 0
+      
+      // 计算会员比例
+      calculateMemberRatio()
+    } else {
+      console.error('获取用户列表失败', response)
+      ElMessage.error(response?.message || '获取用户列表失败')
+    }
   } catch (error) {
     console.error('获取用户列表失败:', error)
-    ElMessage.error('获取用户列表失败')
+    ElMessage.error(error.message || '获取用户列表失败')
+  } finally {
     loading.value = false
   }
 }
@@ -302,12 +321,12 @@ const fetchUserList = async () => {
 // 分页处理
 const handleSizeChange = (val) => {
   pageSize.value = val
-  fetchUserList()
+  fetchUsers()
 }
 
 const handleCurrentChange = (val) => {
   currentPage.value = val
-  fetchUserList()
+  fetchUsers()
 }
 
 // 添加用户
@@ -341,7 +360,7 @@ const handleSubmit = async () => {
         await new Promise(resolve => setTimeout(resolve, 1000))
         ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
         dialogVisible.value = false
-        fetchUserList()
+        fetchUsers()
       } catch (error) {
         console.error('保存用户信息失败:', error)
         ElMessage.error('操作失败')
@@ -379,9 +398,10 @@ const handleResetPasswordSubmit = async () => {
 // 启用/禁用用户
 const handleToggleStatus = async (row) => {
   try {
+    // 确认对话框
     await ElMessageBox.confirm(
-      `确定要${row.status === 'active' ? '禁用' : '启用'}该用户吗？`,
-      '提示',
+      `确定要${row.status === 'active' ? '禁用' : '启用'}用户 "${row.username}" 吗？`,
+      row.status === 'active' ? '禁用用户' : '启用用户',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -389,20 +409,129 @@ const handleToggleStatus = async (row) => {
       }
     )
     
-    // TODO: 调用后端API修改用户状态
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    ElMessage.success(`${row.status === 'active' ? '禁用' : '启用'}成功`)
-    row.status = row.status === 'active' ? 'disabled' : 'active'
+    // 使用更新的API调用
+    const response = await userApi.toggleUserStatus(row.id, row.status === 'active')
+    
+    if (response.success) {
+      // 更新本地状态
+      row.status = row.status === 'active' ? 'disabled' : 'active'
+      ElMessage.success(`${row.status === 'active' ? '启用' : '禁用'}用户成功`)
+    } else {
+      ElMessage.error(response.message || `${row.status === 'active' ? '禁用' : '启用'}用户失败`)
+    }
   } catch (error) {
-    if (error !== 'cancel') {
-      console.error('修改用户状态失败:', error)
-      ElMessage.error('操作失败')
+    // 取消操作或API错误
+    if (error !== 'cancel' && error.message !== 'cancel') {
+      console.error('切换用户状态失败:', error)
+      ElMessage.error(error.message || '操作失败')
     }
   }
 }
 
+// 删除用户
+const deleteUser = async (row) => {
+  try {
+    // 确认对话框
+    await ElMessageBox.confirm(
+      `确定要删除用户 "${row.username}" 吗？此操作不可恢复！`,
+      '删除用户',
+      {
+        confirmButtonText: '确定删除',
+        cancelButtonText: '取消',
+        type: 'danger'
+      }
+    )
+    
+    // 使用更新的API调用
+    const response = await userApi.deleteUser(row.id)
+    
+    if (response.success) {
+      // 从列表中移除该用户
+      const index = userList.value.findIndex(u => u.id === row.id)
+      if (index > -1) {
+        userList.value.splice(index, 1)
+      }
+      
+      // 更新分页信息
+      total.value -= 1
+      
+      ElMessage.success('删除用户成功')
+    } else {
+      ElMessage.error(response.message || '删除用户失败')
+    }
+  } catch (error) {
+    // 取消操作或API错误
+    if (error !== 'cancel' && error.message !== 'cancel') {
+      console.error('删除用户失败:', error)
+      ElMessage.error(error.message || '删除失败')
+    }
+  }
+}
+
+// 根据角色获取用户
+const getUsersByRole = async (role) => {
+  if (!role) return
+  
+  loading.value = true
+  try {
+    // 使用更新的API调用
+    const response = await userApi.getUsersByRole(
+      role,
+      pagination.currentPage,
+      pagination.pageSize
+    )
+    
+    if (response.success && response.data) {
+      // 更新用户列表
+      userList.value = response.data.users || []
+      
+      // 更新分页信息
+      pagination.total = response.data.total || 0
+      
+      // 设置当前选中的角色
+      currentRole.value = role
+    } else {
+      console.error('获取角色用户列表失败', response)
+      ElMessage.error(response?.message || '获取角色用户列表失败')
+    }
+  } catch (error) {
+    console.error('获取角色用户列表失败:', error)
+    ElMessage.error(error.message || '获取角色用户列表失败')
+  } finally {
+    loading.value = false
+  }
+}
+
+// 获取角色用户数量
+const getUserCountByRole = async () => {
+  try {
+    // 获取客户数量
+    const customerResponse = await userApi.getUserCountByRole('CUSTOMER')
+    if (customerResponse.success && customerResponse.data) {
+      roleCounts.customer = customerResponse.data.count || 0
+    }
+    
+    // 获取员工数量
+    const staffResponse = await userApi.getUserCountByRole('STAFF')
+    if (staffResponse.success && staffResponse.data) {
+      roleCounts.staff = staffResponse.data.count || 0
+    }
+    
+    // 获取管理员数量
+    const adminResponse = await userApi.getUserCountByRole('ADMIN')
+    if (adminResponse.success && adminResponse.data) {
+      roleCounts.admin = adminResponse.data.count || 0
+    }
+    
+    // 计算会员比例
+    calculateMemberRatio()
+  } catch (error) {
+    console.error('获取角色用户数量失败:', error)
+  }
+}
+
 // 初始化
-fetchUserList()
+fetchUsers()
 </script>
 
 <style scoped>

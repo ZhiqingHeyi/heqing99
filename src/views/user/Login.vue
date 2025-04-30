@@ -116,20 +116,24 @@ const handleLogin = async () => {
         });
         
         // 如果登录成功
-        if (response && response.token) {
+        if (response && response.data && response.data.token) {
+          const userData = response.data;
+          
           // 保存登录状态到localStorage
-          localStorage.setItem('userToken', response.token);
-          localStorage.setItem('userName', loginForm.username);
-          localStorage.setItem('userId', response.userId || '');
+          localStorage.setItem('userToken', userData.token);
+          localStorage.setItem('userName', userData.username || loginForm.username);
+          localStorage.setItem('userId', userData.userId || '');
+          localStorage.setItem('userRole', userData.role || 'USER');
           
           // 获取用户详细信息
           try {
-            if (response.userId) {
-              const userInfo = await userApi.getUserInfo(response.userId);
+            if (userData.userId) {
+              // 使用新的API调用
+              const userInfo = await userApi.getUserInfo(userData.userId);
               
-              // 保存用户个人信息
+              // 确保使用正确的响应结构
               if (userInfo && userInfo.data) {
-                localStorage.setItem('userRealName', userInfo.data.realName || '');
+                localStorage.setItem('userRealName', userInfo.data.name || '');
                 localStorage.setItem('userPhone', userInfo.data.phone || '');
                 localStorage.setItem('userEmail', userInfo.data.email || '');
                 localStorage.setItem('userBirthday', userInfo.data.birthday || '');
@@ -137,12 +141,19 @@ const handleLogin = async () => {
               }
               
               // 获取会员信息
-              const memberInfo = await membershipApi.getMemberInfo(response.userId);
+              const memberInfo = await membershipApi.getMemberInfo(userData.userId);
               
               // 保存会员信息
-              localStorage.setItem('userLevel', memberInfo.memberLevel || '普通用户');
-              localStorage.setItem('userPoints', String(memberInfo.points || 0));
-              localStorage.setItem('userTotalSpent', String(memberInfo.totalSpent || 0));
+              if (memberInfo && memberInfo.data) {
+                localStorage.setItem('userLevel', memberInfo.data.level || '普通用户');
+                localStorage.setItem('userPoints', String(memberInfo.data.points || 0));
+                localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent || 0));
+              } else {
+                // 设置默认值
+                localStorage.setItem('userLevel', '普通用户');
+                localStorage.setItem('userPoints', '0');
+                localStorage.setItem('userTotalSpent', '0');
+              }
             } else {
               // 设置默认值
               localStorage.setItem('userLevel', '普通用户');

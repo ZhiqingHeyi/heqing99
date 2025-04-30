@@ -337,4 +337,37 @@ public class CheckInServiceImpl implements CheckInService {
         // 使用repository中已定义的方法查询当前所有入住的客人记录
         return checkInRecordRepository.findCurrentlyCheckedIn();
     }
+    
+    @Override
+    public BigDecimal calculateTodayRevenue() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+        
+        // 获取今日完成的所有退房记录
+        List<CheckInRecord> records = checkInRecordRepository.findByCheckOutTimeBetweenAndStatus(
+            startOfDay, endOfDay, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        
+        // 计算总收入
+        return records.stream()
+            .map(CheckInRecord::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
+    
+    @Override
+    public BigDecimal calculateMonthlyRevenue() {
+        LocalDate today = LocalDate.now();
+        LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+        LocalDateTime startOfMonth = firstDayOfMonth.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+        
+        // 获取本月完成的所有退房记录
+        List<CheckInRecord> records = checkInRecordRepository.findByCheckOutTimeBetweenAndStatus(
+            startOfMonth, endOfDay, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        
+        // 计算总收入
+        return records.stream()
+            .map(CheckInRecord::getTotalAmount)
+            .reduce(BigDecimal.ZERO, BigDecimal::add);
+    }
 } 

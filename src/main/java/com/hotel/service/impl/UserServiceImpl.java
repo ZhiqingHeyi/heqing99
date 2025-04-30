@@ -12,6 +12,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.LocalDateTime;
+import java.time.LocalTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
@@ -251,6 +254,16 @@ public class UserServiceImpl implements UserService {
     @Override
     public long countAllUsers() {
         return userRepository.count();
+    }
+
+    @Override
+    public int countNewUsersThisMonth() {
+        LocalDate today = LocalDate.now();
+        LocalDate firstDayOfMonth = today.withDayOfMonth(1);
+        LocalDateTime startOfMonth = firstDayOfMonth.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(LocalTime.MAX);
+        
+        return userRepository.countByCreateTimeBetween(startOfMonth, endOfDay);
     }
 
     @Override

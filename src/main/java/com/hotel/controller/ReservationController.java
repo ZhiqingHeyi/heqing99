@@ -12,6 +12,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.time.format.DateTimeParseException;
@@ -20,6 +21,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.stream.Collectors;
 
 @RestController
 @RequestMapping("/api/reservations")
@@ -156,90 +158,6 @@ public class ReservationController {
             List<Reservation> reservations = reservationService.getReservationsByUser(user);
             System.out.println("找到用户预订数量: " + reservations.size());
             
-            // 如果没有记录，创建一些示例数据（仅用于演示）
-            if (reservations.isEmpty()) {
-                // 创建示例房间类型
-                RoomType roomType1 = new RoomType();
-                roomType1.setId(1L);
-                roomType1.setName("豪华大床房");
-                roomType1.setBasePrice(new BigDecimal("500"));
-                roomType1.setCapacity(2);
-                
-                RoomType roomType2 = new RoomType();
-                roomType2.setId(2L);
-                roomType2.setName("行政套房");
-                roomType2.setBasePrice(new BigDecimal("800"));
-                roomType2.setCapacity(2);
-                
-                RoomType roomType3 = new RoomType();
-                roomType3.setId(3L);
-                roomType3.setName("总统套房");
-                roomType3.setBasePrice(new BigDecimal("1200"));
-                roomType3.setCapacity(4);
-                
-                // 创建示例房间
-                Room room1 = new Room();
-                room1.setId(1L);
-                room1.setRoomNumber("101");
-                room1.setRoomType(roomType1);
-                room1.setFloor(1);
-                room1.setStatus(Room.RoomStatus.AVAILABLE);
-                
-                Room room2 = new Room();
-                room2.setId(2L);
-                room2.setRoomNumber("202");
-                room2.setRoomType(roomType2);
-                room2.setFloor(2);
-                room2.setStatus(Room.RoomStatus.AVAILABLE);
-                
-                Room room3 = new Room();
-                room3.setId(3L);
-                room3.setRoomNumber("303");
-                room3.setRoomType(roomType3);
-                room3.setFloor(3);
-                room3.setStatus(Room.RoomStatus.AVAILABLE);
-                
-                // 创建示例预订
-                Reservation reservation1 = new Reservation();
-                reservation1.setId(1L);
-                reservation1.setUser(user);
-                reservation1.setRoom(room1);
-                reservation1.setCheckInTime(LocalDateTime.now().plusDays(5));
-                reservation1.setCheckOutTime(LocalDateTime.now().plusDays(7));
-                reservation1.setGuestName(user.getName());
-                reservation1.setGuestPhone(user.getPhone());
-                reservation1.setTotalPrice(new BigDecimal("1000"));
-                reservation1.setRoomCount(1);
-                reservation1.setStatus(Reservation.ReservationStatus.PENDING);
-                
-                Reservation reservation2 = new Reservation();
-                reservation2.setId(2L);
-                reservation2.setUser(user);
-                reservation2.setRoom(room2);
-                reservation2.setCheckInTime(LocalDateTime.now().plusDays(15));
-                reservation2.setCheckOutTime(LocalDateTime.now().plusDays(17));
-                reservation2.setGuestName(user.getName());
-                reservation2.setGuestPhone(user.getPhone());
-                reservation2.setTotalPrice(new BigDecimal("1500"));
-                reservation2.setRoomCount(1);
-                reservation2.setStatus(Reservation.ReservationStatus.CONFIRMED);
-                
-                Reservation reservation3 = new Reservation();
-                reservation3.setId(3L);
-                reservation3.setUser(user);
-                reservation3.setRoom(room3);
-                reservation3.setCheckInTime(LocalDateTime.now().minusDays(20));
-                reservation3.setCheckOutTime(LocalDateTime.now().minusDays(18));
-                reservation3.setGuestName(user.getName());
-                reservation3.setGuestPhone(user.getPhone());
-                reservation3.setTotalPrice(new BigDecimal("2000"));
-                reservation3.setRoomCount(1);
-                reservation3.setStatus(Reservation.ReservationStatus.COMPLETED);
-                
-                reservations = Collections.unmodifiableList(Arrays.asList(reservation1, reservation2, reservation3));
-                System.out.println("使用示例数据代替空记录");
-            }
-            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", reservations);
@@ -252,7 +170,7 @@ public class ReservationController {
             e.printStackTrace();
             Map<String, Object> response = new HashMap<>();
             response.put("success", false);
-            response.put("message", "获取预订失败: " + e.getMessage());
+            response.put("message", "获取用户预订失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
         }
     }
@@ -261,26 +179,21 @@ public class ReservationController {
     @PostMapping("/{id}/cancel")
     public ResponseEntity<?> cancelReservation(@PathVariable Long id) {
         try {
-            Reservation reservation = reservationService.getReservationById(id);
-            if (reservation == null) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "预订不存在");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
+            System.out.println("接收到取消预订请求, id: " + id);
             reservationService.cancelReservation(id);
+            
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "预订已取消");
+            response.put("message", "预订取消成功");
+            
+            System.out.println("预订取消成功, id: " + id);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("取消预订失败: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
-                put("success", false);
-                put("message", "取消预订失败: " + e.getMessage());
-            }});
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "取消预订失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
     
@@ -288,7 +201,9 @@ public class ReservationController {
     @GetMapping("/{id}")
     public ResponseEntity<?> getReservation(@PathVariable Long id) {
         try {
+            System.out.println("接收到获取预订详情请求, id: " + id);
             Reservation reservation = reservationService.getReservationById(id);
+            
             if (reservation == null) {
                 Map<String, Object> response = new HashMap<>();
                 response.put("success", false);
@@ -299,20 +214,15 @@ public class ReservationController {
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("data", reservation);
-            // 添加会员信息
-            User user = reservation.getUser();
-            if (user != null) {
-                response.put("memberLevel", user.getMemberLevel());
-                response.put("memberDiscount", user.getDiscountRate());
-            }
+            
+            System.out.println("返回预订详情成功, id: " + id);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("获取预订详情失败: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
-                put("success", false);
-                put("message", "获取预订详情失败: " + e.getMessage());
-            }});
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取预订详情失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
     
@@ -320,27 +230,22 @@ public class ReservationController {
     @PostMapping("/{id}/confirm")
     public ResponseEntity<?> confirmReservation(@PathVariable Long id) {
         try {
-            Reservation reservation = reservationService.getReservationById(id);
-            if (reservation == null) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "预订不存在");
-                return ResponseEntity.badRequest().body(response);
-            }
+            System.out.println("接收到确认预订请求, id: " + id);
+            Reservation reservation = reservationService.confirmReservation(id);
             
-            Reservation confirmedReservation = reservationService.confirmReservation(id);
-            return ResponseEntity.ok(new HashMap<String, Object>() {{
-                put("success", true);
-                put("message", "预订已确认");
-                put("data", confirmedReservation);
-            }});
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "预订确认成功");
+            response.put("data", reservation);
+            
+            System.out.println("预订确认成功, id: " + id);
+            return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("确认预订失败: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
-                put("success", false);
-                put("message", "确认预订失败: " + e.getMessage());
-            }});
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "确认预订失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
     
@@ -350,27 +255,228 @@ public class ReservationController {
             @RequestParam Long userId,
             @RequestParam BigDecimal amount) {
         try {
-            User user = userService.getUserById(userId);
-            BigDecimal discount = BigDecimal.valueOf(user.getDiscountRate());
-            BigDecimal discountedAmount = amount.multiply(discount).setScale(2, BigDecimal.ROUND_HALF_UP);
-            BigDecimal savedAmount = amount.subtract(discountedAmount);
+            System.out.println("接收到计算折扣请求, userId: " + userId + ", amount: " + amount);
+            
+            BigDecimal discount = userService.getDiscountByUserId(userId);
+            BigDecimal discountedAmount = amount.multiply(discount);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
             response.put("originalAmount", amount);
             response.put("discountRate", discount);
             response.put("discountedAmount", discountedAmount);
-            response.put("savedAmount", savedAmount);
-            response.put("memberLevel", user.getMemberLevel());
             
+            System.out.println("计算折扣成功: " + discountedAmount);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("计算折扣失败: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "计算折扣失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+    
+    // 获取预订列表
+    @GetMapping
+    public ResponseEntity<?> getAllReservations(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String roomType,
+            @RequestParam(required = false) String guestName,
+            @RequestParam(required = false) String startDate,
+            @RequestParam(required = false) String endDate) {
+        
+        try {
+            System.out.println("接收到获取预订列表请求，参数：" + 
+                    "page=" + page + 
+                    ", pageSize=" + pageSize + 
+                    ", status=" + status + 
+                    ", roomType=" + roomType + 
+                    ", guestName=" + guestName + 
+                    ", startDate=" + startDate + 
+                    ", endDate=" + endDate);
+            
+            // 调用服务层方法获取预订列表
+            List<Reservation> reservations = reservationService.getAllReservations();
+            
+            // 进行过滤处理
+            if (status != null && !status.isEmpty()) {
+                reservations = reservations.stream()
+                        .filter(r -> r.getStatus().toString().equalsIgnoreCase(status))
+                        .collect(Collectors.toList());
+            }
+            
+            if (roomType != null && !roomType.isEmpty()) {
+                reservations = reservations.stream()
+                        .filter(r -> r.getRoom().getRoomType().getName().contains(roomType))
+                        .collect(Collectors.toList());
+            }
+            
+            if (guestName != null && !guestName.isEmpty()) {
+                reservations = reservations.stream()
+                        .filter(r -> r.getGuestName().contains(guestName))
+                        .collect(Collectors.toList());
+            }
+            
+            if (startDate != null && !startDate.isEmpty()) {
+                LocalDate start = LocalDate.parse(startDate);
+                reservations = reservations.stream()
+                        .filter(r -> !r.getCheckInTime().toLocalDate().isBefore(start))
+                        .collect(Collectors.toList());
+            }
+            
+            if (endDate != null && !endDate.isEmpty()) {
+                LocalDate end = LocalDate.parse(endDate);
+                reservations = reservations.stream()
+                        .filter(r -> !r.getCheckOutTime().toLocalDate().isAfter(end))
+                        .collect(Collectors.toList());
+            }
+            
+            // 计算总数
+            int total = reservations.size();
+            
+            // 分页处理
+            int fromIndex = (page - 1) * pageSize;
+            if (fromIndex >= reservations.size()) {
+                reservations = Collections.emptyList();
+            } else {
+                int toIndex = Math.min(fromIndex + pageSize, reservations.size());
+                reservations = reservations.subList(fromIndex, toIndex);
+            }
+            
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            
+            Map<String, Object> data = new HashMap<>();
+            data.put("total", total);
+            data.put("list", reservations);
+            
+            response.put("data", data);
+            
+            System.out.println("返回预订列表成功，总数：" + total);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("获取预订列表失败: " + e.getMessage());
             e.printStackTrace();
-            return ResponseEntity.badRequest().body(new HashMap<String, Object>() {{
-                put("success", false);
-                put("message", "计算折扣失败: " + e.getMessage());
-            }});
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取预订列表失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // 更新预订状态
+    @PutMapping("/{id}")
+    public ResponseEntity<?> updateReservationStatus(
+            @PathVariable Long id,
+            @RequestBody Map<String, String> statusUpdate) {
+        
+        try {
+            System.out.println("接收到更新预订状态请求, id: " + id + ", 状态: " + statusUpdate);
+            
+            String status = statusUpdate.get("status");
+            if (status == null || status.isEmpty()) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "状态参数不能为空");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 获取预订
+            Reservation reservation = reservationService.getReservationById(id);
+            if (reservation == null) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "预订不存在");
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 设置新状态
+            try {
+                Reservation.ReservationStatus newStatus = Reservation.ReservationStatus.valueOf(status.toUpperCase());
+                reservation.setStatus(newStatus);
+            } catch (IllegalArgumentException e) {
+                Map<String, Object> response = new HashMap<>();
+                response.put("success", false);
+                response.put("message", "无效的状态值: " + status);
+                return ResponseEntity.badRequest().body(response);
+            }
+            
+            // 更新预订
+            Reservation updatedReservation = reservationService.updateReservation(reservation);
+            
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "状态更新成功");
+            response.put("data", updatedReservation);
+            
+            System.out.println("预订状态更新成功, id: " + id + ", 新状态: " + status);
+            return ResponseEntity.ok(response);
+            
+        } catch (Exception e) {
+            System.err.println("更新预订状态失败: " + e.getMessage());
+            e.printStackTrace();
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "更新预订状态失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // 完成预订
+    @PutMapping("/{id}/complete")
+    public ResponseEntity<?> completeReservation(@PathVariable Long id) {
+        try {
+            System.out.println("接收到完成预订请求, id: " + id);
+            Reservation reservation = reservationService.completeReservation(id);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "预订完成成功");
+            response.put("data", null);
+            
+            System.out.println("预订完成成功, id: " + id);
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("完成预订失败: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "完成预订失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // 获取预订统计数据
+    @GetMapping("/statistics")
+    public ResponseEntity<?> getReservationStatistics(
+            @RequestParam(required = false, defaultValue = "month") String period) {
+        try {
+            System.out.println("接收到获取预订统计数据请求, period: " + period);
+            Map<String, Object> statistics = reservationService.getReservationStatistics(period);
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", statistics);
+            
+            System.out.println("获取预订统计数据成功");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("获取预订统计数据失败: " + e.getMessage());
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取预订统计数据失败: " + e.getMessage());
+            return ResponseEntity.badRequest().body(response);
         }
     }
 }

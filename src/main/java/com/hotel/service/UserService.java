@@ -85,6 +85,11 @@ public interface UserService {
      * 统计所有用户数量
      */
     long countAllUsers();
+    
+    /**
+     * 统计当月新注册用户数量
+     */
+    int countNewUsersThisMonth();
 
     /**
      * 检查手机号是否已被注册

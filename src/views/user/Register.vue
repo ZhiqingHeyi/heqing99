@@ -175,10 +175,13 @@ const handleMemberRegister = async () => {
         // 构建注册数据对象
         const registerData = {
           username: memberForm.username,
-          phone: memberForm.phone,
           password: memberForm.password,
+          confirmPassword: memberForm.confirmPassword,
+          name: memberForm.realName,     // 修改参数名称为 name
+          phone: memberForm.phone,
           email: memberForm.email,
-          realName: memberForm.realName
+          gender: 'unknown',             // 提供默认值
+          birthday: null                 // 提供默认值
         }
         
         console.log('会员注册提交的数据:', registerData)

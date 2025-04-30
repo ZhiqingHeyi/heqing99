@@ -67,6 +67,17 @@ export const userApi = {
   // 用户注册
   register: (userData) => {
     console.log('调用注册API:', userData)
+    
+    // 验证必要参数
+    if (!userData.username || !userData.password || !userData.confirmPassword || !userData.name || !userData.phone) {
+      return Promise.reject(new Error('缺少必要参数'))
+    }
+    
+    // 验证两次密码是否一致
+    if (userData.password !== userData.confirmPassword) {
+      return Promise.reject(new Error('两次输入的密码不一致'))
+    }
+    
     return apiClient.post('/api/users/register', userData)
       .then(response => {
         console.log('注册API响应:', response)
@@ -125,15 +136,19 @@ export const userApi = {
   },
   
   // 获取用户信息
-  getUserInfo: () => {
-    console.log('调用获取用户信息API')
-    return apiClient.get('/api/users/profile')
+  getUserInfo: (id) => {
+    if (!id) {
+      return Promise.reject(new Error('用户ID不能为空'))
+    }
+    
+    console.log('调用获取用户信息API, ID:', id)
+    return apiClient.get(`/api/users/${id}`)
       .then(response => {
         console.log('获取用户信息API响应:', response)
         if (!response || response.success === false) {
           throw new Error(response?.message || '获取用户信息失败')
         }
-        return response.data
+        return response
       })
       .catch(error => {
         console.error('获取用户信息API错误:', error)
@@ -148,17 +163,259 @@ export const userApi = {
       })
   },
   
-  // 更新用户信息
-  updateUserInfo: (userData) => apiClient.put('/api/users/profile', userData),
+  // 通过用户名获取用户信息
+  getUserByUsername: (username) => {
+    if (!username) {
+      return Promise.reject(new Error('用户名不能为空'))
+    }
+    
+    console.log('通过用户名获取用户信息API, username:', username)
+    return apiClient.get(`/api/users/username/${username}`)
+      .then(response => {
+        console.log('通过用户名获取用户信息API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取用户信息失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('通过用户名获取用户信息API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
   
-  // 修改密码
-  changePassword: (passwordData) => apiClient.put('/api/users/password', passwordData),
+  // 更新用户信息
+  updateUserInfo: (id, userData) => {
+    if (!id) {
+      return Promise.reject(new Error('用户ID不能为空'))
+    }
+    
+    console.log('调用更新用户信息API, ID:', id)
+    return apiClient.put(`/api/users/${id}`, userData)
+      .then(response => {
+        console.log('更新用户信息API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '更新用户信息失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('更新用户信息API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
 
-  // 刷新Token
-  refreshToken: (refreshData) => apiClient.post('/api/refresh-token', refreshData),
+  // 修改密码
+  changePassword: (id, passwordData) => {
+    if (!id) {
+      return Promise.reject(new Error('用户ID不能为空'))
+    }
+    
+    console.log('调用修改密码API, ID:', id)
+    return apiClient.put(`/api/users/${id}/password`, passwordData)
+      .then(response => {
+        console.log('修改密码API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '修改密码失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('修改密码API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
 
   // 退出登录
-  logout: () => apiClient.post('/api/logout')
+  logout: () => apiClient.post('/api/logout'),
+  
+  // 刷新Token
+  refreshToken: (refreshData) => apiClient.post('/api/refresh-token', refreshData),
+  
+  // 获取所有用户(管理员权限)
+  getAllUsers: (page = 1, pageSize = 10, filters = {}) => {
+    console.log('调用获取所有用户API:', { page, pageSize, filters })
+    
+    // 构建查询参数
+    const params = { page, pageSize, ...filters }
+    
+    return apiClient.get('/api/users', { params })
+      .then(response => {
+        console.log('获取所有用户API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取用户列表失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取所有用户API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 按角色获取用户(管理员权限)
+  getUsersByRole: (role, page = 1, pageSize = 10) => {
+    if (!role) {
+      return Promise.reject(new Error('角色不能为空'))
+    }
+    
+    console.log('调用按角色获取用户API, role:', role)
+    return apiClient.get(`/api/users/role/${role}`, { params: { page, pageSize } })
+      .then(response => {
+        console.log('按角色获取用户API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取用户列表失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('按角色获取用户API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 切换用户状态(管理员权限)
+  toggleUserStatus: (id, enabled) => {
+    if (!id) {
+      return Promise.reject(new Error('用户ID不能为空'))
+    }
+    
+    console.log('调用切换用户状态API, ID:', id, '状态:', enabled)
+    return apiClient.put(`/api/users/${id}/status?enabled=${enabled}`)
+      .then(response => {
+        console.log('切换用户状态API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '切换用户状态失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('切换用户状态API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 删除用户(管理员权限)
+  deleteUser: (id) => {
+    if (!id) {
+      return Promise.reject(new Error('用户ID不能为空'))
+    }
+    
+    console.log('调用删除用户API, ID:', id)
+    return apiClient.delete(`/api/users/${id}`)
+      .then(response => {
+        console.log('删除用户API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '删除用户失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('删除用户API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 获取特定角色的用户数量
+  getUserCountByRole: (role) => {
+    if (!role) {
+      return Promise.reject(new Error('角色不能为空'))
+    }
+    
+    console.log('调用获取用户数量API, role:', role)
+    return apiClient.get(`/api/users/count/${role}`)
+      .then(response => {
+        console.log('获取用户数量API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取用户数量失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取用户数量API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+  
+  // 获取活跃员工
+  getActiveStaff: () => {
+    console.log('调用获取活跃员工API')
+    return apiClient.get('/api/users/staff/active')
+      .then(response => {
+        console.log('获取活跃员工API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '获取活跃员工失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('获取活跃员工API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  }
 };
 
 // 会员相关API

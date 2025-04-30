@@ -59,4 +59,16 @@ public interface CheckInService {
     
     // 获取当前所有入住的客人记录
     List<CheckInRecord> getCurrentlyCheckedInRecords();
+    
+    /**
+     * 计算今日收入
+     * @return 今日收入总额
+     */
+    BigDecimal calculateTodayRevenue();
+    
+    /**
+     * 计算当月收入
+     * @return 当月收入总额
+     */
+    BigDecimal calculateMonthlyRevenue();
 } 

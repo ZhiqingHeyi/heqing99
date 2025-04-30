@@ -193,16 +193,33 @@ class UserManagerClass {
     userState.error = null
     
     try {
-      // 调用API获取用户基本信息
+      // 调用API获取用户基本信息，使用更新后的API
       const userResponse = await userApi.getUserInfo(userState.userData.id)
       
-      // 直接使用API返回的数据，因为响应拦截器已经处理了数据结构
-      if (!userResponse) {
+      if (!userResponse || !userResponse.success) {
         throw new Error('获取用户信息失败')
       }
       
       // 更新用户基本信息
-      Object.assign(userState.userData, userResponse.data)
+      const userData = userResponse.data;
+      
+      // 更新用户状态
+      Object.assign(userState.userData, {
+        userName: userData.username,
+        realName: userData.name,  // 使用name字段
+        phone: userData.phone,
+        email: userData.email,
+        birthday: userData.birthday,
+        gender: userData.gender
+      });
+      
+      // 更新本地存储
+      localStorage.setItem('userName', userData.username);
+      localStorage.setItem('userRealName', userData.name);
+      localStorage.setItem('userPhone', userData.phone || '');
+      localStorage.setItem('userEmail', userData.email || '');
+      localStorage.setItem('userBirthday', userData.birthday || '');
+      localStorage.setItem('userGender', userData.gender || 'unknown');
       
       // 获取会员信息
       const membershipResponse = await membershipApi.getMemberInfo(userState.userData.id)
@@ -211,21 +228,16 @@ class UserManagerClass {
         // 更新会员相关信息
         const memberData = membershipResponse.data;
         
-        // 更新本地存储
-        localStorage.setItem('userLevel', memberData.memberLevel);
-        localStorage.setItem('userPoints', String(memberData.points));
-        localStorage.setItem('userTotalSpent', String(memberData.totalSpent));
-        
         // 更新状态
         Object.assign(userState.userData, {
-          level: memberData.memberLevel,
+          level: memberData.level,
           points: memberData.points,
           totalSpent: memberData.totalSpent,
           joinDate: memberData.joinDate
         });
 
         // 更新本地存储
-        localStorage.setItem('userLevel', memberData.memberLevel);
+        localStorage.setItem('userLevel', memberData.level);
         localStorage.setItem('userPoints', String(memberData.points));
         localStorage.setItem('userTotalSpent', String(memberData.totalSpent));
       }
@@ -251,59 +263,91 @@ class UserManagerClass {
     if (!userState.isAuthenticated || !userState.userData.id) {
       throw new Error('用户未登录');
     }
-
+    
+    userState.isLoading = true;
+    userState.error = null;
+    
     try {
-      // 调用API更新用户信息
-      const response = await userApi.updateUserInfo(userState.userData.id, {
-        realName: userData.realName,
+      // 构建API所需的更新数据格式
+      const updateData = {
+        username: userData.userName,
+        name: userData.realName,
         phone: userData.phone,
         email: userData.email,
-        birthday: userData.birthday,
-        gender: userData.gender
-      });
-
-      if (response && response.data) {
-        // 更新本地状态
-        Object.assign(userState.userData, response.data);
-        // 触发数据更新事件
-        UserEventBus.emit('userDataUpdated', userState.userData);
-        return response.data;
+        gender: userData.gender,
+        birthday: userData.birthday
+      };
+      
+      // 调用更新后的API
+      const response = await userApi.updateUserInfo(userState.userData.id, updateData);
+      
+      if (!response || !response.success) {
+        throw new Error(response?.message || '更新用户信息失败');
       }
-
-      throw new Error('更新用户信息失败');
+      
+      // 更新用户状态
+      Object.assign(userState.userData, {
+        userName: updateData.username,
+        realName: updateData.name,
+        phone: updateData.phone,
+        email: updateData.email,
+        gender: updateData.gender,
+        birthday: updateData.birthday
+      });
+      
+      // 更新本地存储
+      localStorage.setItem('userName', updateData.username);
+      localStorage.setItem('userRealName', updateData.name);
+      localStorage.setItem('userPhone', updateData.phone || '');
+      localStorage.setItem('userEmail', updateData.email || '');
+      localStorage.setItem('userGender', updateData.gender || 'unknown');
+      localStorage.setItem('userBirthday', updateData.birthday || '');
+      
+      // 触发用户数据更新事件
+      UserEventBus.emit('userDataUpdated', userState.userData);
+      
+      return userState.userData;
     } catch (error) {
       console.error('更新用户信息失败:', error);
+      userState.error = error.message || '更新用户信息失败';
+      UserEventBus.emit('userDataError', userState.error);
       throw error;
+    } finally {
+      userState.isLoading = false;
     }
   }
   
   // 修改密码
   async changePassword(oldPassword, newPassword) {
     if (!userState.isAuthenticated || !userState.userData.id) {
-      throw new Error('用户未登录或ID无效')
+      throw new Error('用户未登录');
     }
     
-    userState.isLoading = true
-    userState.error = null
+    userState.isLoading = true;
+    userState.error = null;
     
     try {
-      // 调用API修改密码
+      // 调用更新后的API
       const response = await userApi.changePassword(userState.userData.id, {
         oldPassword,
         newPassword
-      })
+      });
       
       if (!response || !response.success) {
-        throw new Error(response?.message || '修改密码失败')
+        throw new Error(response?.message || '修改密码失败');
       }
       
-      return true
+      // 密码修改成功，触发事件
+      UserEventBus.emit('passwordChanged');
+      
+      return true;
     } catch (error) {
-      console.error('修改密码时出错:', error)
-      userState.error = error.message || '修改密码失败'
-      throw error
+      console.error('修改密码失败:', error);
+      userState.error = error.message || '修改密码失败';
+      UserEventBus.emit('userDataError', userState.error);
+      throw error;
     } finally {
-      userState.isLoading = false
+      userState.isLoading = false;
     }
   }
   
@@ -320,38 +364,50 @@ class UserManagerClass {
         throw new Error(response?.message || '登录失败')
       }
       
-      const { token, refreshToken, expiresAt, userId, userData } = response.data
+      // 获取用户数据
+      const userData = response.data
       
-      // 保存token到本地存储
-      localStorage.setItem('userToken', token)
+      // 保存token和用户基本信息
+      userState.tokenData.accessToken = userData.token
+      userState.tokenData.refreshToken = userData.refreshToken || null
       
-      if (rememberMe) {
-        localStorage.setItem('userRefreshToken', refreshToken)
-        localStorage.setItem('tokenExpiresAt', expiresAt)
+      // 计算token过期时间
+      if (userData.expiresIn) {
+        const expiresAt = new Date()
+        expiresAt.setSeconds(expiresAt.getSeconds() + userData.expiresIn)
+        userState.tokenData.expiresAt = expiresAt.toISOString()
+        localStorage.setItem('tokenExpiresAt', userState.tokenData.expiresAt)
       }
       
-      localStorage.setItem('userId', userId)
+      // 保存到本地存储
+      localStorage.setItem('userToken', userData.token)
+      if (userData.refreshToken) {
+        localStorage.setItem('userRefreshToken', userData.refreshToken)
+      }
+      
+      // 保存用户ID和基本信息
+      localStorage.setItem('userId', userData.userId)
+      localStorage.setItem('userName', userData.username)
+      localStorage.setItem('userRole', userData.role || 'USER')
       
       // 更新状态
+      userState.userData.id = userData.userId
+      userState.userData.userName = userData.username
       userState.isAuthenticated = true
-      userState.tokenData.accessToken = token
-      userState.tokenData.refreshToken = refreshToken
-      userState.tokenData.expiresAt = expiresAt
-      userState.userData.id = userId
       
-      // 如果API返回了用户数据，直接更新
-      if (userData) {
-        Object.assign(userState.userData, userData)
-      } else {
-        // 否则获取用户详细信息
-        await this.fetchUserData()
-      }
+      // 获取用户详细信息
+      await this.fetchUserData()
       
-      return true
+      // 触发登录成功事件
+      UserEventBus.emit('loginSuccess', userState.userData)
+      
+      return userState
     } catch (error) {
-      console.error('登录时出错:', error)
+      console.error('登录失败:', error)
       userState.error = error.message || '登录失败'
       
+      // 触发登录失败事件
+      UserEventBus.emit('loginError', userState.error)
       throw error
     } finally {
       userState.isLoading = false

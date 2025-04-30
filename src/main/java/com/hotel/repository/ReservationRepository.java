@@ -35,4 +35,10 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     List<Reservation> findReservationsToCheckIn(LocalDateTime currentTime);
 
     List<Reservation> findByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    
+    // 添加根据入住时间范围计数的方法
+    int countByCheckInTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    
+    // 添加根据入住时间之后计数的方法
+    int countByCheckInTimeAfter(LocalDateTime time);
 }

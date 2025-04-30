@@ -22,6 +22,7 @@ import java.util.Optional;
 import java.util.HashMap;
 import java.util.ArrayList;
 import java.time.LocalDate;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -65,17 +66,36 @@ public class ReservationServiceImpl implements ReservationService {
     public Reservation updateReservation(Reservation reservation) {
         Reservation existingReservation = getReservationById(reservation.getId());
 
-        // 只允许更新待确认状态的预订
-        if (existingReservation.getStatus() != Reservation.ReservationStatus.PENDING) {
-            throw new RuntimeException("当前状态不允许修改预订信息");
-        }
+        // 检查是否只更新了状态
+        boolean onlyStatusChanged = existingReservation.getCheckInTime().equals(reservation.getCheckInTime()) 
+                && existingReservation.getCheckOutTime().equals(reservation.getCheckOutTime())
+                && existingReservation.getRoom().equals(reservation.getRoom())
+                && existingReservation.getGuestName().equals(reservation.getGuestName())
+                && existingReservation.getGuestPhone().equals(reservation.getGuestPhone())
+                && existingReservation.getRoomCount().equals(reservation.getRoomCount())
+                && existingReservation.getTotalPrice().equals(reservation.getTotalPrice())
+                && existingReservation.getStatus() != reservation.getStatus();
 
-        // 检查时间冲突
-        if (hasTimeConflict(reservation)) {
-            throw new RuntimeException("该时间段房间已被预订");
+        // 如果只是状态更新，直接保存
+        if (onlyStatusChanged) {
+            // 记录状态变更
+            System.out.println("预订状态从 " + existingReservation.getStatus() + " 变更为 " + reservation.getStatus());
+            return reservationRepository.save(reservation);
+        } 
+        // 如果是其他信息更新，需要检查是否允许
+        else {
+            // 只允许更新待确认状态的预订
+            if (existingReservation.getStatus() != Reservation.ReservationStatus.PENDING) {
+                throw new RuntimeException("当前状态不允许修改预订信息");
+            }
+    
+            // 检查时间冲突
+            if (hasTimeConflict(reservation)) {
+                throw new RuntimeException("该时间段房间已被预订");
+            }
+    
+            return reservationRepository.save(reservation);
         }
-
-        return reservationRepository.save(reservation);
     }
 
     @Override
@@ -247,12 +267,15 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public long countTodayReservations() {
         LocalDate today = LocalDate.now();
-        LocalDateTime start = today.atStartOfDay();
-        LocalDateTime end = today.plusDays(1).atStartOfDay();
-        
-        // 使用现有的查询方法替代countByCheckInDateBetween
-        List<Reservation> todayReservations = reservationRepository.findByCreateTimeBetween(start, end);
-        return todayReservations.size();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+        return reservationRepository.countByCheckInTimeBetween(startOfDay, endOfDay);
+    }
+
+    @Override
+    public int countUpcomingReservations() {
+        LocalDateTime now = LocalDateTime.now();
+        return reservationRepository.countByCheckInTimeAfter(now);
     }
     
     @Override
@@ -350,5 +373,130 @@ public class ReservationServiceImpl implements ReservationService {
     @Override
     public List<Reservation> getAllReservations() {
         return reservationRepository.findAll();
+    }
+
+    @Override
+    public Reservation completeReservation(Long reservationId) {
+        Reservation reservation = getReservationById(reservationId);
+        
+        // 验证状态是否允许完成（待确认或已确认状态）
+        if (reservation.getStatus() != Reservation.ReservationStatus.PENDING &&
+            reservation.getStatus() != Reservation.ReservationStatus.CONFIRMED) {
+            throw new RuntimeException("当前状态不允许完成预订");
+        }
+        
+        // 更新状态
+        reservation.setStatus(Reservation.ReservationStatus.COMPLETED);
+        reservation.setUpdateTime(LocalDateTime.now());
+        
+        return reservationRepository.save(reservation);
+    }
+
+    @Override
+    public Map<String, Object> getReservationStatistics(String period) {
+        LocalDateTime startDate;
+        LocalDateTime endDate = LocalDateTime.now();
+        
+        // 确定统计周期
+        if ("quarter".equals(period)) {
+            startDate = endDate.minusMonths(3);
+        } else if ("year".equals(period)) {
+            startDate = endDate.minusYears(1);
+        } else {
+            // 默认为月
+            startDate = endDate.minusMonths(1);
+        }
+        
+        // 统计各状态预订数
+        long totalPending = reservationRepository.countByStatus(Reservation.ReservationStatus.PENDING);
+        long totalConfirmed = reservationRepository.countByStatus(Reservation.ReservationStatus.CONFIRMED);
+        long totalCanceled = reservationRepository.countByStatus(Reservation.ReservationStatus.CANCELLED);
+        long totalCompleted = reservationRepository.countByStatus(Reservation.ReservationStatus.COMPLETED);
+        long totalCheckedIn = reservationRepository.countByStatus(Reservation.ReservationStatus.CHECKED_IN);
+        
+        long totalReservations = totalPending + totalConfirmed + totalCanceled + totalCompleted + totalCheckedIn;
+        
+        // 构建结果
+        Map<String, Object> statistics = new HashMap<>();
+        statistics.put("totalReservations", totalReservations);
+        statistics.put("totalConfirmed", totalConfirmed);
+        statistics.put("totalCanceled", totalCanceled);
+        statistics.put("totalCompleted", totalCompleted);
+        
+        // 按状态统计
+        List<Map<String, Object>> byStatus = new ArrayList<>();
+        byStatus.add(createStatusCount("待确认", totalPending));
+        byStatus.add(createStatusCount("已确认", totalConfirmed));
+        byStatus.add(createStatusCount("已取消", totalCanceled));
+        byStatus.add(createStatusCount("已完成", totalCompleted));
+        byStatus.add(createStatusCount("已入住", totalCheckedIn));
+        statistics.put("byStatus", byStatus);
+        
+        // 按房间类型统计
+        statistics.put("byRoomType", getRoomTypeStatistics());
+        
+        // 按日期统计
+        statistics.put("byDate", getDateStatistics(startDate, endDate, period));
+        
+        return statistics;
+    }
+
+    private Map<String, Object> createStatusCount(String status, long count) {
+        Map<String, Object> result = new HashMap<>();
+        result.put("status", status);
+        result.put("count", count);
+        return result;
+    }
+
+    private List<Map<String, Object>> getRoomTypeStatistics() {
+        // 获取所有预订
+        List<Reservation> allReservations = reservationRepository.findAll();
+        
+        // 按房间类型分组统计
+        Map<String, Long> roomTypeCounts = allReservations.stream()
+            .collect(Collectors.groupingBy(
+                r -> r.getRoom().getRoomType().getName(),
+                Collectors.counting()
+            ));
+        
+        // 转换为所需格式
+        return roomTypeCounts.entrySet().stream()
+            .map(entry -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("roomType", entry.getKey());
+                item.put("count", entry.getValue());
+                return item;
+            })
+            .collect(Collectors.toList());
+    }
+
+    private List<Map<String, Object>> getDateStatistics(LocalDateTime startDate, LocalDateTime endDate, String period) {
+        // 获取日期范围内的所有预订
+        List<Reservation> reservations = reservationRepository.findByCreateTimeBetween(startDate, endDate);
+        
+        // 按日期格式化并分组
+        DateTimeFormatter formatter;
+        if ("year".equals(period)) {
+            formatter = DateTimeFormatter.ofPattern("yyyy-MM");
+        } else {
+            formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd");
+        }
+        
+        Map<String, Long> dateCounts = reservations.stream()
+            .collect(Collectors.groupingBy(
+                r -> r.getCreateTime().format(formatter),
+                Collectors.counting()
+            ));
+        
+        // 转换为所需格式
+        return dateCounts.entrySet().stream()
+            .map(entry -> {
+                Map<String, Object> item = new HashMap<>();
+                item.put("date", entry.getKey());
+                item.put("count", entry.getValue());
+                return item;
+            })
+            .sorted((a, b) -> ((String)a.get("date")).compareTo((String)b.get("date")))
+            .collect(Collectors.toList());
     }
 }

@@ -240,7 +240,7 @@
 <script setup>
 import { ref, reactive, onMounted, computed, watch } from 'vue'
 import { useRouter } from 'vue-router'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { User, Tickets, Medal, Setting } from '@element-plus/icons-vue'
 import { userApi, membershipApi, reservationApi } from '@/api'
 
@@ -392,79 +392,147 @@ const goToBooking = () => {
 // 保存用户信息
 const saveUserInfo = async () => {
   try {
-    // 调用API保存用户信息
-    const response = await userApi.updateUserInfo({
-      userName: userForm.userName,
-      realName: userForm.realName,
+    // 验证数据有效性
+    if (!userForm.userName.trim() || !userForm.realName.trim() || !userForm.phone.trim()) {
+      ElMessage.warning('用户名、姓名和手机号不能为空');
+      return;
+    }
+
+    // 验证手机号格式
+    const phoneRegex = /^1[3-9]\d{9}$/;
+    if (!phoneRegex.test(userForm.phone)) {
+      ElMessage.warning('请输入有效的手机号');
+      return;
+    }
+
+    // 验证邮箱格式
+    if (userForm.email) {
+      const emailRegex = /^[a-zA-Z0-9._-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,6}$/;
+      if (!emailRegex.test(userForm.email)) {
+        ElMessage.warning('请输入有效的邮箱地址');
+        return;
+      }
+    }
+    
+    // 用户ID
+    const userId = userState.userData.id || localStorage.getItem('userId');
+    
+    if (!userId) {
+      ElMessage.error('未找到用户ID，请重新登录');
+      return;
+    }
+
+    // 构建更新数据
+    const updateData = {
+      username: userForm.userName,
+      name: userForm.realName,      // 使用name替代realName
       phone: userForm.phone,
       email: userForm.email,
-      birthday: userForm.birthday,
-      gender: userForm.gender
-    })
-    
-    if (response && response.success) {
-      ElMessage.success('个人信息保存成功')
-      isEditing.value = false
+      gender: userForm.gender,
+      birthday: userForm.birthday ? new Date(userForm.birthday).toISOString().split('T')[0] : null
+    };
+
+    // 显示加载中
+    const loading = ElLoading.service({
+      lock: true,
+      text: '保存中...',
+      background: 'rgba(255, 255, 255, 0.7)'
+    });
+
+    try {
+      // 使用更新的API调用
+      const response = await userApi.updateUserInfo(userId, updateData);
       
-      // 更新显示的用户名
-      userInfo.userName = userForm.userName
-      localStorage.setItem('userName', userForm.userName)
-      
-      // 重新获取会员信息
-      const memberInfo = await membershipApi.getMemberInfo()
-      if (memberInfo && memberInfo.data) {
-        userInfo.level = memberInfo.data.level
-        userInfo.points = memberInfo.data.points
-        userInfo.totalSpent = memberInfo.data.totalSpent
-        localStorage.setItem('userLevel', memberInfo.data.level)
-        localStorage.setItem('userPoints', String(memberInfo.data.points))
-        localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent))
-        updateNextLevel()
+      if (response.success) {
+        ElMessage.success('信息更新成功');
+        
+        // 更新本地存储
+        localStorage.setItem('userName', updateData.username);
+        localStorage.setItem('userRealName', updateData.name);
+        localStorage.setItem('userPhone', updateData.phone);
+        localStorage.setItem('userEmail', updateData.email || '');
+        localStorage.setItem('userGender', updateData.gender || 'unknown');
+        localStorage.setItem('userBirthday', updateData.birthday || '');
+        
+        // 更新用户状态
+        Object.assign(userState.userData, {
+          userName: updateData.username,
+          realName: updateData.name,
+          phone: updateData.phone,
+          email: updateData.email,
+          gender: updateData.gender,
+          birthday: updateData.birthday
+        });
+        
+        // 关闭编辑模式
+        isEditing.value = false;
+      } else {
+        ElMessage.error(response.message || '更新失败，请稍后重试');
       }
-    } else {
-      ElMessage.error(response?.message || '保存失败')
+    } catch (error) {
+      console.error('更新用户信息失败:', error);
+      ElMessage.error(error.message || '更新失败，请稍后重试');
+    } finally {
+      // 关闭加载
+      loading.close();
     }
   } catch (error) {
-    console.error('保存用户信息失败:', error)
-    ElMessage.error('保存失败: ' + error.message)
+    console.error('保存用户信息出错:', error);
+    ElMessage.error('操作出错，请重试');
   }
-}
+};
 
 // 修改密码
 const changePassword = async () => {
-  if (!passwordFormRef.value) return
+  if (!passwordFormRef.value) return;
   
   await passwordFormRef.value.validate(async (valid) => {
     if (valid) {
+      // 用户ID
+      const userId = userState.userData.id || localStorage.getItem('userId');
+      
+      if (!userId) {
+        ElMessage.error('未找到用户ID，请重新登录');
+        return;
+      }
+      
+      // 显示加载中
+      const loading = ElLoading.service({
+        lock: true,
+        text: '提交中...',
+        background: 'rgba(255, 255, 255, 0.7)'
+      });
+      
       try {
-        loading.value = true
-        
-        // 调用API修改密码
-        const response = await userApi.changePassword({
+        // 使用更新的API调用
+        const response = await userApi.changePassword(userId, {
           oldPassword: passwordForm.oldPassword,
-          newPassword: passwordForm.newPassword,
-          confirmPassword: passwordForm.confirmPassword
-        })
+          newPassword: passwordForm.newPassword
+        });
         
-        if (response && response.success) {
-          ElMessage.success('密码修改成功')
-          // 清空表单
-          passwordForm.oldPassword = ''
-          passwordForm.newPassword = ''
-          passwordForm.confirmPassword = ''
+        if (response.success) {
+          ElMessage.success('密码修改成功');
+          
+          // 重置表单
+          passwordForm.oldPassword = '';
+          passwordForm.newPassword = '';
+          passwordForm.confirmPassword = '';
+          
+          // 重置表单验证
+          passwordFormRef.value.resetFields();
         } else {
-          ElMessage.error(response?.message || '密码修改失败')
+          ElMessage.error(response.message || '密码修改失败，请稍后重试');
         }
-        
-        loading.value = false
       } catch (error) {
-        loading.value = false
-        console.error('密码修改失败:', error)
-        ElMessage.error('密码修改失败: ' + error.message)
+        console.error('修改密码失败:', error);
+        ElMessage.error(error.message || '密码修改失败，请稍后重试');
+      } finally {
+        // 关闭加载
+        loading.close();
       }
     }
-  })
-}
+  });
+};
 
 // 保存通知设置
 const saveNotificationSettings = () => {

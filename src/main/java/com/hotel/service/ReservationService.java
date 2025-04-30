@@ -52,6 +52,11 @@ public interface ReservationService {
     long countTodayReservations();
     
     /**
+     * 统计未来预订数量
+     */
+    int countUpcomingReservations();
+    
+    /**
      * 获取今日预订详情列表
      */
     List<Map<String, Object>> getTodayReservationsWithDetails();
@@ -125,4 +130,14 @@ public interface ReservationService {
      * 检查房间是否有关联的预订记录
      */
     boolean hasRoomReservations(Long roomId);
+    
+    /**
+     * 完成预订
+     */
+    Reservation completeReservation(Long reservationId);
+
+    /**
+     * 获取预订统计数据
+     */
+    Map<String, Object> getReservationStatistics(String period);
 }
