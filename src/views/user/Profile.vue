@@ -761,24 +761,41 @@ onMounted(async () => {
   try {
     loading.value = true
     
-    // 获取用户基本信息
-    const userResponse = await userApi.getUserInfo()
-    if (userResponse) {
-      userForm.userName = userResponse.username || userInfo.userName
-      userForm.realName = userResponse.realName || ''
-      userForm.phone = userResponse.phone || ''
-      userForm.email = userResponse.email || ''
-      userForm.birthday = userResponse.birthday || ''
-      userForm.gender = userResponse.gender || ''
-      
-      // 更新显示的用户名
-      userInfo.userName = userResponse.username || userInfo.userName
-      localStorage.setItem('userName', userInfo.userName)
+    // 从 localStorage 获取 userId
+    const userId = localStorage.getItem('userId');
+
+    // 校验 userId 是否存在
+    if (!userId) {
+      ElMessage.error('无法获取用户ID，请重新登录');
+      loading.value = false; // 停止加载状态
+      return; // 阻止后续操作
     }
-    
-    // 获取会员信息
+
+    // 获取用户基本信息，传递 userId
+    const userResponse = await userApi.getUserInfo(userId);
+    if (userResponse && userResponse.success && userResponse.data) { // 确保 userResponse 和 data 有效
+      const userData = userResponse.data;
+      userForm.userName = userData.username || userInfo.userName
+      userForm.realName = userData.name || '' // 后端字段为 name
+      userForm.phone = userData.phone || ''
+      userForm.email = userData.email || ''
+      userForm.birthday = userData.birthday || ''
+      userForm.gender = userData.gender || ''
+
+      // 更新显示的用户名
+      userInfo.userName = userData.username || userInfo.userName
+      localStorage.setItem('userName', userInfo.userName) // 仅更新用户名，其他信息在 memberInfo 获取
+    } else {
+       // 如果获取失败，可以记录日志或显示更具体的错误信息
+       console.warn('获取用户基本信息失败:', userResponse?.message);
+       // 可以选择是否显示给用户，取决于业务需求
+       // ElMessage.warning(userResponse?.message || '获取用户基本信息失败');
+       // 如果获取基本信息失败，可能不需要阻止后续操作，看产品设计
+    }
+
+    // 获取会员信息 (这个API不需要userId)
     const memberInfo = await membershipApi.getMemberInfo()
-    if (memberInfo && memberInfo.data) {
+    if (memberInfo && memberInfo.success && memberInfo.data) { // 确保 memberInfo 和 data 有效
       userInfo.level = memberInfo.data.level || '普通用户'
       userInfo.points = memberInfo.data.points || 0
       userInfo.totalSpent = memberInfo.data.totalSpent || 0
@@ -802,7 +819,8 @@ onMounted(async () => {
   } catch (error) {
     loading.value = false
     console.error('获取用户数据失败:', error)
-    ElMessage.error('获取用户数据失败: ' + error.message)
+    // 显示从 API 调用中捕获到的更具体的错误消息
+    ElMessage.error('获取用户数据失败: ' + (error.message || '未知错误'));
   }
   
   // 确保路由配置和组件渲染正常

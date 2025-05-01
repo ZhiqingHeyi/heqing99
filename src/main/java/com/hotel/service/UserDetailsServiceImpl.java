@@ -9,6 +9,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.stereotype.Service;
+import com.hotel.security.CustomUserDetails; // 引入 CustomUserDetails
 
 import java.util.Collections;
 import java.util.Set;
@@ -39,11 +40,11 @@ public class UserDetailsServiceImpl implements UserDetailsService {
         String roleName = "ROLE_" + user.getRole().name(); 
         Set<GrantedAuthority> authorities = Collections.singleton(new SimpleGrantedAuthority(roleName));
 
-        // 返回 Spring Security 的 User 对象
-        // 注意：principal name 仍然使用数据库中的实际用户名 user.getUsername()
-        return new org.springframework.security.core.userdetails.User(
+        // 返回 CustomUserDetails 对象，包含 ID
+        return new CustomUserDetails(
+                user.getId(), // <-- 添加 user ID
                 user.getUsername(),
-                user.getPassword(), // 确保密码是加密存储的
+                user.getPassword(),
                 authorities
         );
     }
