@@ -55,7 +55,12 @@
           <div v-if="activeMenu === 'profile'">
             <div class="section-header">
               <h2>个人信息</h2>
-              <el-button type="primary" size="small" @click="isEditing = !isEditing">
+              <el-button
+                type="primary"
+                size="small"
+                :class="isEditing ? 'btn-cancel-style' : 'btn-edit-style'"
+                @click="isEditing = !isEditing"
+              >
                 {{ isEditing ? '取消' : '编辑' }}
               </el-button>
             </div>
@@ -1040,4 +1045,35 @@ onMounted(async () => {
   font-size: 12px;
   font-weight: 500;
 }
+
+/* Gold Button Styles */
+.btn-edit-style,
+.user-form .el-form-item:last-child .el-button {
+  background-color: #c59d5f !important; /* Main gold */
+  border-color: #c59d5f !important;
+  color: #ffffff !important;
+  border-radius: 4px; /* Adjust as needed */
+  transition: background-color 0.3s, border-color 0.3s;
+}
+
+.btn-edit-style:hover,
+.user-form .el-form-item:last-child .el-button:hover {
+  background-color: #deb887 !important; /* Lighter gold on hover */
+  border-color: #deb887 !important;
+}
+
+.btn-cancel-style {
+  background-color: transparent !important;
+  border: 1px solid #c59d5f !important; /* Main gold border */
+  color: #c59d5f !important; /* Main gold text */
+  border-radius: 4px;
+  transition: background-color 0.3s, color 0.3s, border-color 0.3s;
+}
+
+.btn-cancel-style:hover {
+  background-color: #fdfbf6 !important; /* Light background on hover */
+  border-color: #a07d4a !important; /* Darker border/text on hover */
+  color: #a07d4a !important;
+}
+/* End Gold Button Styles */
 </style>
