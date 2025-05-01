@@ -966,5 +966,27 @@ export const checkOutApi = {
   }
 };
 
+// 邀请码相关API
+export const invitationCodeApi = {
+  generateCode: () => apiClient.post('/api/invitation-codes'),
+  validateCode: (code) => apiClient.get(`/api/invitation-codes/validate/${code}`),
+  getAllCodes: () => apiClient.get('/api/invitation-codes'),
+  deleteCode: (id) => apiClient.delete(`/api/invitation-codes/${id}`),
+};
+
+// 清洁任务相关API
+export const cleaningApi = {
+  getTasks: () => apiClient.get('/api/cleaning/tasks'),
+  updateTaskStatus: (taskId, status) => apiClient.put(`/api/cleaning/tasks/${taskId}/status`, { status }),
+  getCleaningRecords: () => apiClient.get('/api/cleaning/records'),
+};
+
+// 添加 adminApi 用于管理端特定的接口
+export const adminApi = {
+  // 获取仪表盘统计数据
+  getDashboardStatistics: () => apiClient.get('/api/admin/dashboard/statistics'),
+  // ... 未来可以添加更多 admin 相关的 API 函数
+};
+
 // 导出API客户端，方便直接使用
 export default apiClient;

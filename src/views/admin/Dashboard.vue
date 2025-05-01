@@ -2,8 +2,18 @@
   <div class="dashboard-container">
     <!-- 管理员才能看到的内容 -->
     <div v-if="userRole === 'admin'">
-      <el-row :gutter="24">
-        <!-- 数据概览卡片 -->
+      <el-skeleton :rows="5" animated v-if="isLoading" />
+
+      <el-alert
+        v-if="error"
+        :title="error"
+        type="error"
+        show-icon
+        :closable="false"
+        class="error-alert"
+      />
+
+      <el-row :gutter="24" v-if="!isLoading && !error">
         <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="card in dataCards" :key="card.title">
           <el-card class="data-card luxury-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover shadow="hover">
             <div class="card-content">
@@ -226,41 +236,46 @@
 import { ref, onMounted, reactive, watch } from 'vue'
 import { House, Money, User, Calendar } from '@element-plus/icons-vue'
 import * as echarts from 'echarts'
+import { adminApi } from '../../api'
 
 // 获取用户角色
 const userRole = ref(localStorage.getItem('userRole') || 'admin')
+
+// 状态变量
+const isLoading = ref(false)
+const error = ref(null)
 
 // 数据概览卡片数据
 const dataCards = reactive([
   {
     title: '今日入住率',
-    value: '85%',
-    change: '↑ 5%',
-    trend: 'up',
+    value: '--',
+    change: '--',
+    trend: '',
     icon: House,
     type: 'success'
   },
   {
     title: '本月收入',
-    value: '¥128,500',
-    change: '↑ 12%',
-    trend: 'up',
+    value: '--',
+    change: '--',
+    trend: '',
     icon: Money,
     type: 'primary'
   },
   {
     title: '访客数量',
-    value: '256',
-    change: '↑ 8%',
-    trend: 'up',
+    value: '--',
+    change: '--',
+    trend: '',
     icon: User,
     type: 'warning'
   },
   {
     title: '预订数量',
-    value: '45',
-    change: '↓ 3%',
-    trend: 'down',
+    value: '--',
+    change: '--',
+    trend: '',
     icon: Calendar,
     type: 'info'
   }
@@ -387,10 +402,51 @@ watch(revenueTimeRange, () => {
   updateRevenueChart()
 })
 
+// 定义 fetchDashboardData 函数
+const fetchDashboardData = async () => {
+  isLoading.value = true
+  error.value = null
+  try {
+    const response = await adminApi.getDashboardStatistics()
+    const stats = response
+
+    // 数据映射
+    // 今日入住率
+    const occupiedRooms = stats.occupiedRooms || 0
+    const totalRooms = stats.totalRooms || 0
+    dataCards[0].value = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) + '%' : '0%'
+    // dataCards[0].change = '--' // 变化数据待后端提供
+    // dataCards[0].trend = ''
+
+    // 本月收入
+    dataCards[1].value = stats.monthlyRevenue !== undefined ? `¥${stats.monthlyRevenue.toLocaleString()}` : '¥0'
+    // dataCards[1].change = '--' // 变化数据待后端提供
+    // dataCards[1].trend = ''
+
+    // 访客数量 (映射为总用户数)
+    dataCards[2].value = stats.totalUsers !== undefined ? String(stats.totalUsers) : '0'
+    // dataCards[2].change = '--' // 变化数据待后端提供
+    // dataCards[2].trend = ''
+
+    // 预订数量 (映射为今日预订数)
+    dataCards[3].value = stats.todayReservations !== undefined ? String(stats.todayReservations) : '0'
+    // dataCards[3].change = '--' // 变化数据待后端提供
+    // dataCards[3].trend = ''
+
+  } catch (e) {
+    console.error("加载仪表盘数据失败:", e)
+    error.value = '加载数据失败: ' + (e.message || '未知错误')
+  } finally {
+    isLoading.value = false
+  }
+}
+
 // 初始化图表
 onMounted(() => {
-  // 只有管理员角色才初始化图表
+  // 只有管理员角色才初始化图表和获取数据
   if (userRole.value === 'admin') {
+    fetchDashboardData()
+
     // 入住率趋势图
     occupancyChartInstance = echarts.init(occupancyChart.value)
     occupancyChartInstance.setOption({
