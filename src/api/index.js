@@ -12,18 +12,44 @@ const apiClient = axios.create({
 // 请求拦截器 - 添加认证Token等
 apiClient.interceptors.request.use(
   config => {
-    // 优先尝试获取用户Token
-    let token = localStorage.getItem('userToken');
-    
-    // 如果用户Token不存在，尝试获取管理员Token
-    if (!token) {
+    const url = config.url || '';
+    const method = (config.method || '').toUpperCase();
+
+    // 定义需要管理员权限的 API 路径判断逻辑
+    const isAdminPath = 
+      url.startsWith('/api/admin/') ||
+      (url === '/api/users' && (method === 'GET' || method === 'DELETE')) ||
+      (url.startsWith('/api/users/') && url.endsWith('/status') && method === 'PUT') || // toggleUserStatus
+      url.startsWith('/api/users/staff/active') ||
+      url.startsWith('/api/users/count/') ||
+      url.startsWith('/api/invitation-codes');
+
+    let token = null;
+
+    if (isAdminPath) {
+      // 如果是管理员路径，只尝试获取 adminToken
       token = localStorage.getItem('adminToken');
+      if (token) {
+        console.log('Interceptor: Using adminToken for path:', url);
+        config.headers['Authorization'] = `Bearer ${token}`;
+      } else {
+        console.warn('Interceptor: adminToken not found for admin path:', url);
+        // 对于需要管理员权限的接口，如果没找到 adminToken，可能需要阻止请求或提示登录
+        // 但当前仅记录警告，允许请求继续（后端会处理权限）
+      }
+    } else {
+      // 如果不是管理员路径，只尝试获取 userToken
+      token = localStorage.getItem('userToken');
+      if (token) {
+        // 为调试添加日志，确认是否使用了 userToken
+        // console.log('Interceptor: Using userToken for path:', url); 
+        config.headers['Authorization'] = `Bearer ${token}`;
+      } else {
+         // 对于非管理员路径，没找到 userToken 是正常的（例如公共接口）
+         // console.log('Interceptor: userToken not found for path:', url);
+      }
     }
-    
-    // 如果获取到Token，添加到请求头
-    if (token) {
-      config.headers['Authorization'] = `Bearer ${token}`;
-    }
+
     return config;
   },
   error => {
@@ -139,6 +165,25 @@ export const userApi = {
           throw error
         }
       })
+  },
+  
+  // 管理员创建用户 (新添加)
+  createUser: (userData) => {
+    console.log('调用管理员创建用户API:', userData);
+    return apiClient.post('/api/users', userData)
+      .then(response => {
+        console.log('管理员创建用户API响应:', response);
+        // 检查后端返回的通用成功/失败标志
+        if (response && response.success === false) {
+          throw new Error(response.message || '创建用户失败');
+        }
+        return response; // 直接返回后端响应体
+      })
+      .catch(error => {
+        console.error('管理员创建用户API错误:', error);
+        // 错误已在拦截器中处理，这里重新抛出以便组件捕获
+        throw error; 
+      });
   },
   
   // 获取用户信息

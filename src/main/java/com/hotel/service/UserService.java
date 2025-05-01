@@ -1,6 +1,8 @@
 package com.hotel.service;
 
 import com.hotel.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.math.BigDecimal;
 import java.util.List;
@@ -104,4 +106,9 @@ public interface UserService {
     String getMemberLevelByUserId(Long userId);
     BigDecimal getDiscountByUserId(Long userId);
     int getPointsRateByUserId(Long userId);
+
+    /**
+     * 根据条件分页和过滤用户列表
+     */
+    Page<User> findUsersPaginatedAndFiltered(int page, int pageSize, String username, String phone, String status);
 }

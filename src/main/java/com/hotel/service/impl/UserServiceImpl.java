@@ -7,10 +7,16 @@ import com.hotel.service.InvitationCodeService;
 import com.hotel.service.UserService;
 import com.hotel.util.JwtUtil;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import javax.persistence.criteria.Predicate;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
@@ -414,5 +420,50 @@ public class UserServiceImpl implements UserService {
         return amount.multiply(BigDecimal.valueOf(pointsRate))
                 .divide(BigDecimal.valueOf(100), BigDecimal.ROUND_DOWN)
                 .intValue();
+    }
+
+    @Override
+    public Page<User> findUsersPaginatedAndFiltered(int page, int pageSize, String username, String phone, String status) {
+        // 转换前端页码 (1-based) 为 Spring Data JPA 页码 (0-based)
+        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+
+        // 使用 Specification 构建动态查询条件
+        Specification<User> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 添加用户名模糊查询条件
+            if (username != null && !username.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.like(root.get("username"), "%" + username.trim() + "%"));
+            }
+
+            // 添加手机号精确查询条件 (或模糊查询，根据需要)
+            if (phone != null && !phone.trim().isEmpty()) {
+                predicates.add(criteriaBuilder.equal(root.get("phone"), phone.trim()));
+            }
+
+            // 添加状态查询条件
+            if (status != null && !status.trim().isEmpty()) {
+                boolean enabledStatus;
+                if ("active".equalsIgnoreCase(status.trim())) {
+                    enabledStatus = true;
+                } else if ("disabled".equalsIgnoreCase(status.trim())) {
+                    enabledStatus = false;
+                } else {
+                    // 如果状态无效，可以抛出异常或忽略此条件
+                    // 这里选择忽略
+                    System.err.println("无效的状态参数: " + status);
+                    enabledStatus = true; // 或者根据业务逻辑决定默认行为
+                }
+                 predicates.add(criteriaBuilder.equal(root.get("enabled"), enabledStatus));
+            }
+            
+             // (重要) 排除超级管理员，如果需要的话
+             predicates.add(criteriaBuilder.notEqual(root.get("role"), User.UserRole.SUPER_ADMIN));
+
+
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        return userRepository.findAll(spec, pageable);
     }
 }

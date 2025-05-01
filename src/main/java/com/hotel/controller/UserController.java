@@ -7,6 +7,7 @@ import com.hotel.dto.LoginRequest;
 import com.hotel.dto.LoginResponse;
 import com.hotel.util.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -15,6 +16,7 @@ import org.springframework.security.core.Authentication;
 import org.springframework.security.core.AuthenticationException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
 
 import java.time.LocalDate;
@@ -37,6 +39,9 @@ public class UserController {
 
     @Autowired
     private JwtTokenProvider jwtTokenProvider;
+
+    @Autowired
+    private PasswordEncoder passwordEncoder;
 
     /**
      * 用户注册接口
@@ -415,28 +420,36 @@ public class UserController {
     }
 
     @GetMapping
-    public ResponseEntity<?> getAllUsers() {
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllUsers(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String status) {
         try {
-            System.out.println("接收到获取所有用户请求");
-            List<User> users = userService.getAllUsers();
-            
+            System.out.println("接收到获取所有用户请求 (分页+过滤)");
+            Page<User> userPage = userService.findUsersPaginatedAndFiltered(page, pageSize, username, phone, status);
+
             // 移除敏感信息
-            users.forEach(user -> user.setPassword(null));
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", users);
-            
-            System.out.println("返回所有用户信息成功, 用户数量: " + users.size());
+            userPage.getContent().forEach(user -> user.setPassword(null));
+
+            // 构建前端期望的响应结构
+            Map<String, Object> data = new HashMap<>();
+            data.put("users", userPage.getContent());
+            data.put("total", userPage.getTotalElements());
+
+            // 使用 ApiResponse 包装
+            ApiResponse<Map<String, Object>> response = ApiResponse.success(data);
+
+            System.out.println("返回分页用户信息成功, Page: " + page + ", Size: " + pageSize + ", Total: " + userPage.getTotalElements());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
-            System.err.println("获取所有用户失败: " + e.getMessage());
+            System.err.println("获取所有用户失败 (分页+过滤): " + e.getMessage());
             e.printStackTrace();
-            
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取所有用户失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 返回错误响应
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("获取用户列表失败: " + e.getMessage()));
         }
     }
 
@@ -548,6 +561,65 @@ public class UserController {
             // 使用API响应工具类返回错误信息
             ApiResponse<?> errorResponse = ApiResponse.fail("统计角色用户数量失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+
+    /**
+     * 由管理员创建用户
+     */
+    @PostMapping
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> createUserByAdmin(@RequestBody User newUser) {
+        try {
+            System.out.println("===== 接收到管理员创建用户请求 =====");
+            System.out.println("请求数据: " + newUser);
+
+            // 基本验证
+            if (newUser == null || newUser.getUsername() == null || newUser.getPassword() == null ||
+                newUser.getName() == null || newUser.getPhone() == null || newUser.getRole() == null) {
+                return ResponseEntity.badRequest().body(ApiResponse.fail("缺少必要的用户信息（用户名、密码、姓名、电话、角色）"));
+            }
+
+            // 检查用户名是否已存在
+            try {
+                userService.getUserByUsername(newUser.getUsername());
+                // 如果没抛异常，说明用户名已存在
+                return ResponseEntity.badRequest().body(ApiResponse.fail("用户名 '" + newUser.getUsername() + "' 已被注册"));
+            } catch (RuntimeException e) {
+                // 用户名不存在，是期望的情况，继续
+            }
+            
+            // 检查手机号是否已存在 (可选，根据业务需求)
+            if (userService.existsByPhone(newUser.getPhone())) {
+                 return ResponseEntity.badRequest().body(ApiResponse.fail("手机号 '" + newUser.getPhone() + "' 已被注册"));
+            }
+
+            // 加密密码
+            newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
+
+            // 设置默认启用状态
+            newUser.setEnabled(true);
+            // 如果前端没传会员等级，设置默认值
+            if (newUser.getMemberLevel() == null) {
+                newUser.setMemberLevel(com.hotel.entity.MemberLevel.REGULAR);
+            }
+
+            // 调用服务保存用户
+            User savedUser = userService.createUser(newUser); // 使用 createUser 方法
+
+            // 移除敏感信息后返回
+            savedUser.setPassword(null); 
+
+            System.out.println("管理员创建用户成功, userId: " + savedUser.getId());
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("用户创建成功", savedUser));
+
+        } catch (Exception e) {
+            System.err.println("===== 管理员创建用户失败 =====");
+            System.err.println("异常类型: " + e.getClass().getName());
+            System.err.println("异常消息: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("创建用户失败: " + e.getMessage()));
         }
     }
 }

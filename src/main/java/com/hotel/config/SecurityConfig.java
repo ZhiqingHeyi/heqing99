@@ -117,7 +117,6 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.PUT, "/api/users/{id}/password").authenticated()
                 // 管理员相关 API 需要管理员角色
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
-                .antMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("ADMIN")
                 // 添加 OPTIONS 请求支持，用于 CORS 预检
                 .antMatchers(HttpMethod.OPTIONS, "/**").permitAll()

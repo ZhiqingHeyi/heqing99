@@ -40,7 +40,7 @@
     <el-card class="list-card">
       <div class="list-header">
         <div class="list-title">用户列表</div>
-        <div class="list-summary">共 <span class="highlight-text">{{ total }}</span> 位用户</div>
+        <div class="list-summary">共 <span class="highlight-text">{{ pagination.total }}</span> 位用户</div>
       </div>
       
       <el-table 
@@ -56,6 +56,17 @@
         <el-table-column prop="name" label="姓名" min-width="100" />
         <el-table-column prop="phone" label="手机号" min-width="120" />
         <el-table-column prop="email" label="邮箱" min-width="180" />
+        <el-table-column label="角色" width="120" align="center">
+          <template #default="{ row }">
+            <el-tag 
+              size="small"
+              :type="row.role === 'ADMIN' || row.role === 'SUPER_ADMIN' ? 'warning' : (row.role === 'RECEPTIONIST' || row.role === 'CLEANER' ? 'info' : 'success')"
+              disable-transitions
+            >
+              {{ getRoleDisplayName(row.role) }}
+            </el-tag>
+          </template>
+        </el-table-column>
         <el-table-column prop="createTime" label="注册时间" min-width="160" />
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
@@ -94,10 +105,10 @@
       <!-- 分页 -->
       <div class="pagination-container">
         <el-pagination
-          v-model:current-page="currentPage"
-          v-model:page-size="pageSize"
+          v-model:current-page="pagination.currentPage"
+          v-model:page-size="pagination.pageSize"
           :page-sizes="[10, 20, 50, 100]"
-          :total="total"
+          :total="pagination.total"
           layout="total, sizes, prev, pager, next, jumper"
           @size-change="handleSizeChange"
           @current-change="handleCurrentChange"
@@ -136,11 +147,21 @@
         <el-form-item label="密码" prop="password" v-if="dialogType === 'add'">
           <el-input v-model="userForm.password" type="password" show-password />
         </el-form-item>
+        <el-form-item label="角色" prop="role" v-if="dialogType === 'add'">
+          <el-select v-model="userForm.role" placeholder="请选择角色">
+            <el-option
+              v-for="item in userRoles"
+              :key="item.value"
+              :label="item.label"
+              :value="item.value"
+            />
+          </el-select>
+        </el-form-item>
       </el-form>
       <template #footer>
         <span class="dialog-footer">
           <el-button @click="dialogVisible = false" class="cancel-button">取消</el-button>
-          <el-button type="primary" @click="handleSubmit" class="confirm-button">确定</el-button>
+          <el-button type="primary" @click="handleSubmit" class="confirm-button" :loading="loading">确定</el-button>
         </span>
       </template>
     </el-dialog>
@@ -178,7 +199,7 @@
 </template>
 
 <script setup>
-import { ref, reactive } from 'vue'
+import { ref, reactive, onMounted, computed } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Search, Refresh, Edit, Key, Lock, Unlock, Iphone } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
@@ -199,15 +220,18 @@ const userList = ref([
     phone: '13800138000',
     email: 'zhangsan@example.com',
     createTime: '2024-03-31 10:00:00',
-    status: 'active'
+    status: 'active',
+    id: '1'
   },
   // 更多模拟数据...
 ])
 
 // 分页
-const currentPage = ref(1)
-const pageSize = ref(10)
-const total = ref(userList.value.length)
+const pagination = reactive({
+  currentPage: 1,
+  pageSize: 10,
+  total: 0
+})
 
 // 表单对话框
 const dialogVisible = ref(false)
@@ -218,8 +242,17 @@ const userForm = reactive({
   name: '',
   phone: '',
   email: '',
-  password: ''
+  password: '',
+  role: ''
 })
+
+// 可选的角色列表
+const userRoles = [
+  { value: 'ADMIN', label: '管理员' },
+  { value: 'RECEPTIONIST', label: '前台' },
+  { value: 'CLEANER', label: '清洁人员' },
+  { value: 'CUSTOMER', label: '普通用户' },
+]
 
 // 表单验证规则
 const userFormRules = {
@@ -239,8 +272,11 @@ const userFormRules = {
     { type: 'email', message: '请输入正确的邮箱地址', trigger: 'blur' }
   ],
   password: [
-    { required: true, message: '请输入密码', trigger: 'blur' },
+    { required: dialogType.value === 'add', message: '请输入密码', trigger: 'blur' },
     { min: 6, message: '密码长度不能小于6位', trigger: 'blur' }
+  ],
+  role: [
+    { required: dialogType.value === 'add', message: '请选择用户角色', trigger: 'change' }
   ]
 }
 
@@ -275,7 +311,7 @@ const resetPasswordRules = {
 
 // 搜索
 const handleSearch = () => {
-  currentPage.value = 1
+  pagination.currentPage = 1
   fetchUsers()
 }
 
@@ -283,6 +319,7 @@ const resetSearch = () => {
   Object.keys(searchForm).forEach(key => {
     searchForm[key] = ''
   })
+  pagination.currentPage = 1
   handleSearch()
 }
 
@@ -290,22 +327,15 @@ const resetSearch = () => {
 const fetchUsers = async () => {
   loading.value = true
   try {
-    // 使用更新的API调用，添加分页和过滤参数
     const response = await userApi.getAllUsers(
       pagination.currentPage,
       pagination.pageSize,
-      filterForm
+      searchForm
     )
     
     if (response.success && response.data) {
-      // 更新用户列表
       userList.value = response.data.users || []
-      
-      // 更新分页信息
       pagination.total = response.data.total || 0
-      
-      // 计算会员比例
-      calculateMemberRatio()
     } else {
       console.error('获取用户列表失败', response)
       ElMessage.error(response?.message || '获取用户列表失败')
@@ -320,12 +350,13 @@ const fetchUsers = async () => {
 
 // 分页处理
 const handleSizeChange = (val) => {
-  pageSize.value = val
+  pagination.pageSize = val
+  pagination.currentPage = 1
   fetchUsers()
 }
 
 const handleCurrentChange = (val) => {
-  currentPage.value = val
+  pagination.currentPage = val
   fetchUsers()
 }
 
@@ -355,15 +386,32 @@ const handleSubmit = async () => {
   
   await userFormRef.value.validate(async (valid) => {
     if (valid) {
+      loading.value = true;
       try {
-        // TODO: 调用后端API保存用户信息
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
-        dialogVisible.value = false
-        fetchUsers()
+        let response = null;
+        if (dialogType.value === 'add') {
+          response = await userApi.createUser(userForm);
+          ElMessage.success(response.message || '添加成功');
+        } else {
+          if (!userForm.id) {
+             console.error('编辑用户时缺少 ID');
+             ElMessage.error('编辑失败，缺少用户ID');
+             loading.value = false;
+             return;
+          }
+          const userDataToUpdate = { ...userForm };
+          delete userDataToUpdate.password;
+          response = await userApi.updateUserInfo(userForm.id, userDataToUpdate);
+          ElMessage.success(response.message || '修改成功');
+        }
+        
+        dialogVisible.value = false;
+        fetchUsers();
       } catch (error) {
-        console.error('保存用户信息失败:', error)
-        ElMessage.error('操作失败')
+        console.error('保存用户信息失败:', error);
+        ElMessage.error(error.message || '操作失败');
+      } finally {
+        loading.value = false;
       }
     }
   })
@@ -446,16 +494,16 @@ const deleteUser = async (row) => {
     const response = await userApi.deleteUser(row.id)
     
     if (response.success) {
-      // 从列表中移除该用户
-      const index = userList.value.findIndex(u => u.id === row.id)
-      if (index > -1) {
-        userList.value.splice(index, 1)
-      }
-      
-      // 更新分页信息
-      total.value -= 1
-      
+      // 暂时注释掉直接修改列表和总数的代码，让 fetchUsers 重新获取最新数据
+      // const index = userList.value.findIndex(u => u.id === row.id)
+      // if (index > -1) {
+      //   userList.value.splice(index, 1)
+      // }
+      // pagination.total -= 1 // 修改
       ElMessage.success('删除用户成功')
+      // 删除成功后重新请求数据，以保证分页和列表的准确性
+      // 如果当前页在删除后为空，可能需要跳转到前一页（这是一个优化点，暂时不处理）
+      fetchUsers()
     } else {
       ElMessage.error(response.message || '删除用户失败')
     }
@@ -530,8 +578,23 @@ const getUserCountByRole = async () => {
   }
 }
 
+// (新) 角色名称映射函数
+const getRoleDisplayName = (role) => {
+  const roleMap = {
+    ADMIN: '管理员',
+    RECEPTIONIST: '前台',
+    CLEANER: '清洁人员',
+    CUSTOMER: '普通用户',
+    SUPER_ADMIN: '超级管理员'
+  };
+  return roleMap[role] || role;
+};
+
 // 初始化
-fetchUsers()
+onMounted(() => {
+  fetchUsers()
+  // getUserCountByRole() // 如果需要也放在这里
+})
 </script>
 
 <style scoped>
