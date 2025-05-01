@@ -213,10 +213,16 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public void toggleUserStatus(Long userId, boolean enabled) {
+    public void toggleUserStatus(Long userId) {
         User user = getUserById(userId);
-        user.setEnabled(enabled);
+        // 获取当前状态，并计算新状态
+        String currentStatus = user.getStatus();
+        String newStatus = "ACTIVE".equalsIgnoreCase(currentStatus) ? "DISABLED" : "ACTIVE"; // 假设数据库用 ACTIVE/DISABLED
+        // 设置新状态
+        user.setStatus(newStatus);
+        // 保存用户
         userRepository.save(user);
+        System.out.println("用户状态已切换至: " + newStatus + " for userId: " + userId);
     }
 
     @Override

@@ -48,8 +48,8 @@ public class User {
     @Enumerated(EnumType.STRING)
     private UserRole role;
 
-    @Column(nullable = false)
-    private Boolean enabled = true;
+    @Column(nullable = false, length = 20)
+    private String status = "ACTIVE";
     
     @OneToMany(mappedBy = "user")
     @JsonIgnoreProperties("user")

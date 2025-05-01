@@ -71,11 +71,11 @@
         <el-table-column prop="status" label="状态" width="100" align="center">
           <template #default="{ row }">
             <el-tag 
-              :type="row.status === 'active' ? 'success' : 'danger'"
+              :type="row.status === 'ACTIVE' ? 'success' : 'danger'"
               effect="dark"
               class="status-tag"
             >
-              {{ row.status === 'active' ? '正常' : '禁用' }}
+              {{ row.status === 'ACTIVE' ? '正常' : '禁用' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -89,13 +89,13 @@
                 <el-icon><Key /></el-icon>重置密码
               </el-button>
               <el-button 
-                :type="row.status === 'active' ? 'danger' : 'success'"
+                :type="row.status === 'ACTIVE' ? 'danger' : 'success'"
                 link 
                 @click="handleToggleStatus(row)"
                 class="action-button"
               >
-                <el-icon><component :is="row.status === 'active' ? 'Lock' : 'Unlock'" /></el-icon>
-                {{ row.status === 'active' ? '禁用' : '启用' }}
+                <el-icon><component :is="row.status === 'ACTIVE' ? 'Lock' : 'Unlock'" /></el-icon>
+                {{ row.status === 'ACTIVE' ? '禁用' : '启用' }}
               </el-button>
             </div>
           </template>
@@ -325,28 +325,40 @@ const resetSearch = () => {
 
 // 获取用户列表
 const fetchUsers = async () => {
-  loading.value = true
+  console.log('fetchUsers called. Current page:', pagination.currentPage, 'pageSize:', pagination.pageSize, 'Filters:', searchForm);
+  loading.value = true;
   try {
     const response = await userApi.getAllUsers(
       pagination.currentPage,
       pagination.pageSize,
       searchForm
-    )
+    );
     
-    if (response.success && response.data) {
-      userList.value = response.data.users || []
-      pagination.total = response.data.total || 0
+    // 添加日志，检查返回的数据结构和 status 值
+    console.log('API response received:', response);
+
+    if (response.success && response.data && response.data.users) {
+      // 在更新前打印具体的用户数据
+      console.log('Fetched users data before update:', JSON.stringify(response.data.users)); 
+      userList.value = response.data.users;
+      pagination.total = response.data.total || 0;
+      console.log('userList updated. Total:', pagination.total);
     } else {
-      console.error('获取用户列表失败', response)
-      ElMessage.error(response?.message || '获取用户列表失败')
+      console.error('获取用户列表失败或数据结构错误', response);
+      userList.value = []; // 清空列表以防万一
+      pagination.total = 0;
+      ElMessage.error(response?.message || '获取用户列表失败');
     }
   } catch (error) {
-    console.error('获取用户列表失败:', error)
-    ElMessage.error(error.message || '获取用户列表失败')
+    console.error('获取用户列表失败 (catch block):', error);
+    userList.value = []; // 出错时也清空列表
+    pagination.total = 0;
+    ElMessage.error(error.message || '获取用户列表失败');
   } finally {
-    loading.value = false
+    loading.value = false;
+    console.log('fetchUsers finished.');
   }
-}
+};
 
 // 分页处理
 const handleSizeChange = (val) => {
@@ -448,8 +460,8 @@ const handleToggleStatus = async (row) => {
   try {
     // 确认对话框
     await ElMessageBox.confirm(
-      `确定要${row.status === 'active' ? '禁用' : '启用'}用户 "${row.username}" 吗？`,
-      row.status === 'active' ? '禁用用户' : '启用用户',
+      `确定要${row.status === 'ACTIVE' ? '禁用' : '启用'}用户 "${row.username}" 吗？`,
+      row.status === 'ACTIVE' ? '禁用用户' : '启用用户',
       {
         confirmButtonText: '确定',
         cancelButtonText: '取消',
@@ -457,22 +469,26 @@ const handleToggleStatus = async (row) => {
       }
     )
     
-    // 使用更新的API调用
-    const response = await userApi.toggleUserStatus(row.id, row.status === 'active')
+    loading.value = true;
+    // 调用更新后的API，移除第二个参数
+    const response = await userApi.toggleUserStatus(row.id);
     
     if (response.success) {
-      // 更新本地状态
-      row.status = row.status === 'active' ? 'disabled' : 'active'
-      ElMessage.success(`${row.status === 'active' ? '启用' : '禁用'}用户成功`)
+      // 删除本地状态修改
+      // row.status = row.status === 'active' ? 'disabled' : 'active'
+      ElMessage.success(response.message || '用户状态已切换');
+      // 添加 fetchUsers() 刷新列表
+      fetchUsers(); 
     } else {
-      ElMessage.error(response.message || `${row.status === 'active' ? '禁用' : '启用'}用户失败`)
+      ElMessage.error(response.message || '切换用户状态失败');
     }
   } catch (error) {
-    // 取消操作或API错误
     if (error !== 'cancel' && error.message !== 'cancel') {
-      console.error('切换用户状态失败:', error)
-      ElMessage.error(error.message || '操作失败')
+      console.error('切换用户状态失败:', error);
+      ElMessage.error(error.message || '操作失败');
     }
+  } finally {
+     loading.value = false; // 结束加载
   }
 }
 

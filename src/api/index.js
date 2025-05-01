@@ -361,19 +361,20 @@ export const userApi = {
   },
   
   // 切换用户状态(管理员权限)
-  toggleUserStatus: (id, enabled) => {
+  toggleUserStatus: (id) => {
     if (!id) {
-      return Promise.reject(new Error('用户ID不能为空'))
+      return Promise.reject(new Error('用户ID不能为空'));
     }
     
-    console.log('调用切换用户状态API, ID:', id, '状态:', enabled)
-    return apiClient.put(`/api/users/${id}/status?enabled=${enabled}`)
+    console.log('调用切换用户状态API, ID:', id);
+    // 更新 URL 并移除查询参数
+    return apiClient.put(`/api/users/${id}/toggle-status`) 
       .then(response => {
-        console.log('切换用户状态API响应:', response)
+        console.log('切换用户状态API响应:', response);
         if (!response || response.success === false) {
-          throw new Error(response?.message || '切换用户状态失败')
+          throw new Error(response?.message || '切换用户状态失败');
         }
-        return response
+        return response;
       })
       .catch(error => {
         console.error('切换用户状态API错误:', error)

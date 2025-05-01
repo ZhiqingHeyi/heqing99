@@ -22,9 +22,9 @@ public interface UserRepository extends JpaRepository<User, Long>, JpaSpecificat
 
     List<User> findByRole(User.UserRole role);
 
-    List<User> findByRoleAndEnabledTrue(User.UserRole role);
+    List<User> findByRoleAndStatus(User.UserRole role, String status);
 
-    @Query("SELECT u FROM User u WHERE (u.role = 'ADMIN' OR u.role = 'RECEPTIONIST' OR u.role = 'CLEANER') AND u.enabled = true")
+    @Query("SELECT u FROM User u WHERE (u.role = 'ADMIN' OR u.role = 'RECEPTIONIST' OR u.role = 'CLEANER') AND u.status = 'ACTIVE'")
     List<User> findAllActiveStaff();
 
     @Query("SELECT COUNT(u) FROM User u WHERE u.role = ?1")

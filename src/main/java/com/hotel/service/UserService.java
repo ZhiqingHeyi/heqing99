@@ -64,9 +64,9 @@ public interface UserService {
     List<User> getUsersByRole(User.UserRole role);
 
     /**
-     * 启用/禁用用户
+     * 启用/禁用用户 (修改签名)
      */
-    void toggleUserStatus(Long id, boolean enabled);
+    void toggleUserStatus(Long userId);
 
     /**
      * 获取所有在职的保洁人员

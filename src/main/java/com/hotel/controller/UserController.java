@@ -479,19 +479,18 @@ public class UserController {
         }
     }
 
-    @PutMapping("/{id}/status")
+    @PutMapping("/{id}/toggle-status")
     public ResponseEntity<?> toggleUserStatus(
-            @PathVariable Long id,
-            @RequestParam boolean enabled) {
+            @PathVariable Long id) {
         try {
-            System.out.println("接收到切换用户状态请求, userId: " + id + ", enabled: " + enabled);
-            userService.toggleUserStatus(id, enabled);
+            System.out.println("接收到切换用户状态请求, userId: " + id);
+            userService.toggleUserStatus(id);
             
             Map<String, Object> response = new HashMap<>();
             response.put("success", true);
-            response.put("message", "用户状态已更新");
+            response.put("message", "用户状态已切换");
             
-            System.out.println("用户状态更新成功, userId: " + id + ", enabled: " + enabled);
+            System.out.println("用户状态切换成功, userId: " + id);
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("切换用户状态失败: " + e.getMessage());
@@ -597,8 +596,9 @@ public class UserController {
             // 加密密码
             newUser.setPassword(passwordEncoder.encode(newUser.getPassword()));
 
-            // 设置默认启用状态
-            newUser.setEnabled(true);
+            // 设置状态 (修复 Linter Error)
+            newUser.setStatus("ACTIVE"); // 设置默认状态为 ACTIVE
+            
             // 如果前端没传会员等级，设置默认值
             if (newUser.getMemberLevel() == null) {
                 newUser.setMemberLevel(com.hotel.entity.MemberLevel.REGULAR);

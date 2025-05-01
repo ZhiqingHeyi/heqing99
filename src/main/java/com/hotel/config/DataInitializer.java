@@ -26,7 +26,7 @@ public class DataInitializer implements CommandLineRunner {
             adminUser.setPassword(passwordEncoder.encode("admin123"));
             adminUser.setName("系统管理员");
             adminUser.setRole(User.UserRole.ADMIN);
-            adminUser.setEnabled(true);
+            adminUser.setStatus("ACTIVE");
             adminUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(adminUser);
             
@@ -40,7 +40,7 @@ public class DataInitializer implements CommandLineRunner {
             frontUser.setPassword(passwordEncoder.encode("front123"));
             frontUser.setName("前台接待");
             frontUser.setRole(User.UserRole.RECEPTIONIST);
-            frontUser.setEnabled(true);
+            frontUser.setStatus("ACTIVE");
             frontUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(frontUser);
             
@@ -54,7 +54,7 @@ public class DataInitializer implements CommandLineRunner {
             cleanerUser.setPassword(passwordEncoder.encode("cleaner123"));
             cleanerUser.setName("清洁人员");
             cleanerUser.setRole(User.UserRole.CLEANER);
-            cleanerUser.setEnabled(true);
+            cleanerUser.setStatus("ACTIVE");
             cleanerUser.setMemberLevel(MemberLevel.REGULAR); // 设置默认会员等级
             userRepository.save(cleanerUser);
             
@@ -70,7 +70,7 @@ public class DataInitializer implements CommandLineRunner {
             customerUser.setPhone("13800138000");
             customerUser.setEmail("customer@example.com");
             customerUser.setRole(User.UserRole.CUSTOMER);
-            customerUser.setEnabled(true);
+            customerUser.setStatus("ACTIVE");
             customerUser.setMemberLevel(MemberLevel.SILVER); // 设置为银牌会员
             customerUser.setPoints(200); // 设置初始积分
             userRepository.save(customerUser);
