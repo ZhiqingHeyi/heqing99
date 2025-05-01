@@ -14,6 +14,7 @@ apiClient.interceptors.request.use(
   config => {
     const url = config.url || '';
     const method = (config.method || '').toUpperCase();
+    console.log(`[Request Interceptor] URL: ${url}, Method: ${method}`);
 
     // 定义需要管理员权限的 API 路径判断逻辑
     const isAdminPath = 
@@ -23,32 +24,36 @@ apiClient.interceptors.request.use(
       url.startsWith('/api/users/staff/active') ||
       url.startsWith('/api/users/count/') ||
       url.startsWith('/api/invitation-codes');
+    console.log(`[Request Interceptor] Is Admin Path? ${isAdminPath}`);
 
     let token = null;
 
     if (isAdminPath) {
       // 如果是管理员路径，只尝试获取 adminToken
       token = localStorage.getItem('adminToken');
+      console.log(`[Request Interceptor] Retrieved adminToken: ${token ? 'Found' : 'Not Found'}`);
       if (token) {
-        console.log('Interceptor: Using adminToken for path:', url);
+        console.log('[Request Interceptor] Adding Authorization header for admin path.');
         config.headers['Authorization'] = `Bearer ${token}`;
       } else {
-        console.warn('Interceptor: adminToken not found for admin path:', url);
+        console.warn('[Request Interceptor] adminToken not found for admin path:', url);
         // 对于需要管理员权限的接口，如果没找到 adminToken，可能需要阻止请求或提示登录
         // 但当前仅记录警告，允许请求继续（后端会处理权限）
       }
     } else {
       // 如果不是管理员路径，只尝试获取 userToken
       token = localStorage.getItem('userToken');
+       console.log(`[Request Interceptor] Retrieved userToken: ${token ? 'Found' : 'Not Found'}`);
       if (token) {
         // 为调试添加日志，确认是否使用了 userToken
-        // console.log('Interceptor: Using userToken for path:', url); 
+         console.log('[Request Interceptor] Adding Authorization header for user path.');
         config.headers['Authorization'] = `Bearer ${token}`;
       } else {
          // 对于非管理员路径，没找到 userToken 是正常的（例如公共接口）
-         // console.log('Interceptor: userToken not found for path:', url);
+         // console.log('[Request Interceptor] userToken not found for path:', url);
       }
     }
+    console.log('[Request Interceptor] Final Headers:', JSON.stringify(config.headers));
 
     return config;
   },

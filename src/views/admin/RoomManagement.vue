@@ -8,79 +8,100 @@
     </div>
 
     <!-- 操作栏 -->
-    <div class="action-bar">
-      <div class="filter-section">
-        <el-select v-model="filterOptions.floorFilter" placeholder="楼层" clearable>
-          <el-option label="全部楼层" value=""></el-option>
-          <el-option v-for="floor in floorOptions" :key="floor" :label="`${floor}层`" :value="floor"></el-option>
-        </el-select>
-        <el-select v-model="filterOptions.typeFilter" placeholder="房型" clearable>
-          <el-option label="全部房型" value=""></el-option>
-          <el-option v-for="type in roomTypes" :key="type.id" :label="type.name" :value="type.id"></el-option>
-        </el-select>
-        <el-select v-model="filterOptions.statusFilter" placeholder="状态" clearable>
-          <el-option label="全部状态" value=""></el-option>
-          <el-option v-for="status in statusOptions" :key="status.value" :label="status.label" :value="status.value"></el-option>
-        </el-select>
-        <el-input v-model="filterOptions.searchKeyword" placeholder="搜索房间号" clearable></el-input>
-      </div>
-      <div class="action-buttons">
-        <el-button type="primary" @click="openAddRoomDialog">添加房间</el-button>
-        <el-button type="success" @click="openAddRoomTypeDialog">添加房型</el-button>
-      </div>
-    </div>
+    <el-card class="search-card">
+      <el-form :inline="true" :model="filterOptions" class="search-form">
+        <el-form-item label="楼层">
+          <el-select v-model="filterOptions.floorFilter" placeholder="楼层" clearable>
+            <el-option label="全部楼层" value=""></el-option>
+            <el-option v-for="floor in floorOptions" :key="floor" :label="`${floor}层`" :value="floor"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="房型">
+          <el-select v-model="filterOptions.typeFilter" placeholder="房型" clearable>
+            <el-option label="全部房型" value=""></el-option>
+            <el-option v-for="type in roomTypes" :key="type.id" :label="type.name" :value="type.id"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="状态">
+          <el-select v-model="filterOptions.statusFilter" placeholder="状态" clearable>
+            <el-option label="全部状态" value=""></el-option>
+            <el-option v-for="status in statusOptions" :key="status.value" :label="status.label" :value="status.value"></el-option>
+          </el-select>
+        </el-form-item>
+        <el-form-item label="房间号">
+          <el-input v-model="filterOptions.searchKeyword" placeholder="搜索房间号" clearable prefix-icon="Search"></el-input>
+        </el-form-item>
+        <el-form-item>
+          <el-button type="primary" @click="openAddRoomDialog" class="add-button">
+             <el-icon class="button-icon"><Plus /></el-icon>添加房间
+          </el-button>
+          <el-button type="success" @click="openAddRoomTypeDialog" class="add-type-button">
+             <el-icon class="button-icon"><Plus /></el-icon>添加房型
+          </el-button>
+          <el-button @click="resetFilters" class="reset-button">
+             <el-icon class="button-icon"><Refresh /></el-icon>重置
+          </el-button>
+        </el-form-item>
+      </el-form>
+    </el-card>
 
     <!-- 房间列表 -->
-    <el-table 
-      :data="filteredRooms" 
-      style="width: 100%" 
-      border 
-      stripe
-      v-loading="loading"
-      class="room-table">
-      <el-table-column prop="roomNumber" label="房间号" width="120" sortable></el-table-column>
-      <el-table-column prop="floor" label="楼层" width="120" sortable></el-table-column>
-      <el-table-column label="房型" min-width="160">
-        <template #default="scope">
-          {{ scope.row.roomType ? scope.row.roomType.name : '未分配' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="基础价格" width="120" sortable>
-        <template #default="scope">
-          ¥{{ scope.row.roomType ? scope.row.roomType.basePrice : '0.00' }}
-        </template>
-      </el-table-column>
-      <el-table-column label="容量" width="120" sortable>
-        <template #default="scope">
-          {{ scope.row.roomType ? scope.row.roomType.capacity : '0' }}人
-        </template>
-      </el-table-column>
-      <el-table-column label="状态" width="150">
-        <template #default="scope">
-          <el-tag :type="getStatusType(scope.row.status)" effect="light">
-            {{ getStatusText(scope.row.status) }}
-          </el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="清洁状态" width="120">
-        <template #default="scope">
-          <el-tag type="warning" effect="light" v-if="scope.row.needCleaning">需要清洁</el-tag>
-          <el-tag type="success" effect="light" v-else>已清洁</el-tag>
-        </template>
-      </el-table-column>
-      <el-table-column label="更新时间" width="180" sortable>
-        <template #default="scope">
-          {{ formatDateTime(scope.row.updateTime) }}
-        </template>
-      </el-table-column>
-      <el-table-column label="操作" width="280" fixed="right">
-        <template #default="scope">
-          <el-button size="small" type="primary" @click="editRoom(scope.row)">编辑</el-button>
-          <el-button size="small" type="warning" @click="changeRoomStatus(scope.row)">修改状态</el-button>
-          <el-button size="small" type="danger" @click="confirmDeleteRoom(scope.row)">删除</el-button>
-        </template>
-      </el-table-column>
-    </el-table>
+    <el-card class="list-card">
+      <div class="list-header">
+        <div class="list-title">房间列表</div>
+        <div class="list-summary">共 <span class="highlight-text">{{ totalRooms }}</span> 间房</div>
+      </div>
+      <el-table 
+        :data="filteredRooms" 
+        style="width: 100%" 
+        border 
+        stripe
+        v-loading="loading"
+        class="staff-table">
+        <el-table-column prop="roomNumber" label="房间号" width="120" sortable></el-table-column>
+        <el-table-column prop="floor" label="楼层" width="120" sortable></el-table-column>
+        <el-table-column label="房型" min-width="160">
+          <template #default="scope">
+            {{ scope.row.roomType ? scope.row.roomType.name : '未分配' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="基础价格" width="120" sortable>
+          <template #default="scope">
+            ¥{{ scope.row.roomType ? scope.row.roomType.basePrice : '0.00' }}
+          </template>
+        </el-table-column>
+        <el-table-column label="容量" width="120" sortable>
+          <template #default="scope">
+            {{ scope.row.roomType ? scope.row.roomType.capacity : '0' }}人
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="150">
+          <template #default="scope">
+            <el-tag :type="getStatusType(scope.row.status)" effect="light">
+              {{ getStatusText(scope.row.status) }}
+            </el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="清洁状态" width="120">
+          <template #default="scope">
+            <el-tag type="warning" effect="light" v-if="scope.row.needCleaning">需要清洁</el-tag>
+            <el-tag type="success" effect="light" v-else>已清洁</el-tag>
+          </template>
+        </el-table-column>
+        <el-table-column label="更新时间" width="180" sortable>
+          <template #default="scope">
+            {{ formatDateTime(scope.row.updateTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="280" fixed="right">
+          <template #default="scope">
+            <el-button size="small" type="primary" @click="editRoom(scope.row)">编辑</el-button>
+            <el-button size="small" type="warning" @click="changeRoomStatus(scope.row)">修改状态</el-button>
+            <el-button size="small" type="danger" @click="confirmDeleteRoom(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+    </el-card>
 
     <!-- 分页 -->
     <div class="pagination-container">
@@ -101,8 +122,8 @@
       :title="isEditing ? '编辑房间' : '添加新房间'"
       width="600px"
       destroy-on-close
-    >
-      <el-form :model="roomForm" :rules="roomRules" ref="roomFormRef" label-width="120px">
+      class="custom-dialog">
+      <el-form :model="roomForm" :rules="roomRules" ref="roomFormRef" label-width="120px" class="custom-form">
         <el-form-item label="房间号" prop="roomNumber">
           <el-input v-model="roomForm.roomNumber" placeholder="例如：301"></el-input>
         </el-form-item>
@@ -128,8 +149,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="addRoomDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitRoomForm" :loading="submitting">确定</el-button>
+          <el-button @click="addRoomDialogVisible = false" class="cancel-button">取消</el-button>
+          <el-button type="primary" @click="submitRoomForm" :loading="submitting" class="confirm-button">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -140,8 +161,8 @@
       :title="isEditingType ? '编辑房型' : '添加新房型'"
       width="600px"
       destroy-on-close
-    >
-      <el-form :model="roomTypeForm" :rules="roomTypeRules" ref="roomTypeFormRef" label-width="120px">
+      class="custom-dialog">
+      <el-form :model="roomTypeForm" :rules="roomTypeRules" ref="roomTypeFormRef" label-width="120px" class="custom-form">
         <el-form-item label="房型名称" prop="name">
           <el-input v-model="roomTypeForm.name" placeholder="例如：豪华大床房"></el-input>
         </el-form-item>
@@ -160,8 +181,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="addRoomTypeDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitRoomTypeForm" :loading="submitting">确定</el-button>
+          <el-button @click="addRoomTypeDialogVisible = false" class="cancel-button">取消</el-button>
+          <el-button type="primary" @click="submitRoomTypeForm" :loading="submitting" class="confirm-button">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -172,8 +193,8 @@
       title="修改房间状态"
       width="400px"
       destroy-on-close
-    >
-      <el-form :model="statusForm" ref="statusFormRef" label-width="120px">
+      class="custom-dialog">
+      <el-form :model="statusForm" ref="statusFormRef" label-width="120px" class="custom-form">
         <el-form-item label="当前状态">
           <el-tag :type="getStatusType(statusForm.currentStatus)" effect="light">
             {{ getStatusText(statusForm.currentStatus) }}
@@ -187,8 +208,8 @@
       </el-form>
       <template #footer>
         <div class="dialog-footer">
-          <el-button @click="changeStatusDialogVisible = false">取消</el-button>
-          <el-button type="primary" @click="submitStatusChange" :loading="submitting">确定</el-button>
+          <el-button @click="changeStatusDialogVisible = false" class="cancel-button">取消</el-button>
+          <el-button type="primary" @click="submitStatusChange" :loading="submitting" class="confirm-button">确定</el-button>
         </div>
       </template>
     </el-dialog>
@@ -198,7 +219,7 @@
 <script setup>
 import { ref, reactive, computed, onMounted } from 'vue';
 import { ElMessage, ElMessageBox } from 'element-plus';
-import axios from 'axios';
+import apiClient from '@/api';
 
 // 状态定义
 const loading = ref(false);
@@ -220,6 +241,16 @@ const filterOptions = reactive({
   statusFilter: '',
   searchKeyword: '',
 });
+
+// 重置筛选条件
+const resetFilters = () => {
+  filterOptions.floorFilter = '';
+  filterOptions.typeFilter = '';
+  filterOptions.statusFilter = '';
+  filterOptions.searchKeyword = '';
+  // 如果需要重置后立即刷新列表，取消下一行注释
+  // loadRooms(); 
+};
 
 // 楼层选项（从1到20）
 const floorOptions = Array.from({ length: 20 }, (_, i) => i + 1);
@@ -335,15 +366,33 @@ const loadRooms = async () => {
   loading.value = true;
   try {
     // 获取所有房间
-    const response = await axios.get('/api/admin/rooms');
-    rooms.value = response.data;
-    totalRooms.value = rooms.value.length;
+    const response = await apiClient.get('/api/admin/rooms');
     
-    // 加载房型
-    await loadRoomTypes();
+    // --- 注意：后端 AdminRoomController 的 getAllRooms 返回了包装后的数据格式 --- 
+    // { success: true, code: 200, message: '获取成功', data: { total: ..., list: [...] } }
+    // --- 而不是直接返回数组或分页对象 --- 
+    
+    // 检查响应是否成功且包含 data 字段
+    if (response && response.success && response.data) {
+      rooms.value = response.data.list; // 从 data.list 获取房间列表
+      totalRooms.value = response.data.total; // 从 data.total 获取总数
+      // 加载房型 (保持不变，假设也使用 apiClient)
+      await loadRoomTypes(); 
+    } else {
+      // 处理获取数据失败的情况
+      console.error('加载房间失败: 响应格式不正确或失败', response);
+      // 使用后端返回的错误消息，如果没有则使用默认消息
+      ElMessage.error(response?.message || '加载房间列表失败，响应格式不正确');
+      rooms.value = []; // 清空列表
+      totalRooms.value = 0; // 重置总数
+    }
+
   } catch (error) {
-    console.error('加载房间失败:', error);
-    ElMessage.error('加载房间列表失败，请重试');
+    // axios 拦截器已经处理了基本错误并设置了 error.message
+    console.error('加载房间失败 (catch):', error);
+    ElMessage.error(error.message || '加载房间列表时发生未知错误');
+    rooms.value = []; // 清空列表
+    totalRooms.value = 0; // 重置总数
   } finally {
     loading.value = false;
   }
@@ -352,11 +401,22 @@ const loadRooms = async () => {
 // 加载房型列表
 const loadRoomTypes = async () => {
   try {
-    const response = await axios.get('/api/admin/rooms/types');
-    roomTypes.value = response.data;
+    const response = await apiClient.get('/api/admin/roomtypes');
+    
+    // --- 后端 AdminDashboardController @GetMapping("/roomtypes") 返回 { success: true, data: [...] } 格式 --- 
+    
+    if (response && response.success && response.data) {
+        roomTypes.value = response.data; // 直接使用 data 数组
+    } else {
+        console.error('加载房型失败: 响应格式不正确或失败', response);
+        ElMessage.error(response?.message || '加载房型列表失败，响应格式不正确');
+        roomTypes.value = []; // 清空
+    }
+    
   } catch (error) {
-    console.error('加载房型失败:', error);
-    ElMessage.error('加载房型列表失败，请重试');
+    console.error('加载房型失败 (catch):', error);
+    ElMessage.error(error.message || '加载房型列表时发生未知错误');
+    roomTypes.value = []; // 清空
   }
 };
 
@@ -432,12 +492,12 @@ const confirmDeleteRoom = (room) => {
 const deleteRoom = async (roomId) => {
   loading.value = true;
   try {
-    await axios.delete(`/api/admin/rooms/${roomId}`);
+    await apiClient.delete(`/api/admin/rooms/${roomId}`);
     ElMessage.success('删除房间成功');
     await loadRooms();
   } catch (error) {
-    console.error('删除房间失败:', error);
-    ElMessage.error('删除房间失败，请重试');
+    console.error('删除房间失败 (catch):', error);
+    ElMessage.error(error.message || '删除房间失败，请重试');
   } finally {
     loading.value = false;
   }
@@ -460,19 +520,19 @@ const submitRoomForm = async () => {
         
         if (isEditing.value) {
           // 更新房间
-          await axios.put(`/api/admin/rooms/${roomForm.id}`, roomData);
+          await apiClient.put(`/api/admin/rooms/${roomForm.id}`, roomData);
           ElMessage.success('更新房间成功');
         } else {
           // 添加新房间
-          await axios.post('/api/admin/rooms', roomData);
+          await apiClient.post('/api/admin/rooms', roomData);
           ElMessage.success('添加房间成功');
         }
         
         addRoomDialogVisible.value = false;
         await loadRooms();
       } catch (error) {
-        console.error('保存房间失败:', error);
-        ElMessage.error('保存房间失败: ' + (error.response?.data?.message || '请重试'));
+        console.error('保存房间失败 (catch):', error);
+        ElMessage.error(error.message || '保存房间失败，请重试');
       } finally {
         submitting.value = false;
       }
@@ -490,19 +550,19 @@ const submitRoomTypeForm = async () => {
       try {
         if (isEditingType.value) {
           // 更新房型
-          await axios.put(`/api/roomtypes/${roomTypeForm.id}`, roomTypeForm);
+          await apiClient.put(`/api/roomtypes/${roomTypeForm.id}`, roomTypeForm);
           ElMessage.success('更新房型成功');
         } else {
           // 添加新房型
-          await axios.post('/api/admin/rooms/types', roomTypeForm);
+          await apiClient.post('/api/admin/rooms/types', roomTypeForm);
           ElMessage.success('添加房型成功');
         }
         
         addRoomTypeDialogVisible.value = false;
         await loadRoomTypes();
       } catch (error) {
-        console.error('保存房型失败:', error);
-        ElMessage.error('保存房型失败: ' + (error.response?.data?.message || '请重试'));
+        console.error('保存房型失败 (catch):', error);
+        ElMessage.error(error.message || '保存房型失败，请重试');
       } finally {
         submitting.value = false;
       }
@@ -527,15 +587,15 @@ const submitStatusChange = async () => {
   
   submitting.value = true;
   try {
-    await axios.put(`/api/rooms/${statusForm.roomId}/status`, {
+    await apiClient.put(`/api/rooms/${statusForm.roomId}/status`, {
       status: statusForm.newStatus
     });
     ElMessage.success('修改房间状态成功');
     changeStatusDialogVisible.value = false;
     await loadRooms();
   } catch (error) {
-    console.error('修改房间状态失败:', error);
-    ElMessage.error('修改房间状态失败，请重试');
+    console.error('修改房间状态失败 (catch):', error);
+    ElMessage.error(error.message || '修改房间状态失败，请重试');
   } finally {
     submitting.value = false;
   }
@@ -603,63 +663,545 @@ onMounted(() => {
 </script>
 
 <style scoped>
-.room-management-container {
-  padding: 20px;
+/* 删除原有样式，粘贴 Staff.vue 的样式并清理 */
+.staff-container { /* 修改为 room-management-container ? 或者保持通用? 保持 staff-container */
+  padding: 24px;
+  min-height: 100vh;
+  background-color: #f5f7fa;
 }
 
 .page-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
   margin-bottom: 24px;
+  background: #fff;
+  padding: 24px 28px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  position: relative;
+  overflow: hidden;
+}
+
+.page-header::after {
+  content: '';
+  position: absolute;
+  right: -40px;
+  top: -40px;
+  width: 180px;
+  height: 180px;
+  background: linear-gradient(135deg, rgba(52, 152, 219, 0.05), rgba(44, 62, 80, 0.08));
+  border-radius: 50%;
+  z-index: 0;
+}
+
+.header-content {
+  position: relative;
+  z-index: 1;
+}
+
+.header-content h2 {
+  margin: 0;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.5px;
 }
 
 .gradient-text {
-  background: linear-gradient(to right, #3a8ee6, #53a8ff);
+  background: linear-gradient(135deg, #3498db, #2c3e50); /* 统一颜色 */
   -webkit-background-clip: text;
-  color: transparent;
+  background-clip: text;
+  -webkit-text-fill-color: transparent;
+  position: relative;
+}
+
+.gradient-text::after {
+  content: '';
+  position: absolute;
+  bottom: -8px;
+  left: 0;
+  width: 40px;
+  height: 3px;
+  background: linear-gradient(135deg, #3498db, #2c3e50);
+  border-radius: 3px;
 }
 
 .header-description {
-  color: #666;
-  font-size: 14px;
-  margin-top: 8px;
+  margin: 16px 0 0;
+  color: #606266;
+  font-size: 15px;
+  max-width: 450px;
 }
 
-.action-bar {
+.header-actions {
+  display: flex;
+  gap: 12px;
+  position: relative;
+  z-index: 1;
+}
+
+.add-button, .invite-button { /* invite-button 可以移除或重命名 */
+  border: none;
+  padding: 12px 24px;
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+}
+
+.add-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+}
+
+/* .invite-button {
+  background: linear-gradient(135deg, #2ecc71, #27ae60);
+} */
+/* 添加 add-type-button 样式，使用 success 颜色 */
+.add-type-button {
+  border: none;
+  padding: 12px 24px; /* 保持一致 */
+  border-radius: 12px;
+  display: flex;
+  align-items: center;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  letter-spacing: 0.5px;
+  position: relative;
+  overflow: hidden;
+  z-index: 1;
+  background: linear-gradient(135deg, #67c23a, #5cb85c); /* Success gradient */
+  color: white; 
+}
+
+.add-button::before, .add-type-button::before { /* .invite-button::before */
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  transition: opacity 0.3s ease;
+  z-index: -1;
+}
+
+.add-button::before {
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+}
+
+.add-type-button::before { /* .invite-button::before */
+  background: linear-gradient(135deg, #5cb85c, #4cae4c); /* Darker success gradient */
+}
+
+.add-button:hover, .add-type-button:hover { /* .invite-button:hover */
+  transform: translateY(-3px);
+}
+
+.add-button:hover {
+  box-shadow: 0 8px 20px rgba(41, 128, 185, 0.3);
+}
+
+.add-type-button:hover {
+  box-shadow: 0 8px 20px rgba(88, 184, 92, 0.3);
+}
+
+.add-button:hover::before, .add-type-button:hover::before { /* .invite-button:hover::before */
+  opacity: 1;
+}
+
+.button-icon {
+  margin-right: 8px;
+  font-size: 16px;
+}
+
+.search-card {
+  margin-bottom: 24px;
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding: 5px 10px;
+  border: none;
+}
+
+.search-form {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+}
+
+.search-form :deep(.el-form-item) {
+  margin-bottom: 10px;
+  margin-right: 20px;
+}
+
+.search-form :deep(.el-input__wrapper),
+.search-form :deep(.el-select__wrapper) {
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.04);
+  border-radius: 10px;
+  transition: all 0.3s ease;
+}
+
+.search-form :deep(.el-input__wrapper:hover),
+.search-form :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.search-form :deep(.el-input__wrapper:focus-within),
+.search-form :deep(.el-select__wrapper:focus-within) {
+  box-shadow: 0 0 0 1px #3498db inset, 0 3px 10px rgba(52, 152, 219, 0.1);
+}
+
+.search-button, /* Staff.vue 中没有 search-button, 但可以保留 */
+.reset-button {
+  display: flex;
+  align-items: center;
+  border-radius: 10px;
+  padding: 10px 18px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+}
+
+/* .search-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  margin-right: 12px;
+} */
+
+/* .search-button:hover {
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(41, 128, 185, 0.2);
+} */
+
+.reset-button {
+  border: 1px solid #dcdfe6;
+}
+
+.reset-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+  background-color: #f8f9fa;
+}
+
+.list-card {
+  border-radius: 16px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  padding-bottom: 0;
+  border: none;
+  overflow: hidden;
+}
+
+.list-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 20px;
-  flex-wrap: wrap;
-  gap: 12px;
+  align-items: center;
+  padding: 20px 24px;
+  border-bottom: 1px solid #f0f0f0;
+  background: linear-gradient(to right, #f8f9fa, #f0f7ff);
 }
 
-.filter-section {
+.list-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  position: relative;
+  padding-left: 15px;
+}
+
+.list-title::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 50%;
+  transform: translateY(-50%);
+  width: 4px;
+  height: 18px;
+  background: linear-gradient(to bottom, #3498db, #2980b9);
+  border-radius: 2px;
+}
+
+.list-summary {
+  font-size: 15px;
+  color: #606266;
+}
+
+.highlight-text {
+  color: #3498db;
+  font-weight: 600;
+  font-size: 16px;
+}
+
+.staff-table { /* 应用于房间列表 */
+  margin: 10px 0;
+}
+
+.staff-table :deep(.el-table__header-wrapper) {
+  background-color: #f8f9fb;
+}
+
+.staff-table :deep(.el-table__header) {
+  font-weight: 600;
+}
+
+.staff-table :deep(.el-table__header th) {
+  background-color: #f5f7fa;
+  color: #303133;
+  font-size: 15px;
+  padding: 16px 0;
+}
+
+.staff-table :deep(.el-table__row) {
+  transition: all 0.3s ease;
+}
+
+.staff-table :deep(.el-table__row td) {
+  padding: 16px 0;
+}
+
+.staff-table :deep(.el-table__row:hover) {
+  background-color: #f0f7ff !important;
+}
+
+.role-tag, .status-tag { /* status-tag 可以保留给房间状态 */
+  border-radius: 6px;
+  padding: 4px 12px;
+  font-weight: 500;
+  box-shadow: 0 3px 6px rgba(0, 0, 0, 0.1);
+  font-size: 13px;
+}
+
+/* .work-schedule { ... } - 移除员工特有 */
+
+.table-actions {
   display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  justify-content: flex-start;
+  gap: 8px;
+  flex-wrap: nowrap;
+  white-space: nowrap;
 }
 
-.room-table {
-  margin-bottom: 20px;
+.action-button { /* 通用操作按钮 */
+  display: flex;
+  align-items: center;
+  font-size: 14px;
+  padding: 6px 10px;
+  border-radius: 6px;
+  transition: all 0.25s ease;
+  font-weight: 500;
+  white-space: nowrap;
+}
+
+.action-button:hover {
+  background-color: rgba(64, 158, 255, 0.1);
+  transform: translateY(-2px);
+}
+
+.action-button:deep(.el-icon) {
+  margin-right: 4px;
+  font-size: 14px;
 }
 
 .pagination-container {
-  display: flex;
-  justify-content: center;
-  margin-top: 20px;
+  padding: 24px;
+  text-align: right;
+  background-color: #fff;
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  border-top: 1px solid #f0f0f0;
+}
+
+.pagination-container :deep(.el-pagination) {
+  justify-content: flex-end;
+}
+
+.pagination-container :deep(.el-pagination__total) {
+  font-size: 14px;
+  color: #606266;
+}
+
+.pagination-container :deep(.el-pagination .btn-prev),
+.pagination-container :deep(.el-pagination .btn-next),
+.pagination-container :deep(.el-pagination .number) {
+  background-color: #f8f9fa;
+  border-radius: 6px;
+  margin: 0 3px;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.pagination-container :deep(.el-pagination .btn-prev:hover),
+.pagination-container :deep(.el-pagination .btn-next:hover),
+.pagination-container :deep(.el-pagination .number:hover) {
+  background-color: #ecf5ff;
+  color: #3498db;
+}
+
+.pagination-container :deep(.el-pagination .active) {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  color: white;
+}
+
+.custom-dialog :deep(.el-dialog) {
+  border-radius: 16px;
+  overflow: hidden;
+  box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+}
+
+.custom-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px;
+  background: linear-gradient(to right, #f8f9fa, #f0f7ff);
+  border-bottom: 1px solid #f0f0f0;
+  text-align: center;
+}
+
+.custom-dialog :deep(.el-dialog__title) {
+  font-weight: 600;
+  font-size: 18px;
+  color: #303133;
+  position: relative;
+}
+
+.custom-dialog :deep(.el-dialog__headerbtn) {
+  top: 24px;
+  right: 24px;
+}
+
+.custom-dialog :deep(.el-dialog__body) {
+  padding: 32px 40px;
+}
+
+.custom-dialog :deep(.el-dialog__footer) {
+  padding: 20px 24px;
+  background-color: #f9fafc;
+  border-top: 1px solid #f0f0f0;
+}
+
+.custom-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #303133;
+  padding-right: 20px;
+}
+
+.custom-form :deep(.el-input__wrapper),
+.custom-form :deep(.el-select__wrapper) {
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.03);
+  border-radius: 10px;
+  padding: 2px 15px;
+  transition: all 0.3s ease;
+}
+
+.custom-form :deep(.el-input__wrapper:hover),
+.custom-form :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.08);
+}
+
+.custom-form :deep(.el-input__wrapper:focus-within),
+.custom-form :deep(.el-select__wrapper:focus-within) {
+  box-shadow: 0 0 0 1px #3498db inset, 0 3px 10px rgba(52, 152, 219, 0.1);
 }
 
 .dialog-footer {
   display: flex;
-  justify-content: flex-end;
+  justify-content: center; /* 修改为 center */
+  width: 100%;
+  gap: 16px;
 }
 
-/* 响应式调整 */
+.cancel-button,
+.confirm-button {
+  min-width: 120px;
+  border-radius: 10px;
+  transition: all 0.3s ease;
+  font-weight: 500;
+  padding: 12px 20px;
+  font-size: 15px;
+}
+
+.confirm-button {
+  background: linear-gradient(135deg, #3498db, #2980b9);
+  border: none;
+  color: white; /* 添加颜色 */
+}
+
+.confirm-button:hover {
+  background: linear-gradient(135deg, #2980b9, #1a5276);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(41, 128, 185, 0.2);
+}
+
+.cancel-button {
+  border: 1px solid #dcdfe6;
+}
+
+.cancel-button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.08);
+  background-color: #f8f9fa;
+}
+
+/* 移除 Staff.vue 特有的样式，例如：排班、邀请码等 */
+/* .schedule-dialog ... */
+/* .schedule-header ... */
+/* .employee-info ... */
+/* .employee-avatar ... */
+/* ... (其他排班相关) ... */
+/* .qr-code ... */
+/* .invite-code-container ... */
+/* ... (其他邀请码相关) ... */
+
 @media (max-width: 768px) {
-  .action-bar {
-    flex-direction: column;
+  .staff-container { /* or .room-management-container */
+    padding: 16px;
   }
   
-  .filter-section {
-    margin-bottom: 12px;
+  .page-header {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 16px;
+    padding: 20px;
   }
+  
+  .header-actions {
+    width: 100%;
+  }
+  
+  .add-button, .add-type-button { /* .invite-button */
+    flex: 1;
+    justify-content: center;
+  }
+  
+  .search-form {
+    flex-direction: column;
+    align-items: stretch;
+  }
+  
+  .search-form .el-form-item {
+    margin-right: 0;
+    width: 100%;
+  }
+  
+  .table-actions {
+    flex-wrap: wrap;
+  }
+  
+  /* 移除 schedule header 的响应式 */
+  /* .schedule-header {
+    flex-direction: column;
+    gap: 16px;
+  } */
+  
+  /* .schedule-actions {
+    width: 100%;
+  } */
+  
+  /* .schedule-actions button {
+    flex: 1;
+  } */
 }
 </style> 
