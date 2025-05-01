@@ -116,20 +116,21 @@ const handleLogin = async () => {
         });
         
         // 如果登录成功
-        if (response && response.data && response.data.token) {
-          const userData = response.data;
+        if (response && response.success && response.token) {
+          // const userData = response.data; // 删除或注释掉此行
           
-          // 保存登录状态到localStorage
-          localStorage.setItem('userToken', userData.token);
-          localStorage.setItem('userName', userData.username || loginForm.username);
-          localStorage.setItem('userId', userData.userId || '');
-          localStorage.setItem('userRole', userData.role || 'USER');
+          // 保存登录状态到localStorage，直接使用 response 的字段
+          localStorage.setItem('userToken', response.token);
+          localStorage.setItem('userName', response.username || loginForm.username); // 使用 response.username
+          localStorage.setItem('userId', response.userId || ''); // 使用 response.userId
+          localStorage.setItem('userRole', response.role || 'USER'); // 使用 response.role
           
           // 获取用户详细信息
           try {
-            if (userData.userId) {
-              // 使用新的API调用
-              const userInfo = await userApi.getUserInfo(userData.userId);
+            // 使用 response.userId 进行判断
+            if (response.userId) { 
+              // 使用新的API调用，传递 response.userId
+              const userInfo = await userApi.getUserInfo(response.userId); 
               
               // 确保使用正确的响应结构
               if (userInfo && userInfo.data) {
@@ -140,8 +141,8 @@ const handleLogin = async () => {
                 localStorage.setItem('userGender', userInfo.data.gender || '');
               }
               
-              // 获取会员信息
-              const memberInfo = await membershipApi.getMemberInfo(userData.userId);
+              // 获取会员信息，传递 response.userId
+              const memberInfo = await membershipApi.getMemberInfo(response.userId); 
               
               // 保存会员信息
               if (memberInfo && memberInfo.data) {
@@ -177,11 +178,15 @@ const handleLogin = async () => {
             router.push('/');
           }
         } else {
+          // 此处现在处理的是 response.success 为 false 或缺少 token 的情况
           ElMessage.error(response?.message || '登录失败，请检查用户名和密码');
         }
       } catch (error) {
         console.error('登录失败:', error);
-        ElMessage.error(error.message || '登录失败，请检查用户名和密码');
+        // 注意：这里的 error.message 可能是后端返回的，也可能是前端代码错误
+        // 如果后端明确返回 success:false，会进入上面的 else 分支，而不是这里
+        // 这里通常处理网络错误或后端返回 500 等情况
+        ElMessage.error(error.message || '登录请求出错，请稍后重试');
       } finally {
         loading.value = false;
       }

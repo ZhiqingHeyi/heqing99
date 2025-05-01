@@ -33,5 +33,7 @@ logging:
   level:
     root: INFO
     com.hotel: DEBUG
+    org.springframework.web: DEBUG
+    org.springframework.security: DEBUG
   file:
     name: logs/hotel-management.log

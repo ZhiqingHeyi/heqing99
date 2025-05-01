@@ -224,7 +224,7 @@ public class UserController {
     /**
      * 用户登录接口 (使用 Spring Security 和 JWT)
      */
-    @PostMapping("/api/users/login") // 确保路径正确
+    @PostMapping("/login")
     public ResponseEntity<?> login(@RequestBody LoginRequest loginRequest) {
         try {
             System.out.println("接收到登录请求: " + loginRequest.getUsername());
