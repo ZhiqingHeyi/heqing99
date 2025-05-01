@@ -22,6 +22,7 @@ apiClient.interceptors.request.use(
       (url === '/api/users' && (method === 'GET' || method === 'DELETE')) ||
       (url.startsWith('/api/users/') && url.endsWith('/status') && method === 'PUT') || // toggleUserStatus
       url.startsWith('/api/users/staff/active') ||
+      url.startsWith('/api/users/staff') || // 添加对 /api/users/staff 的判断 (应该放在 /active 之前，但这里也行)
       url.startsWith('/api/users/count/') ||
       url.startsWith('/api/invitation-codes');
     console.log(`[Request Interceptor] Is Admin Path? ${isAdminPath}`);

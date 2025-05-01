@@ -89,22 +89,22 @@
         highlight-current-row
       >
         <el-table-column type="selection" width="55" fixed="left" />
-        <el-table-column prop="code" label="邀请码" min-width="120" />
-        <el-table-column prop="role" label="角色权限" min-width="90" align="center">
+        <el-table-column prop="code" label="邀请码" min-width="180" />
+        <el-table-column prop="role" label="角色权限" min-width="100" align="center">
           <template #default="{ row }">
             <el-tag 
-              :type="row.role === 'receptionist' ? 'primary' : 'success'"
+              :type="row.role === 'receptionist' ? 'primary' : row.role === 'cleaner' ? 'success' : 'info'"
               effect="dark"
               class="role-tag"
             >
-              {{ row.role === 'receptionist' ? '前台' : '保洁' }}
+              {{ row.role === 'receptionist' ? '前台' : row.role === 'cleaner' ? '保洁' : '未知' }}
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="createdAt" label="创建时间" min-width="140" />
-        <el-table-column prop="expireAt" label="过期时间" min-width="140" />
-        <el-table-column prop="usedBy" label="使用人" min-width="100" />
-        <el-table-column prop="status" label="状态" min-width="80" align="center">
+        <el-table-column prop="createdAt" label="创建时间" min-width="160" />
+        <el-table-column prop="expireAt" label="过期时间" min-width="160" />
+        <el-table-column prop="usedBy" label="使用状态" min-width="100" align="center" />
+        <el-table-column prop="status" label="状态" min-width="90" align="center">
           <template #default="{ row }">
             <el-tag 
               :type="row.status === 'active' ? 'success' : row.status === 'used' ? 'info' : 'danger'"
@@ -115,8 +115,7 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column prop="note" label="备注" min-width="120" />
-        <el-table-column label="操作" fixed="right" min-width="280">
+        <el-table-column label="操作" fixed="right" min-width="220">
           <template #default="{ row }">
             <div class="table-actions">
               <el-button 
@@ -308,67 +307,25 @@
 </template>
 
 <script setup>
+console.log('[InviteCodes.vue] Script setup started'); // 日志1
+
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Plus, Download, Delete, CopyDocument, Close, View, Tickets, Check, Timer, DataAnalysis, InfoFilled, WarningFilled } from '@element-plus/icons-vue'
 import QRCode from 'qrcodejs2-fix'
+import apiClient from '@/api'; // 导入配置好的 axios 实例
+import { format } from 'date-fns'; // 导入日期格式化工具
 
-// 模拟数据
-const inviteCodes = ref([
-  {
-    id: 1,
-    code: 'HOTEL2023001',
-    role: 'receptionist',
-    createdAt: '2023-05-15 14:30:22',
-    expireAt: '2023-12-31 23:59:59',
-    usedBy: '',
-    status: 'active',
-    note: '前台新员工入职'
-  },
-  {
-    id: 2,
-    code: 'HOTEL2023002',
-    role: 'cleaner',
-    createdAt: '2023-05-15 14:32:11',
-    expireAt: '2023-12-31 23:59:59',
-    usedBy: '张三',
-    status: 'used',
-    note: '保洁员工入职'
-  },
-  {
-    id: 3,
-    code: 'HOTEL2023003',
-    role: 'receptionist',
-    createdAt: '2023-05-16 09:12:43',
-    expireAt: '2023-06-30 23:59:59',
-    usedBy: '',
-    status: 'expired',
-    note: '临时前台入职'
-  },
-  {
-    id: 4,
-    code: 'HOTEL2023004',
-    role: 'cleaner',
-    createdAt: '2023-05-20 10:35:16',
-    expireAt: '2023-12-31 23:59:59',
-    usedBy: '李四',
-    status: 'used',
-    note: '保洁员工入职'
-  },
-  {
-    id: 5,
-    code: 'HOTEL2023005',
-    role: 'receptionist',
-    createdAt: '2023-06-01 08:40:33',
-    expireAt: '2023-12-31 23:59:59',
-    usedBy: '',
-    status: 'active',
-    note: '前台员工入职'
-  }
-])
+// console.log('[InviteCodes.vue] Imports loaded'); // 移除日志2
 
-// 获取应用基础URL
-const baseUrl = 'http://localhost:3000' // 替换为实际的应用URL
+// 移除模拟数据
+// const inviteCodes = ref([...]) 
+const inviteCodes = ref([]) // 初始化为空数组
+
+// 获取应用基础URL (如果需要动态获取，应调整)
+// const baseUrl = 'http://localhost:3000' 
+// TODO: Consider if baseUrl is needed and how to obtain it if yes. Remove if unused.
+const baseUrl = window.location.origin; // 使用 window.location.origin 动态获取基础 URL
 
 // 邀请码加载状态
 const inviteCodeLoading = ref(false)
@@ -405,31 +362,92 @@ const qrCodeRef = ref(null)
 // 批量作废对话框
 const batchExpireVisible = ref(false)
 
-// 过滤后的邀请码列表
+// 辅助函数：计算邀请码状态
+const calculateStatus = (code) => {
+  const now = new Date();
+  const expiryDate = new Date(code.expiryDate);
+
+  if (!code.enabled) {
+    return 'expired'; // 后端标记为禁用
+  }
+  if (expiryDate < now) {
+    return 'expired'; // 已过有效期
+  }
+  // 后端 maxUses 默认为1
+  if (code.currentUses >= (code.maxUses || 1)) { 
+    return 'used'; // 已达到使用次数
+  }
+  return 'active'; // 其他情况为有效
+};
+
+// 过滤后的邀请码列表 (使用计算状态)
 const filteredInviteCodes = computed(() => {
-  if (inviteCodeFilter.value === 'all') return inviteCodes.value
-  return inviteCodes.value.filter(code => code.status === inviteCodeFilter.value)
-})
+  const codesWithStatus = inviteCodes.value.map(code => ({
+    ...code,
+    status: calculateStatus(code) // 计算状态
+  }));
+  
+  if (inviteCodeFilter.value === 'all') return codesWithStatus;
+  return codesWithStatus.filter(code => code.status === inviteCodeFilter.value);
+});
 
-// 获取有效邀请码数量
+// 获取有效邀请码数量 (使用计算状态)
 const getActiveCodesCount = () => {
-  return inviteCodes.value.filter(code => code.status === 'active').length
-}
+  return inviteCodes.value.filter(code => calculateStatus(code) === 'active').length;
+};
 
-// 获取已使用邀请码数量
+// 获取已使用邀请码数量 (使用计算状态)
 const getUsedCodesCount = () => {
-  return inviteCodes.value.filter(code => code.status === 'used').length
-}
+  return inviteCodes.value.filter(code => calculateStatus(code) === 'used').length;
+};
 
-// 获取已过期邀请码数量
+// 获取已过期邀请码数量 (使用计算状态)
 const getExpiredCodesCount = () => {
-  return inviteCodes.value.filter(code => code.status === 'expired').length
-}
+  return inviteCodes.value.filter(code => calculateStatus(code) === 'expired').length;
+};
 
 // 获取总邀请码数量
 const getTotalCodesCount = () => {
-  return inviteCodes.value.length
-}
+  return inviteCodes.value.length;
+};
+
+// 函数：获取邀请码列表
+const fetchInviteCodes = async () => {
+  // console.log('[InviteCodes.vue] fetchInviteCodes function started'); // 移除日志5
+  inviteCodeLoading.value = true;
+  try {
+    // console.log('[InviteCodes.vue] Calling API: /api/invitation-codes'); // 移除日志6
+    // 使用导入的 apiClient 发起请求
+    const response = await apiClient.get('/api/invitation-codes'); 
+    // console.log('[InviteCodes.vue] API response received:', response); // 移除日志7
+    // 注意：axios 响应拦截器已经处理了 response.data，这里直接使用 response
+    if (response && Array.isArray(response)) { // 检查是否为数组
+      inviteCodes.value = response.map(code => ({
+        id: code.id,
+        code: code.code,
+        role: code.role ? code.role.toLowerCase() : 'unknown', 
+        createdAt: code.createTime ? format(new Date(code.createTime), 'yyyy-MM-dd HH:mm:ss') : '', 
+        expireAt: code.expiryDate ? format(new Date(code.expiryDate), 'yyyy-MM-dd HH:mm:ss') : '', 
+        usedBy: code.currentUses > 0 ? '已使用' : '', 
+        note: '', 
+        enabled: code.enabled,
+        expiryDate: code.expiryDate,
+        currentUses: code.currentUses,
+        maxUses: code.maxUses
+      }));
+    } else {
+      console.warn('[InviteCodes.vue] API response is not an array:', response);
+      inviteCodes.value = []; 
+    }
+  } catch (error) { 
+    // 错误已在拦截器中打印，这里不再重复打印
+    // console.error("[InviteCodes.vue] Error in fetchInviteCodes:", error); 
+    ElMessage.error(error.message || '获取邀请码列表失败，请稍后重试'); // 使用拦截器处理后的错误消息
+    inviteCodes.value = []; 
+  } finally {
+    inviteCodeLoading.value = false;
+  }
+};
 
 // 生成新邀请码
 const generateInviteCode = () => {
@@ -444,65 +462,73 @@ const generateInviteCode = () => {
   generateCodeVisible.value = true
 }
 
-// 确认生成邀请码
-const confirmGenerateCode = () => {
+// 确认生成邀请码 (调用后端API)
+const confirmGenerateCode = async () => {
+  // 前端表单验证
   if (inviteCodeForm.expireType === 'date' && !inviteCodeForm.expireDate) {
-    ElMessage.error('请选择截止日期')
-    return
+    ElMessage.error('请选择截止日期');
+    return;
   }
-  
-  inviteCodeLoading.value = true
-  
-  // 模拟API请求
-  setTimeout(() => {
-    const now = new Date()
-    let expireDate
-    
-    if (inviteCodeForm.expireType === 'days') {
-      expireDate = new Date()
-      expireDate.setDate(now.getDate() + inviteCodeForm.expireDays)
-    } else {
-      expireDate = new Date(inviteCodeForm.expireDate)
-      // 设置为当天23:59:59
-      expireDate.setHours(23, 59, 59)
+  if (!inviteCodeForm.role) {
+    ElMessage.error('请选择角色权限');
+    return;
+  }
+  if (inviteCodeForm.quantity < 1 || inviteCodeForm.quantity > 50) {
+     ElMessage.error('生成数量必须在 1 到 50 之间');
+     return;
+  }
+
+  inviteCodeLoading.value = true;
+  let successCount = 0;
+  let failCount = 0;
+
+  // 计算过期时间
+  let expiryDateISO;
+  if (inviteCodeForm.expireType === 'days') {
+    const expireDate = new Date();
+    expireDate.setDate(expireDate.getDate() + inviteCodeForm.expireDays);
+    expireDate.setHours(23, 59, 59, 999); // 设置为当天结束
+    expiryDateISO = expireDate.toISOString();
+  } else {
+    const selectedDate = new Date(inviteCodeForm.expireDate);
+    selectedDate.setHours(23, 59, 59, 999); // 设置为选择日期的结束
+    expiryDateISO = selectedDate.toISOString();
+  }
+
+  // 准备请求参数
+  const roleUpper = inviteCodeForm.role.toUpperCase(); // 转为大写以匹配后端枚举
+  const maxUses = 1; // 默认为1次使用
+
+  // 循环调用创建API
+  for (let i = 0; i < inviteCodeForm.quantity; i++) {
+    try {
+      const payload = {
+        role: roleUpper,
+        maxUses: maxUses,
+        expiryDate: expiryDateISO
+      };
+      // 使用 apiClient
+      await apiClient.post('/api/invitation-codes', payload);
+      successCount++;
+    } catch (error) {
+      // console.error(`创建第 ${i + 1} 个邀请码失败:`, error); // 拦截器已处理
+      failCount++;
+      // 可以在此中断或继续创建剩余的
     }
-    
-    const format = (date) => {
-      const year = date.getFullYear()
-      const month = String(date.getMonth() + 1).padStart(2, '0')
-      const day = String(date.getDate()).padStart(2, '0')
-      const hours = String(date.getHours()).padStart(2, '0')
-      const minutes = String(date.getMinutes()).padStart(2, '0')
-      const seconds = String(date.getSeconds()).padStart(2, '0')
-      return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`
-    }
-    
-    // 生成新的邀请码
-    for (let i = 0; i < inviteCodeForm.quantity; i++) {
-      const newCode = `HOTEL${now.getFullYear()}${String(Math.floor(Math.random() * 10000)).padStart(4, '0')}`
-      
-      inviteCodes.value.unshift({
-        id: inviteCodes.value.length + 1 + i,
-        code: newCode,
-        role: inviteCodeForm.role,
-        createdAt: format(now),
-        expireAt: format(expireDate),
-        usedBy: '',
-        status: 'active',
-        note: inviteCodeForm.note
-      })
-    }
-    
-    inviteCodeLoading.value = false
-    generateCodeVisible.value = false
-    
-    ElMessage({
-      message: `成功生成 ${inviteCodeForm.quantity} 个邀请码`,
-      type: 'success',
-      duration: 2000
-    })
-  }, 1000)
-}
+  }
+
+  inviteCodeLoading.value = false;
+  generateCodeVisible.value = false;
+
+  // 显示结果消息
+  if (successCount > 0) {
+    ElMessage.success(`成功生成 ${successCount} 个邀请码`);
+    await fetchInviteCodes(); // 刷新列表
+  }
+  if (failCount > 0) {
+    ElMessage.error(`有 ${failCount} 个邀请码生成失败，请检查后台日志`);
+  }
+};
 
 // 导出邀请码
 const exportInviteCodes = () => {
@@ -529,7 +555,7 @@ const copyInviteCode = (code) => {
 
 // 复制注册链接
 const copyRegisterLink = () => {
-  const link = `${baseUrl}/admin/register`
+  const link = `${baseUrl}/admin/register` // 确保 baseUrl 已定义
   navigator.clipboard.writeText(link).then(() => {
     ElMessage({
       message: '注册链接已复制到剪贴板',
@@ -588,34 +614,36 @@ const downloadQRCode = () => {
   }
 }
 
-// 作废单个邀请码
+// 作废单个邀请码 (调用后端API)
 const invalidateInviteCode = (row) => {
-  ElMessageBox.confirm(`确定要作废邀请码 ${row.code} 吗？`, '提示', {
-    confirmButtonText: '确定',
+  // 检查是否已经是 active 状态，以及是否有 ID
+  if (!row || !row.id || calculateStatus(row) !== 'active') { 
+    ElMessage.warning('此邀请码无法作废');
+    return;
+  }
+  
+  ElMessageBox.confirm(`确定要作废邀请码 ${row.code} 吗？此操作不可恢复。`, '确认作废', {
+    confirmButtonText: '确定作废',
     cancelButtonText: '取消',
     type: 'warning'
-  }).then(() => {
-    inviteCodeLoading.value = true
-    
-    // 模拟API请求
-    setTimeout(() => {
-      const index = inviteCodes.value.findIndex(item => item.id === row.id)
-      if (index !== -1) {
-        inviteCodes.value[index].status = 'expired'
-      }
-      
-      inviteCodeLoading.value = false
-      
-      ElMessage({
-        message: '邀请码已成功作废',
-        type: 'success',
-        duration: 2000
-      })
-    }, 500)
+  }).then(async () => { 
+    inviteCodeLoading.value = true;
+    try {
+      // 使用 apiClient
+      await apiClient.put(`/api/invitation-codes/${row.id}/disable`); 
+      ElMessage.success('邀请码已成功作废');
+      await fetchInviteCodes(); 
+    } catch (error) {
+      // console.error(`作废邀请码 ${row.code} (ID: ${row.id}) 失败:`, error); // 拦截器已处理
+      ElMessage.error(error.message || '作废邀请码失败，请稍后重试');
+    } finally {
+      inviteCodeLoading.value = false;
+    }
   }).catch(() => {
-    // 用户取消操作
-  })
-}
+    // 用户取消操作，无需提示
+    // ElMessage.info('已取消作废操作');
+  });
+};
 
 // 批量作废邀请码
 const batchExpireInviteCodes = () => {
@@ -623,50 +651,76 @@ const batchExpireInviteCodes = () => {
   batchExpireVisible.value = true
 }
 
-// 确认批量作废
-const confirmBatchExpire = () => {
-  inviteCodeLoading.value = true
-  
-  // 模拟API请求
-  setTimeout(() => {
-    if (selectedCodes.value.length > 0) {
-      // 作废选中的邀请码
-      selectedCodes.value.forEach(row => {
-        const index = inviteCodes.value.findIndex(item => item.id === row.id)
-        if (index !== -1 && inviteCodes.value[index].status === 'active') {
-          inviteCodes.value[index].status = 'expired'
-        }
-      })
+// 确认批量作废 (调用后端API)
+const confirmBatchExpire = async () => {
+  let codesToDisable = [];
+  if (selectedCodes.value.length > 0) {
+    // 获取选中行中状态为 active 的 ID
+    codesToDisable = selectedCodes.value
+      .filter(row => row.id && calculateStatus(row) === 'active')
+      .map(row => row.id);
+  } else {
+    // 获取所有状态为 active 的 ID
+    codesToDisable = inviteCodes.value
+      .filter(code => code.id && calculateStatus(code) === 'active')
+      .map(code => code.id);
+  }
+
+  if (codesToDisable.length === 0) {
+    ElMessage.warning('没有可作废的有效邀请码');
+    batchExpireVisible.value = false;
+    return;
+  }
+
+  inviteCodeLoading.value = true;
+  let successCount = 0;
+  let failCount = 0;
+
+  // 使用 Promise.allSettled 来处理所有请求
+  const results = await Promise.allSettled(
+    codesToDisable.map(id => apiClient.put(`/api/invitation-codes/${id}/disable`))
+  );
+
+  results.forEach((result, index) => {
+    if (result.status === 'fulfilled') {
+      successCount++;
     } else {
-      // 作废所有有效邀请码
-      inviteCodes.value.forEach((code, index) => {
-        if (code.status === 'active') {
-          inviteCodes.value[index].status = 'expired'
-        }
-      })
+      failCount++;
+      console.error(`批量作废邀请码 (ID: ${codesToDisable[index]}) 失败:`, result.reason);
     }
-    
-    inviteCodeLoading.value = false
-    batchExpireVisible.value = false
-    selectedCodes.value = []
-    
-    ElMessage({
-      message: '邀请码已成功批量作废',
-      type: 'success',
-      duration: 2000
-    })
-  }, 1000)
-}
+  });
+
+  inviteCodeLoading.value = false;
+  batchExpireVisible.value = false;
+  selectedCodes.value = []; // 清空选择
+
+  // 显示结果消息
+  if (successCount > 0) {
+    ElMessage.success(`成功作废 ${successCount} 个邀请码`);
+    await fetchInviteCodes(); // 刷新列表
+  }
+  if (failCount > 0) {
+    ElMessage.error(`有 ${failCount} 个邀请码作废失败，请检查后台日志`);
+    // 如果部分成功，列表已刷新，无需额外操作
+  }
+  if (successCount === 0 && failCount === 0) { 
+      // Should not happen based on previous check, but as a safeguard
+      ElMessage.info('没有邀请码被作废');
+  }
+};
 
 // 表格选择变化
 const handleSelectionChange = (selection) => {
   selectedCodes.value = selection
 }
 
-// 页面加载
+// 页面加载时获取数据
 onMounted(() => {
-  // 可以在这里加载实际的邀请码数据
-})
+  // console.log('[InviteCodes.vue] Component mounted (onMounted hook)'); // 移除日志4
+  fetchInviteCodes();
+});
+
+// console.log('[InviteCodes.vue] Script setup finished'); // 移除日志8
 </script>
 
 <style scoped>

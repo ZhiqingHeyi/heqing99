@@ -8,7 +8,9 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.List;
 import java.util.Map;
 
@@ -24,7 +26,10 @@ public class InvitationCodeController {
     public ResponseEntity<InvitationCode> createInvitationCode(@RequestBody Map<String, Object> request) {
         User.UserRole role = User.UserRole.valueOf((String) request.get("role"));
         Integer maxUses = (Integer) request.get("maxUses");
-        LocalDateTime expiryDate = LocalDateTime.parse((String) request.get("expiryDate"));
+        
+        String expiryDateStr = (String) request.get("expiryDate");
+        Instant instant = Instant.parse(expiryDateStr);
+        LocalDateTime expiryDate = instant.atZone(ZoneId.systemDefault()).toLocalDateTime();
         
         InvitationCode invitationCode = invitationCodeService.createInvitationCode(role, maxUses, expiryDate);
         return ResponseEntity.ok(invitationCode);
