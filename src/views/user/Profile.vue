@@ -391,6 +391,7 @@ const goToBooking = () => {
 
 // 保存用户信息
 const saveUserInfo = async () => {
+  let userId = null; // 在 try 块外部声明
   try {
     // 验证数据有效性
     if (!userForm.userName.trim() || !userForm.realName.trim() || !userForm.phone.trim()) {
@@ -414,8 +415,8 @@ const saveUserInfo = async () => {
       }
     }
     
-    // 用户ID
-    const userId = userState.userData.id || localStorage.getItem('userId');
+    // 用户ID - 直接从 localStorage 获取
+    userId = localStorage.getItem('userId');
     
     if (!userId) {
       ElMessage.error('未找到用户ID，请重新登录');
@@ -454,15 +455,16 @@ const saveUserInfo = async () => {
         localStorage.setItem('userGender', updateData.gender || 'unknown');
         localStorage.setItem('userBirthday', updateData.birthday || '');
         
-        // 更新用户状态
-        Object.assign(userState.userData, {
-          userName: updateData.username,
-          realName: updateData.name,
-          phone: updateData.phone,
-          email: updateData.email,
-          gender: updateData.gender,
-          birthday: updateData.birthday
-        });
+        // 更新 userInfo (用于侧边栏等显示)
+        userInfo.userName = updateData.username; 
+
+        // 更新 userForm (用于表单显示)
+        userForm.userName = updateData.username;
+        userForm.realName = updateData.name;
+        userForm.phone = updateData.phone;
+        userForm.email = updateData.email;
+        userForm.gender = updateData.gender;
+        userForm.birthday = updateData.birthday; // 确保 updateData.birthday 是正确的格式或 null
         
         // 关闭编辑模式
         isEditing.value = false;
@@ -488,8 +490,8 @@ const changePassword = async () => {
   
   await passwordFormRef.value.validate(async (valid) => {
     if (valid) {
-      // 用户ID
-      const userId = userState.userData.id || localStorage.getItem('userId');
+      // 用户ID - 直接从 localStorage 获取
+      const userId = localStorage.getItem('userId');
       
       if (!userId) {
         ElMessage.error('未找到用户ID，请重新登录');

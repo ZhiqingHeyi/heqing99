@@ -1171,3 +1171,195 @@
 2025-05-01 10:25:43.977 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
 2025-05-01 10:25:43.983 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
 2025-05-01 10:25:43.983 DEBUG 32992 --- [http-nio-8090-exec-2] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:29:09.622 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.security.web.FilterChainProxy        : Securing GET /api/users/13
+2025-05-01 10:29:09.623 DEBUG 32992 --- [http-nio-8090-exec-3] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:29:09.631 DEBUG 32992 --- [http-nio-8090-exec-3] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:29:09.632 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/users/13] with attributes [authenticated]
+2025-05-01 10:29:09.632 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.security.web.FilterChainProxy        : Secured GET /api/users/13
+2025-05-01 10:29:09.632 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/api/users/13", parameters={}
+2025-05-01 10:29:09.633 DEBUG 32992 --- [http-nio-8090-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#getUserById(Long)
+2025-05-01 10:29:09.641 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:29:09.652 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=成功, data=User(id=13, username=艾达王, password=null, name=阿 (truncated)...]
+2025-05-01 10:29:09.655 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:29:09.656 DEBUG 32992 --- [http-nio-8090-exec-3] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:29:09.690 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.security.web.FilterChainProxy        : Securing GET /api/membership/info
+2025-05-01 10:29:09.694 DEBUG 32992 --- [http-nio-8090-exec-4] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:29:09.702 DEBUG 32992 --- [http-nio-8090-exec-4] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:29:09.703 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/membership/info] with attributes [authenticated]
+2025-05-01 10:29:09.703 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.security.web.FilterChainProxy        : Secured GET /api/membership/info
+2025-05-01 10:29:09.703 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.web.servlet.DispatcherServlet        : GET "/api/membership/info", parameters={}
+2025-05-01 10:29:09.705 DEBUG 32992 --- [http-nio-8090-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.MembershipController#getCurrentUserMembershipInfo()
+2025-05-01 10:29:09.715 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:29:09.715 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
+2025-05-01 10:29:09.716 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:29:09.717 DEBUG 32992 --- [http-nio-8090-exec-4] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:29:21.409 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.security.web.FilterChainProxy        : Securing GET /api/users/13
+2025-05-01 10:29:21.409 DEBUG 32992 --- [http-nio-8090-exec-5] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:29:21.414 DEBUG 32992 --- [http-nio-8090-exec-5] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:29:21.415 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/users/13] with attributes [authenticated]
+2025-05-01 10:29:21.415 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.security.web.FilterChainProxy        : Secured GET /api/users/13
+2025-05-01 10:29:21.415 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.web.servlet.DispatcherServlet        : GET "/api/users/13", parameters={}
+2025-05-01 10:29:21.416 DEBUG 32992 --- [http-nio-8090-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#getUserById(Long)
+2025-05-01 10:29:21.422 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:29:21.432 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=成功, data=User(id=13, username=艾达王, password=null, name=阿 (truncated)...]
+2025-05-01 10:29:21.433 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:29:21.433 DEBUG 32992 --- [http-nio-8090-exec-5] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:29:21.656 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.security.web.FilterChainProxy        : Securing GET /api/membership/info
+2025-05-01 10:29:21.656 DEBUG 32992 --- [http-nio-8090-exec-6] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:29:21.662 DEBUG 32992 --- [http-nio-8090-exec-6] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:29:21.662 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/membership/info] with attributes [authenticated]
+2025-05-01 10:29:21.665 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.security.web.FilterChainProxy        : Secured GET /api/membership/info
+2025-05-01 10:29:21.665 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/api/membership/info", parameters={}
+2025-05-01 10:29:21.665 DEBUG 32992 --- [http-nio-8090-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.MembershipController#getCurrentUserMembershipInfo()
+2025-05-01 10:29:21.670 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:29:21.670 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
+2025-05-01 10:29:21.672 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:29:21.672 DEBUG 32992 --- [http-nio-8090-exec-6] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:13.846 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.security.web.FilterChainProxy        : Securing GET /api/users/13
+2025-05-01 10:30:13.847 DEBUG 32992 --- [http-nio-8090-exec-7] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:13.853 DEBUG 32992 --- [http-nio-8090-exec-7] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:13.853 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/users/13] with attributes [authenticated]
+2025-05-01 10:30:13.854 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.security.web.FilterChainProxy        : Secured GET /api/users/13
+2025-05-01 10:30:13.854 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/api/users/13", parameters={}
+2025-05-01 10:30:13.855 DEBUG 32992 --- [http-nio-8090-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#getUserById(Long)
+2025-05-01 10:30:13.861 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:13.870 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=成功, data=User(id=13, username=艾达王, password=null, name=阿 (truncated)...]
+2025-05-01 10:30:13.872 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:13.872 DEBUG 32992 --- [http-nio-8090-exec-7] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:13.911 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.security.web.FilterChainProxy        : Securing GET /api/membership/info
+2025-05-01 10:30:13.911 DEBUG 32992 --- [http-nio-8090-exec-8] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:13.918 DEBUG 32992 --- [http-nio-8090-exec-8] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:13.920 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/membership/info] with attributes [authenticated]
+2025-05-01 10:30:13.920 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.security.web.FilterChainProxy        : Secured GET /api/membership/info
+2025-05-01 10:30:13.921 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/api/membership/info", parameters={}
+2025-05-01 10:30:13.921 DEBUG 32992 --- [http-nio-8090-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.MembershipController#getCurrentUserMembershipInfo()
+2025-05-01 10:30:13.930 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:13.930 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
+2025-05-01 10:30:13.932 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:13.932 DEBUG 32992 --- [http-nio-8090-exec-8] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:18.852 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.security.web.FilterChainProxy        : Securing PUT /api/users/13
+2025-05-01 10:30:18.853 DEBUG 32992 --- [http-nio-8090-exec-9] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:18.867 DEBUG 32992 --- [http-nio-8090-exec-9] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:18.868 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [PUT /api/users/13] with attributes [authenticated]
+2025-05-01 10:30:18.868 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.security.web.FilterChainProxy        : Secured PUT /api/users/13
+2025-05-01 10:30:18.868 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.web.servlet.DispatcherServlet        : PUT "/api/users/13", parameters={}
+2025-05-01 10:30:18.869 DEBUG 32992 --- [http-nio-8090-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#updateUser(Long, User)
+2025-05-01 10:30:18.916 DEBUG 32992 --- [http-nio-8090-exec-9] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [User(id=null, username=艾达王, password=null, name=阿达, phone=15666663333, email=15666663333@163.com, ge (truncated)...]
+2025-05-01 10:30:19.012 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:19.019 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=用户信息更新成功, data=User(id=13, username=艾达王, password=null,  (truncated)...]
+2025-05-01 10:30:19.019 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:19.019 DEBUG 32992 --- [http-nio-8090-exec-9] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:23.349 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.security.web.FilterChainProxy        : Securing PUT /api/users/13
+2025-05-01 10:30:23.350 DEBUG 32992 --- [http-nio-8090-exec-10] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:23.356 DEBUG 32992 --- [http-nio-8090-exec-10] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:23.357 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [PUT /api/users/13] with attributes [authenticated]
+2025-05-01 10:30:23.358 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.security.web.FilterChainProxy        : Secured PUT /api/users/13
+2025-05-01 10:30:23.358 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.web.servlet.DispatcherServlet        : PUT "/api/users/13", parameters={}
+2025-05-01 10:30:23.358 DEBUG 32992 --- [http-nio-8090-exec-10] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#updateUser(Long, User)
+2025-05-01 10:30:23.360 DEBUG 32992 --- [http-nio-8090-exec-10] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [User(id=null, username=艾达王, password=null, name=阿达, phone=15666663333, email=15666663333@163.com, ge (truncated)...]
+2025-05-01 10:30:23.368 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:23.378 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=用户信息更新成功, data=User(id=13, username=艾达王, password=null,  (truncated)...]
+2025-05-01 10:30:23.379 DEBUG 32992 --- [http-nio-8090-exec-10] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:23.379 DEBUG 32992 --- [http-nio-8090-exec-10] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:39.417 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.security.web.FilterChainProxy        : Securing PUT /api/users/13
+2025-05-01 10:30:39.418 DEBUG 32992 --- [http-nio-8090-exec-1] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:39.424 DEBUG 32992 --- [http-nio-8090-exec-1] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:39.424 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [PUT /api/users/13] with attributes [authenticated]
+2025-05-01 10:30:39.424 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.security.web.FilterChainProxy        : Secured PUT /api/users/13
+2025-05-01 10:30:39.425 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.web.servlet.DispatcherServlet        : PUT "/api/users/13", parameters={}
+2025-05-01 10:30:39.425 DEBUG 32992 --- [http-nio-8090-exec-1] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#updateUser(Long, User)
+2025-05-01 10:30:39.426 DEBUG 32992 --- [http-nio-8090-exec-1] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [User(id=null, username=艾达王, password=null, name=阿达, phone=15666663333, email=15666663333@163.com, ge (truncated)...]
+2025-05-01 10:30:39.435 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:39.444 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=用户信息更新成功, data=User(id=13, username=艾达王, password=null,  (truncated)...]
+2025-05-01 10:30:39.446 DEBUG 32992 --- [http-nio-8090-exec-1] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:39.446 DEBUG 32992 --- [http-nio-8090-exec-1] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:46.777 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.security.web.FilterChainProxy        : Securing GET /api/users/13
+2025-05-01 10:30:46.777 DEBUG 32992 --- [http-nio-8090-exec-2] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:46.781 DEBUG 32992 --- [http-nio-8090-exec-2] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:46.782 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/users/13] with attributes [authenticated]
+2025-05-01 10:30:46.783 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.security.web.FilterChainProxy        : Secured GET /api/users/13
+2025-05-01 10:30:46.783 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.web.servlet.DispatcherServlet        : GET "/api/users/13", parameters={}
+2025-05-01 10:30:46.783 DEBUG 32992 --- [http-nio-8090-exec-2] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#getUserById(Long)
+2025-05-01 10:30:46.790 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:46.798 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=成功, data=User(id=13, username=艾达王, password=null, name=阿 (truncated)...]
+2025-05-01 10:30:46.799 DEBUG 32992 --- [http-nio-8090-exec-2] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:46.799 DEBUG 32992 --- [http-nio-8090-exec-2] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:46.846 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.security.web.FilterChainProxy        : Securing GET /api/membership/info
+2025-05-01 10:30:46.847 DEBUG 32992 --- [http-nio-8090-exec-3] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:46.853 DEBUG 32992 --- [http-nio-8090-exec-3] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:46.853 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/membership/info] with attributes [authenticated]
+2025-05-01 10:30:46.854 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.security.web.FilterChainProxy        : Secured GET /api/membership/info
+2025-05-01 10:30:46.854 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.web.servlet.DispatcherServlet        : GET "/api/membership/info", parameters={}
+2025-05-01 10:30:46.854 DEBUG 32992 --- [http-nio-8090-exec-3] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.MembershipController#getCurrentUserMembershipInfo()
+2025-05-01 10:30:46.863 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:46.863 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
+2025-05-01 10:30:46.865 DEBUG 32992 --- [http-nio-8090-exec-3] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:46.866 DEBUG 32992 --- [http-nio-8090-exec-3] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:30:50.498 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.security.web.FilterChainProxy        : Securing PUT /api/users/13
+2025-05-01 10:30:50.499 DEBUG 32992 --- [http-nio-8090-exec-4] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:30:50.504 DEBUG 32992 --- [http-nio-8090-exec-4] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:30:50.504 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [PUT /api/users/13] with attributes [authenticated]
+2025-05-01 10:30:50.504 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.security.web.FilterChainProxy        : Secured PUT /api/users/13
+2025-05-01 10:30:50.504 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.web.servlet.DispatcherServlet        : PUT "/api/users/13", parameters={}
+2025-05-01 10:30:50.505 DEBUG 32992 --- [http-nio-8090-exec-4] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#updateUser(Long, User)
+2025-05-01 10:30:50.506 DEBUG 32992 --- [http-nio-8090-exec-4] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [User(id=null, username=艾达王, password=null, name=阿达, phone=15666663333, email=15666663333@163.com, ge (truncated)...]
+2025-05-01 10:30:50.516 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:30:50.523 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=用户信息更新成功, data=User(id=13, username=艾达王, password=null,  (truncated)...]
+2025-05-01 10:30:50.524 DEBUG 32992 --- [http-nio-8090-exec-4] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:30:50.524 DEBUG 32992 --- [http-nio-8090-exec-4] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:32:47.312 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.security.web.FilterChainProxy        : Securing GET /api/users/13
+2025-05-01 10:32:47.313 DEBUG 32992 --- [http-nio-8090-exec-5] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:32:47.317 DEBUG 32992 --- [http-nio-8090-exec-5] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:32:47.318 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/users/13] with attributes [authenticated]
+2025-05-01 10:32:47.318 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.security.web.FilterChainProxy        : Secured GET /api/users/13
+2025-05-01 10:32:47.318 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.web.servlet.DispatcherServlet        : GET "/api/users/13", parameters={}
+2025-05-01 10:32:47.318 DEBUG 32992 --- [http-nio-8090-exec-5] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#getUserById(Long)
+2025-05-01 10:32:47.324 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:32:47.332 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=成功, data=User(id=13, username=艾达王, password=null, name=阿 (truncated)...]
+2025-05-01 10:32:47.334 DEBUG 32992 --- [http-nio-8090-exec-5] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:32:47.334 DEBUG 32992 --- [http-nio-8090-exec-5] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:32:47.388 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.security.web.FilterChainProxy        : Securing GET /api/membership/info
+2025-05-01 10:32:47.388 DEBUG 32992 --- [http-nio-8090-exec-6] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:32:47.392 DEBUG 32992 --- [http-nio-8090-exec-6] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:32:47.392 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/membership/info] with attributes [authenticated]
+2025-05-01 10:32:47.393 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.security.web.FilterChainProxy        : Secured GET /api/membership/info
+2025-05-01 10:32:47.394 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.web.servlet.DispatcherServlet        : GET "/api/membership/info", parameters={}
+2025-05-01 10:32:47.394 DEBUG 32992 --- [http-nio-8090-exec-6] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.MembershipController#getCurrentUserMembershipInfo()
+2025-05-01 10:32:47.401 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:32:47.401 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
+2025-05-01 10:32:47.403 DEBUG 32992 --- [http-nio-8090-exec-6] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:32:47.404 DEBUG 32992 --- [http-nio-8090-exec-6] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:33:42.738 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.security.web.FilterChainProxy        : Securing GET /api/users/13
+2025-05-01 10:33:42.738 DEBUG 32992 --- [http-nio-8090-exec-7] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:33:42.744 DEBUG 32992 --- [http-nio-8090-exec-7] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:33:42.744 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/users/13] with attributes [authenticated]
+2025-05-01 10:33:42.745 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.security.web.FilterChainProxy        : Secured GET /api/users/13
+2025-05-01 10:33:42.745 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.web.servlet.DispatcherServlet        : GET "/api/users/13", parameters={}
+2025-05-01 10:33:42.745 DEBUG 32992 --- [http-nio-8090-exec-7] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#getUserById(Long)
+2025-05-01 10:33:42.752 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:33:42.759 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=成功, data=User(id=13, username=艾达王, password=null, name=阿 (truncated)...]
+2025-05-01 10:33:42.761 DEBUG 32992 --- [http-nio-8090-exec-7] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:33:42.761 DEBUG 32992 --- [http-nio-8090-exec-7] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:33:42.832 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.security.web.FilterChainProxy        : Securing GET /api/membership/info
+2025-05-01 10:33:42.833 DEBUG 32992 --- [http-nio-8090-exec-8] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:33:42.838 DEBUG 32992 --- [http-nio-8090-exec-8] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:33:42.838 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [GET /api/membership/info] with attributes [authenticated]
+2025-05-01 10:33:42.838 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.security.web.FilterChainProxy        : Secured GET /api/membership/info
+2025-05-01 10:33:42.839 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.web.servlet.DispatcherServlet        : GET "/api/membership/info", parameters={}
+2025-05-01 10:33:42.839 DEBUG 32992 --- [http-nio-8090-exec-8] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.MembershipController#getCurrentUserMembershipInfo()
+2025-05-01 10:33:42.846 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:33:42.847 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [{code=200, data=MembershipDTO(userId=13, username=艾达王, name=阿达, memberLevel=普通用户, memberLevelCode=RE (truncated)...]
+2025-05-01 10:33:42.848 DEBUG 32992 --- [http-nio-8090-exec-8] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:33:42.849 DEBUG 32992 --- [http-nio-8090-exec-8] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
+2025-05-01 10:33:44.811 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.security.web.FilterChainProxy        : Securing PUT /api/users/13
+2025-05-01 10:33:44.811 DEBUG 32992 --- [http-nio-8090-exec-9] s.s.w.c.SecurityContextPersistenceFilter : Set SecurityContextHolder to empty SecurityContext
+2025-05-01 10:33:44.822 DEBUG 32992 --- [http-nio-8090-exec-9] c.hotel.config.JwtAuthenticationFilter   : 用户 '艾达王' 认证成功, 设置 SecurityContext
+2025-05-01 10:33:44.822 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.s.w.a.i.FilterSecurityInterceptor    : Authorized filter invocation [PUT /api/users/13] with attributes [authenticated]
+2025-05-01 10:33:44.822 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.security.web.FilterChainProxy        : Secured PUT /api/users/13
+2025-05-01 10:33:44.824 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.web.servlet.DispatcherServlet        : PUT "/api/users/13", parameters={}
+2025-05-01 10:33:44.825 DEBUG 32992 --- [http-nio-8090-exec-9] s.w.s.m.m.a.RequestMappingHandlerMapping : Mapped to com.hotel.controller.UserController#updateUser(Long, User)
+2025-05-01 10:33:44.826 DEBUG 32992 --- [http-nio-8090-exec-9] m.m.a.RequestResponseBodyMethodProcessor : Read "application/json;charset=UTF-8" to [User(id=null, username=艾达王, password=null, name=阿达, phone=15666663333, email=15666663333@163.com, ge (truncated)...]
+2025-05-01 10:33:44.832 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Using 'application/json', given [application/json, text/plain, */*] and supported [application/json, application/*+json, application/json, application/*+json]
+2025-05-01 10:33:44.842 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.w.s.m.m.a.HttpEntityMethodProcessor  : Writing [ApiResponse(success=true, code=200, message=用户信息更新成功, data=User(id=13, username=艾达王, password=null,  (truncated)...]
+2025-05-01 10:33:44.843 DEBUG 32992 --- [http-nio-8090-exec-9] o.s.web.servlet.DispatcherServlet        : Completed 200 OK
+2025-05-01 10:33:44.843 DEBUG 32992 --- [http-nio-8090-exec-9] s.s.w.c.SecurityContextPersistenceFilter : Cleared SecurityContextHolder to complete request
