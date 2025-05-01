@@ -64,11 +64,11 @@
         <el-table-column prop="role" label="角色" min-width="90" align="center">
           <template #default="{ row }">
             <el-tag 
-              :type="row.role === 'receptionist' ? 'primary' : 'success'"
+              :type="row.role === 'RECEPTIONIST' ? 'primary' : row.role === 'CLEANER' ? 'success' : 'info'" 
               effect="dark"
               class="role-tag"
             >
-              {{ row.role === 'receptionist' ? '前台' : '保洁' }}
+              {{ row.role === 'RECEPTIONIST' ? '前台' : row.role === 'CLEANER' ? '保洁' : row.role }} 
             </el-tag>
           </template>
         </el-table-column>
@@ -153,10 +153,19 @@
         <el-form-item label="姓名" prop="name">
           <el-input v-model="staffForm.name" />
         </el-form-item>
+        <el-form-item label="用户名" prop="username" v-if="dialogType === 'add'">
+          <el-input v-model="staffForm.username" placeholder="用于登录，创建后不可修改"/>
+        </el-form-item>
+        <el-form-item label="登录密码" prop="password" v-if="dialogType === 'add'">
+          <el-input v-model="staffForm.password" type="password" show-password placeholder="设置初始登录密码" />
+        </el-form-item>
+        <el-form-item label="确认密码" prop="confirmPassword" v-if="dialogType === 'add'">
+          <el-input v-model="staffForm.confirmPassword" type="password" show-password placeholder="请再次输入密码" />
+        </el-form-item>
         <el-form-item label="角色" prop="role">
           <el-select v-model="staffForm.role" placeholder="请选择角色" style="width: 100%">
-            <el-option label="前台" value="receptionist" />
-            <el-option label="保洁" value="cleaner" />
+            <el-option label="前台" value="RECEPTIONIST" />
+            <el-option label="保洁" value="CLEANER" />
           </el-select>
         </el-form-item>
         <el-form-item label="手机号" prop="phone">
@@ -484,6 +493,8 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { Download, Delete, Ticket, Plus, Search, Refresh, Edit, Calendar, CircleClose, CircleCheck, User, Iphone } from '@element-plus/icons-vue'
 import QRCode from 'qrcodejs2-fix'
 import { useRouter } from 'vue-router'
+// 导入 API 函数
+import { userApi } from '@/api/index.js'
 
 const router = useRouter()
 
@@ -497,31 +508,25 @@ const searchForm = reactive({
 
 // 员工列表数据
 const loading = ref(false)
-const staffList = ref([
-  {
-    id: 1,
-    name: '李四',
-    role: 'receptionist',
-    phone: '13800138001',
-    email: 'lisi@example.com',
-    workSchedule: 'night',
-    joinDate: '2024-01-01',
-    status: 'active'
-  },
-  // 更多模拟数据...
-])
+// 移除模拟数据，初始化为空数组
+const staffList = ref([])
 
 // 分页
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(1)
+// 移除模拟数据，初始化为 0
+const total = ref(0)
 
 // 表单对话框
 const dialogVisible = ref(false)
 const dialogType = ref('add')
 const staffFormRef = ref(null)
 const staffForm = reactive({
+  id: null, // 添加 id 字段，用于编辑时存储
   name: '',
+  username: '', // 添加 username
+  password: '', // 添加 password
+  confirmPassword: '', // 添加 confirmPassword
   role: '',
   phone: '',
   email: '',
@@ -529,10 +534,50 @@ const staffForm = reactive({
   workSchedule: ''
 })
 
+// 添加密码验证逻辑
+const validatePass = (rule, value, callback) => {
+  if (dialogType.value === 'add') { // 只在添加时验证密码
+    if (value === '') {
+      callback(new Error('请输入密码'))
+    } else {
+      if (staffForm.confirmPassword !== '') {
+        if (!staffFormRef.value) return
+        staffFormRef.value.validateField('confirmPassword', () => null)
+      }
+      callback()
+    }
+  }
+  callback(); // 编辑时不验证
+}
+
+// 添加密码验证逻辑
+const validatePass2 = (rule, value, callback) => {
+  if (dialogType.value === 'add') { // 只在添加时验证确认密码
+    if (value === '') {
+      callback(new Error('请再次输入密码'))
+    } else if (value !== staffForm.password) {
+      callback(new Error("两次输入密码不一致!"))
+    } else {
+      callback()
+    }
+  }
+  callback(); // 编辑时不验证
+}
+
 // 表单验证规则
 const staffFormRules = {
   name: [
     { required: true, message: '请输入姓名', trigger: 'blur' }
+  ],
+  username: [
+    { required: computed(() => dialogType.value === 'add'), message: '请输入用户名', trigger: 'blur' },
+    { min: 3, max: 20, message: '长度在 3 到 20 个字符', trigger: 'blur' }
+  ],
+  password: [
+    { required: computed(() => dialogType.value === 'add'), validator: validatePass, trigger: 'blur' }
+  ],
+  confirmPassword: [
+    { required: computed(() => dialogType.value === 'add'), validator: validatePass2, trigger: 'blur' }
   ],
   role: [
     { required: true, message: '请选择角色', trigger: 'change' }
@@ -639,12 +684,41 @@ const resetSearch = () => {
 const fetchStaffList = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端API获取员工列表
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    loading.value = false
+    // 构建查询参数，包含分页和搜索条件
+    // 注意：后端 page 参数通常是 0-based，而 el-pagination 是 1-based
+    const params = {
+      page: currentPage.value - 1, // 转换为 0-based
+      pageSize: pageSize.value,
+      // 传递搜索表单的值，空字符串会被忽略
+      username: searchForm.name || null, // 后端可能用 username
+      phone: searchForm.phone || null,
+      status: searchForm.status || null,
+      // 添加一个参数，明确只获取员工角色
+      // (需要后端支持此参数，或者后端 /api/users 默认只返回员工)
+    };
+
+    // 调用 API (修正为调用新的 getStaffList)
+    const response = await userApi.getStaffList(params); 
+
+    // 检查返回的数据结构，修正为匹配后端实际返回的 { users: [...], total: ... }
+    if (response && response.users && typeof response.total !== 'undefined') { 
+      staffList.value = response.users; // 使用 'users' key
+      total.value = response.total;     // 使用 'total' key
+    } else {
+      // 如果数据结构不符合预期，给出提示或默认值
+      console.warn('获取员工列表数据结构异常:', response);
+      staffList.value = [];
+      total.value = 0;
+      ElMessage.warning('获取员工列表数据格式错误');
+    }
+
   } catch (error) {
     console.error('获取员工列表失败:', error)
-    ElMessage.error('获取员工列表失败')
+    // 显示拦截器或 API 函数中抛出的错误消息
+    ElMessage.error(error.message || '获取员工列表失败') 
+    staffList.value = []; // 清空列表，避免显示旧数据
+    total.value = 0;
+  } finally {
     loading.value = false
   }
 }
@@ -664,17 +738,28 @@ const handleCurrentChange = (val) => {
 const handleAdd = () => {
   dialogType.value = 'add'
   Object.keys(staffForm).forEach(key => {
-    staffForm[key] = ''
+    // 重置表单，包括新加的字段
+    staffForm[key] = '' 
   })
+  staffForm.id = null; // 确保 id 为 null
   dialogVisible.value = true
+  // 清除上次的校验结果 (如果存在)
+  if (staffFormRef.value) {
+    staffFormRef.value.resetFields();
+  }
 }
 
 // 编辑员工
 const handleEdit = (row) => {
   dialogType.value = 'edit'
   Object.keys(staffForm).forEach(key => {
-    staffForm[key] = row[key]
+    // 确保只复制 staffForm 中存在的字段
+    if (staffForm.hasOwnProperty(key) && row.hasOwnProperty(key)) {
+       staffForm[key] = row[key]
+    }
   })
+  // 特别设置 id
+  staffForm.id = row.id;
   dialogVisible.value = true
 }
 
@@ -685,14 +770,53 @@ const handleSubmit = async () => {
   await staffFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端API保存员工信息
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
-        dialogVisible.value = false
-        fetchStaffList()
+        let response;
+        // 准备提交的数据
+        const dataToSend = { ...staffForm };
+        // 删除不需要发送给后端的字段 (确认密码)
+        delete dataToSend.confirmPassword;
+        
+        // 添加时需要 username 和 password，编辑时不需要传密码(除非修改密码)
+        if (dialogType.value === 'add') {
+          // 确保 username 和 password 已提供
+          if (!dataToSend.username || !dataToSend.password) {
+            throw new Error('添加员工时必须提供用户名和密码');
+          }
+          delete dataToSend.id; 
+        } else {
+          // 编辑时，通常不发送密码字段，除非有修改密码的功能
+          delete dataToSend.password; 
+          // 编辑时通常不允许修改 username
+          delete dataToSend.username;
+        }
+        
+        // 确认 role 值是大写 (已在 el-option 中修改 value)
+        // dataToSend.role = dataToSend.role.toUpperCase(); 
+
+        if (dialogType.value === 'add') {
+          response = await userApi.createUser(dataToSend); // 使用 createUser 添加员工
+        } else {
+          // 确保 staffForm.id 有值
+          if (!staffForm.id) {
+            throw new Error('缺少员工ID，无法编辑');
+          }
+          response = await userApi.updateStaffInfo(staffForm.id, dataToSend); // 使用 updateStaffInfo 编辑员工
+        }
+
+        // 检查操作是否成功 (根据后端返回的 response 结构判断)
+        // 假设后端成功时返回 { success: true, ... } 或类似结构
+        if (response && (response.success === true || response.code === 200 || response.userId)) { // 假设成功标识
+           ElMessage.success(dialogType.value === 'add' ? '添加成功' : '修改成功')
+           dialogVisible.value = false
+           fetchStaffList() // 刷新列表
+        } else {
+           // API 调用成功但业务逻辑失败
+           throw new Error(response?.message || (dialogType.value === 'add' ? '添加失败' : '修改失败'));
+        }
+
       } catch (error) {
         console.error('保存员工信息失败:', error)
-        ElMessage.error('操作失败')
+        ElMessage.error(error.message || '操作失败')
       }
     }
   })
@@ -730,10 +854,14 @@ const handleToggleStatus = async (row) => {
       }
     )
     
-    // TODO: 调用后端API修改员工状态
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    ElMessage.success(`${row.status === 'active' ? '离职' : '复职'}操作成功`)
-    row.status = row.status === 'active' ? 'inactive' : 'active'
+    // 调用后端API修改员工状态
+    await userApi.toggleUserStatus(row.id);
+    
+    ElMessage.success(`${row.status === 'active' ? '离职' : '复职'}操作成功`);
+    // 移除本地状态修改，调用 fetchStaffList 刷新
+    // row.status = row.status === 'active' ? 'inactive' : 'active' 
+    fetchStaffList(); // 刷新列表以获取最新状态
+
   } catch (error) {
     if (error !== 'cancel') {
       console.error('修改员工状态失败:', error)

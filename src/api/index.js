@@ -467,6 +467,97 @@ export const userApi = {
           throw error
         }
       })
+  },
+
+  // 检查手机号是否可用
+  checkPhone: (phone) => {
+    console.log('调用检查手机号可用性API:', phone)
+    return apiClient.get('/api/users/check-phone', { params: { phone } })
+      .then(response => {
+        console.log('检查手机号可用性API响应:', response)
+        if (!response || response.success === false) {
+          throw new Error(response?.message || '检查手机号可用性失败')
+        }
+        return response
+      })
+      .catch(error => {
+        console.error('检查手机号可用性API错误:', error)
+        if (error.response) {
+          const serverError = error.response.data
+          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
+        } else if (error.request) {
+          throw new Error('服务器无响应，请检查网络连接')
+        } else {
+          throw error
+        }
+      })
+  },
+
+  // 获取用户/员工列表 (支持分页和过滤)
+  getUserList: (params) => {
+    console.log('调用获取用户/员工列表API, 参数:', params);
+    // 确保 page 是 0-based 如果后端需要
+    // if (params && params.page && params.page > 0) {
+    //   params.page = params.page - 1;
+    // }
+    return apiClient.get('/api/users', { params })
+      .then(response => {
+        console.log('获取用户/员工列表API响应:', response);
+        // 假设后端直接返回分页对象 { content: [], totalElements: ... }
+        // 或者可能包裹在 data 字段中 { success: true, data: { content: [], ... } }
+        if (response && response.success === false) {
+          throw new Error(response.message || '获取列表失败');
+        }
+        // 返回后端响应的 data 部分，如果它是按通用格式包装的
+        return response.data || response; 
+      })
+      .catch(error => {
+        console.error('获取用户/员工列表API错误:', error);
+        throw error; // 拦截器已处理，重新抛出
+      });
+  },
+  
+  // 更新员工信息 (由管理员)
+  updateStaffInfo: (id, staffData) => {
+    if (!id) {
+      return Promise.reject(new Error('员工ID不能为空'));
+    }
+    console.log(`调用更新员工信息API, ID: ${id}, 数据:`, staffData);
+    return apiClient.put(`/api/users/${id}`, staffData)
+      .then(response => {
+        console.log('更新员工信息API响应:', response);
+        if (response && response.success === false) {
+          throw new Error(response.message || '更新失败');
+        }
+        return response;
+      })
+      .catch(error => {
+        console.error('更新员工信息API错误:', error);
+        throw error;
+      });
+  },
+  
+  // 新增：获取员工列表 (分页+过滤，固定角色)
+  getStaffList: (params) => {
+    console.log('调用获取员工列表API, 参数:', params);
+    // 确保 page 是 0-based 如果后端需要 (已在 Controller 处理)
+    // if (params && params.page && params.page > 0) {
+    //   params.page = params.page - 1;
+    // }
+    return apiClient.get('/api/users/staff', { params }) // 调用新端点
+      .then(response => {
+        console.log('获取员工列表API响应:', response);
+        // 假设后端返回 { success: true, data: { users: [...], total: ... } }
+        if (response && response.success === false) {
+          throw new Error(response.message || '获取员工列表失败');
+        }
+        // 返回 data 部分
+        return response.data || response; 
+      })
+      .catch(error => {
+        console.error('获取员工列表API错误:', error);
+        throw error; // 拦截器已处理，重新抛出
+      });
   }
 };
 

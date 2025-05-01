@@ -5,6 +5,7 @@ import com.hotel.entity.User;
 import com.hotel.service.UserService;
 import com.hotel.dto.LoginRequest;
 import com.hotel.dto.LoginResponse;
+import com.hotel.dto.UserDTO;
 import com.hotel.util.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -426,23 +427,26 @@ public class UserController {
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String username,
             @RequestParam(required = false) String phone,
-            @RequestParam(required = false) String status) {
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String role) {
         try {
-            System.out.println("接收到获取所有用户请求 (分页+过滤)");
-            Page<User> userPage = userService.findUsersPaginatedAndFiltered(page, pageSize, username, phone, status);
+            System.out.println("接收到获取所有用户请求: page="+page+", pageSize="+pageSize+", username="+username+", phone="+phone+", status="+status+", role="+role);
+            // 注意：Spring Data JPA Pageable 页码是从0开始的
+            // 控制器接收的是从1开始的页码，需要调整
+            int adjustedPage = page > 0 ? page - 1 : 0;
 
-            // 移除敏感信息
-            userPage.getContent().forEach(user -> user.setPassword(null));
+            // 调用服务层方法，传递所有参数，包括新增的 role
+            Page<UserDTO> userDtoPage = userService.findUsersPaginatedAndFiltered(adjustedPage, pageSize, username, phone, status, role);
 
-            // 构建前端期望的响应结构
-            Map<String, Object> data = new HashMap<>();
-            data.put("users", userPage.getContent());
-            data.put("total", userPage.getTotalElements());
+            // 准备响应数据
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("users", userDtoPage.getContent());
+            responseData.put("total", userDtoPage.getTotalElements());
 
             // 使用 ApiResponse 包装
-            ApiResponse<Map<String, Object>> response = ApiResponse.success(data);
+            ApiResponse<Object> response = ApiResponse.success(responseData);
 
-            System.out.println("返回分页用户信息成功, Page: " + page + ", Size: " + pageSize + ", Total: " + userPage.getTotalElements());
+            System.out.println("返回分页用户信息成功, Page: " + page + ", Size: " + pageSize + ", Total: " + userDtoPage.getTotalElements());
             return ResponseEntity.ok(response);
         } catch (Exception e) {
             System.err.println("获取所有用户失败 (分页+过滤): " + e.getMessage());
@@ -620,6 +624,44 @@ public class UserController {
             e.printStackTrace();
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
                     .body(ApiResponse.fail("创建用户失败: " + e.getMessage()));
+        }
+    }
+
+    /**
+     * 获取分页和过滤后的员工列表 (RECEPTIONIST, CLEANER)
+     */
+    @GetMapping("/staff")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<?> getAllStaffPaginated(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String username,
+            @RequestParam(required = false) String phone,
+            @RequestParam(required = false) String status) {
+        try {
+            System.out.println("接收到获取员工列表请求: page="+page+", pageSize="+pageSize+", username="+username+", phone="+phone+", status="+status);
+            // 调整页码为 0-based
+            int adjustedPage = page > 0 ? page - 1 : 0;
+
+            // 调用新的服务层方法
+            Page<UserDTO> staffDtoPage = userService.findStaffPaginatedAndFiltered(adjustedPage, pageSize, username, phone, status);
+
+            // 准备响应数据 (与 getAllUsers 保持一致的结构)
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("users", staffDtoPage.getContent());
+            responseData.put("total", staffDtoPage.getTotalElements());
+
+            // 使用 ApiResponse 包装
+            ApiResponse<Object> response = ApiResponse.success(responseData);
+
+            System.out.println("返回分页员工信息成功, Page: " + page + ", Size: " + pageSize + ", Total: " + staffDtoPage.getTotalElements());
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            System.err.println("获取员工列表失败 (分页+过滤): " + e.getMessage());
+            e.printStackTrace();
+            // 返回错误响应
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("获取员工列表失败: " + e.getMessage()));
         }
     }
 }

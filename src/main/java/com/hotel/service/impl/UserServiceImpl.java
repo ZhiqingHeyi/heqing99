@@ -2,6 +2,7 @@ package com.hotel.service.impl;
 
 import com.hotel.entity.MemberLevel;
 import com.hotel.entity.User;
+import com.hotel.dto.UserDTO;
 import com.hotel.repository.UserRepository;
 import com.hotel.service.InvitationCodeService;
 import com.hotel.service.UserService;
@@ -429,9 +430,11 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    public Page<User> findUsersPaginatedAndFiltered(int page, int pageSize, String username, String phone, String status) {
-        // 转换前端页码 (1-based) 为 Spring Data JPA 页码 (0-based)
-        Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+    public Page<UserDTO> findUsersPaginatedAndFiltered(int page, int pageSize, String username, String phone, String status, String role) {
+        System.out.println("开始查询用户(分页+过滤): page="+page+", pageSize="+pageSize+", username="+username+", phone="+phone+", status="+status+", role="+role);
+        
+        // 创建分页请求对象
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
 
         // 使用 Specification 构建动态查询条件
         Specification<User> spec = (root, query, criteriaBuilder) -> {
@@ -449,27 +452,102 @@ public class UserServiceImpl implements UserService {
 
             // 添加状态查询条件
             if (status != null && !status.trim().isEmpty()) {
-                boolean enabledStatus;
-                if ("active".equalsIgnoreCase(status.trim())) {
-                    enabledStatus = true;
-                } else if ("disabled".equalsIgnoreCase(status.trim())) {
-                    enabledStatus = false;
-                } else {
-                    // 如果状态无效，可以抛出异常或忽略此条件
-                    // 这里选择忽略
-                    System.err.println("无效的状态参数: " + status);
-                    enabledStatus = true; // 或者根据业务逻辑决定默认行为
-                }
-                 predicates.add(criteriaBuilder.equal(root.get("enabled"), enabledStatus));
+                System.out.println("添加 status 过滤条件: " + status);
+                // 假设 status 是字符串类型且与数据库存储一致
+                predicates.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("status")), status.toLowerCase()));
             }
-            
-             // (重要) 排除超级管理员，如果需要的话
-             predicates.add(criteriaBuilder.notEqual(root.get("role"), User.UserRole.SUPER_ADMIN));
 
+            // 添加 role 过滤条件
+            if (role != null && !role.trim().isEmpty()) {
+                System.out.println("添加 role 过滤条件: " + role);
+                try {
+                    // 尝试将传入的 role 字符串转换为 UserRole 枚举
+                    User.UserRole userRole = User.UserRole.valueOf(role.toUpperCase()); 
+                    predicates.add(criteriaBuilder.equal(root.get("role"), userRole));
+                } catch (IllegalArgumentException e) {
+                    // 如果转换失败 (传入的 role 不是有效的枚举值), 可以选择忽略或抛出异常
+                    System.err.println("无效的角色值: " + role + ", 忽略该过滤条件。");
+                    // 或者可以抛出异常: throw new IllegalArgumentException("无效的角色值: " + role);
+                }
+            }
 
+            System.out.println("构建的 Predicate 数量: " + predicates.size());
             return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
         };
 
-        return userRepository.findAll(spec, pageable);
+        // 执行查询并转换
+        Page<User> userPage = userRepository.findAll(spec, pageable);
+        return userPage.map(UserDTO::fromEntity); // 使用静态工厂方法引用
+    }
+
+    @Override
+    public Page<UserDTO> findStaffPaginatedAndFiltered(int page, int pageSize, String username, String phone, String status) {
+        System.out.println("开始查询员工(分页+过滤): page="+page+", pageSize="+pageSize+", username="+username+", phone="+phone+", status="+status);
+        
+        // 创建分页请求对象 (使用 createTime 排序)
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+
+        // 创建查询规范
+        Specification<User> spec = (root, query, criteriaBuilder) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 固定添加角色过滤条件：必须是 RECEPTIONIST 或 CLEANER
+            predicates.add(root.get("role").in(User.UserRole.RECEPTIONIST, User.UserRole.CLEANER));
+
+            // 添加其他过滤条件 (与 findUsersPaginatedAndFiltered 类似)
+            if (username != null && !username.trim().isEmpty()) {
+                System.out.println("添加 username 过滤条件: " + username);
+                predicates.add(criteriaBuilder.like(root.get("username"), "%" + username.trim() + "%"));
+            }
+            if (phone != null && !phone.trim().isEmpty()) {
+                System.out.println("添加 phone 过滤条件: " + phone);
+                // 注意：用户表中的 phone 可能允许 NULL，但这里假设我们只对有手机号的用户进行精确匹配
+                predicates.add(criteriaBuilder.equal(root.get("phone"), phone.trim()));
+            }
+            if (status != null && !status.trim().isEmpty()) {
+                System.out.println("添加 status 过滤条件: " + status);
+                // 假设 status 是字符串类型且与数据库存储一致
+                predicates.add(criteriaBuilder.equal(criteriaBuilder.lower(root.get("status")), status.toLowerCase()));
+            }
+
+            System.out.println("构建的员工查询 Predicate 数量: " + predicates.size());
+            return criteriaBuilder.and(predicates.toArray(new Predicate[0]));
+        };
+
+        // 执行查询
+        Page<User> staffPage = userRepository.findAll(spec, pageable);
+        
+        System.out.println("员工查询完成, 返回数量: " + staffPage.getNumberOfElements() + ", 总页数: " + staffPage.getTotalPages());
+        
+        // 移除敏感信息 (例如密码) - 不再需要，在转换DTO时已排除
+        // staffPage.getContent().forEach(user -> user.setPassword(null));
+
+        // return staffPage;
+        // return staffPage.map(user -> convertToDto(user)); // 使用 map 转换
+        return staffPage.map(UserDTO::fromEntity); // 使用静态工厂方法引用
+    }
+
+    // 添加私有辅助方法用于转换
+    private UserDTO convertToDto(User user) {
+        if (user == null) {
+            return null;
+        }
+        UserDTO dto = new UserDTO();
+        dto.setId(user.getId());
+        dto.setUsername(user.getUsername());
+        dto.setName(user.getName());
+        dto.setPhone(user.getPhone());
+        dto.setEmail(user.getEmail());
+        dto.setGender(user.getGender());
+        dto.setBirthday(user.getBirthday());
+        dto.setRole(user.getRole() != null ? user.getRole().name() : null);
+        dto.setStatus(user.getStatus());
+        dto.setMemberLevel(user.getMemberLevel() != null ? user.getMemberLevel().name() : null);
+        dto.setPoints(user.getPoints());
+        dto.setTotalSpent(user.getTotalSpent());
+        dto.setCreateTime(user.getCreateTime());
+        dto.setUpdateTime(user.getUpdateTime());
+        // 注意：这里没有设置 password
+        return dto;
     }
 }
