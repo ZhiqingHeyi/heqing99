@@ -89,11 +89,11 @@
         <el-table-column prop="status" label="状态" width="80" align="center">
           <template #default="{ row }">
             <el-tag 
-              :type="row.status === 'active' ? 'success' : 'info'"
+              :type="row.status === 'ACTIVE' ? 'success' : 'info'"
               effect="dark"
               class="status-tag"
             >
-              {{ row.status === 'active' ? '在职' : '离职' }}
+              {{ row.status === 'ACTIVE' ? '在职' : '离职' }}
             </el-tag>
           </template>
         </el-table-column>
@@ -107,13 +107,13 @@
                 <el-icon><Calendar /></el-icon>排班
               </el-button>
               <el-button 
-                :type="row.status === 'active' ? 'danger' : 'success'"
+                :type="row.status === 'ACTIVE' ? 'danger' : 'success'"
                 link 
                 @click="handleToggleStatus(row)"
                 class="action-button"
               >
-                <el-icon><component :is="row.status === 'active' ? 'CircleClose' : 'CircleCheck'" /></el-icon>
-                {{ row.status === 'active' ? '离职' : '复职' }}
+                <el-icon><component :is="row.status === 'ACTIVE' ? 'CircleClose' : 'CircleCheck'" /></el-icon>
+                {{ row.status === 'ACTIVE' ? '离职' : '复职' }}
               </el-button>
             </div>
           </template>
@@ -845,7 +845,7 @@ const handleScheduleSubmit = async () => {
 const handleToggleStatus = async (row) => {
   try {
     await ElMessageBox.confirm(
-      `确定要将该员工标记为${row.status === 'active' ? '离职' : '复职'}状态吗？`,
+      `确定要将该员工标记为${row.status === 'ACTIVE' ? '离职' : '复职'}状态吗？`,
       '提示',
       {
         confirmButtonText: '确定',
@@ -857,7 +857,7 @@ const handleToggleStatus = async (row) => {
     // 调用后端API修改员工状态
     await userApi.toggleUserStatus(row.id);
     
-    ElMessage.success(`${row.status === 'active' ? '离职' : '复职'}操作成功`);
+    ElMessage.success(`${row.status === 'ACTIVE' ? '离职' : '复职'}操作成功`);
     // 移除本地状态修改，调用 fetchStaffList 刷新
     // row.status = row.status === 'active' ? 'inactive' : 'active' 
     fetchStaffList(); // 刷新列表以获取最新状态
