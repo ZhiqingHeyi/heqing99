@@ -126,7 +126,9 @@
           <div v-if="activeMenu === 'bookings'">
             <div class="section-header">
               <h2>我的预订</h2>
-              <el-button type="primary" size="small" @click="goToBooking">新增预订</el-button>
+              <el-button type="primary" size="small" @click="goToBooking" class="btn-edit-style">
+                新增预订
+              </el-button>
             </div>
 
             <el-tabs v-model="bookingTab" class="booking-tabs">
@@ -213,7 +215,9 @@
                     <el-input v-model="passwordForm.confirmPassword" type="password" show-password />
                   </el-form-item>
                   <el-form-item>
-                    <el-button type="primary" @click="changePassword">确认修改</el-button>
+                    <el-button type="primary" @click="changePassword" class="btn-edit-style">
+                      确认修改
+                    </el-button>
                   </el-form-item>
                 </el-form>
               </el-collapse-item>
@@ -230,7 +234,9 @@
                     <el-switch v-model="notificationSettings.pointsNotifications" />
                   </el-form-item>
                   <el-form-item>
-                    <el-button type="primary" @click="saveNotificationSettings">保存设置</el-button>
+                    <el-button type="primary" @click="saveNotificationSettings" class="btn-edit-style">
+                      保存设置
+                    </el-button>
                   </el-form-item>
                 </el-form>
               </el-collapse-item>
@@ -1076,4 +1082,44 @@ onMounted(async () => {
   color: #a07d4a !important;
 }
 /* End Gold Button Styles */
+
+/* Tabs and Pagination Gold Styles */
+.booking-tabs :deep(.el-tabs__active-bar) {
+  background-color: #c59d5f; /* 主金色 */
+}
+
+.booking-tabs :deep(.el-tabs__item.is-active) {
+  color: #c59d5f; /* 主金色 */
+}
+
+.booking-tabs :deep(.el-tabs__item:hover) {
+  color: #c59d5f; /* 主金色 */
+}
+
+.pagination-container :deep(.el-pagination.is-background .el-pager li.is-active) {
+  background-color: #c59d5f !important; /* 主金色 */
+  color: #ffffff !important;
+  /* border-radius: 4px; /* Optional: Match button radius */
+}
+
+.pagination-container :deep(.el-pagination.is-background .el-pager li.is-active:hover) {
+    color: #ffffff !important; 
+    background-color: #a07d4a !important; /* 深一点的金色 */
+}
+
+.pagination-container :deep(.el-pagination.is-background .el-pager li:not(.is-disabled):hover) {
+  color: #c59d5f !important; /* 主金色 */
+}
+
+ .pagination-container :deep(.el-pagination button:not(:disabled):hover) {
+     color: #c59d5f !important; /* 主金色 */
+ }
+/* End Tabs and Pagination Gold Styles */
+
+/* Switch Gold Style */
+.el-switch.is-checked :deep(.el-switch__core) {
+  background-color: #c59d5f !important; /* 主金色 */
+  border-color: #c59d5f !important; /* 主金色 */
+}
+/* End Switch Gold Style */
 </style>

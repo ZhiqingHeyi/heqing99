@@ -3,8 +3,11 @@ package com.hotel.repository;
 import com.hotel.entity.Reservation;
 import com.hotel.entity.Room;
 import com.hotel.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -14,12 +17,16 @@ import java.util.List;
 public interface ReservationRepository extends JpaRepository<Reservation, Long> {
     List<Reservation> findByUser(User user);
 
+    Page<Reservation> findByUser(User user, Pageable pageable);
+
     List<Reservation> findByRoom(Room room);
 
     List<Reservation> findByStatus(Reservation.ReservationStatus status);
 
     @Query("SELECT r FROM Reservation r WHERE r.user = ?1 AND r.status = ?2")
     List<Reservation> findByUserAndStatus(User user, Reservation.ReservationStatus status);
+
+    Page<Reservation> findByUserAndStatus(User user, Reservation.ReservationStatus status, Pageable pageable);
 
     @Query("SELECT r FROM Reservation r WHERE r.checkInTime <= ?1 AND r.checkOutTime >= ?1")
     List<Reservation> findCurrentReservations(LocalDateTime currentTime);
@@ -31,8 +38,8 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     @Query("SELECT COUNT(r) FROM Reservation r WHERE r.status = ?1")
     long countByStatus(Reservation.ReservationStatus status);
 
-    @Query("SELECT r FROM Reservation r WHERE r.status = 'CONFIRMED' AND r.checkInTime <= ?1")
-    List<Reservation> findReservationsToCheckIn(LocalDateTime currentTime);
+    @Query("SELECT r FROM Reservation r WHERE r.status = 'CONFIRMED' AND r.checkInTime <= :now")
+    List<Reservation> findReservationsToCheckIn(@Param("now") LocalDateTime now);
 
     List<Reservation> findByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
     
@@ -41,4 +48,6 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     
     // 添加根据入住时间之后计数的方法
     int countByCheckInTimeAfter(LocalDateTime time);
+
+    boolean existsByRoomId(Long roomId);
 }

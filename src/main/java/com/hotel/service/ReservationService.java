@@ -5,6 +5,8 @@ import com.hotel.entity.CheckInRecord;
 import com.hotel.entity.Reservation;
 import com.hotel.entity.Room;
 import com.hotel.entity.User;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -140,4 +142,9 @@ public interface ReservationService {
      * 获取预订统计数据
      */
     Map<String, Object> getReservationStatistics(String period);
+
+    /**
+     * 获取用户的预订列表（分页和可选状态过滤）
+     */
+    Page<Reservation> getUserReservationsPaginated(Long userId, Reservation.ReservationStatus status, Pageable pageable);
 }

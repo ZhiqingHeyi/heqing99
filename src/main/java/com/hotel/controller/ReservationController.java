@@ -7,7 +7,13 @@ import com.hotel.entity.User;
 import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
 import com.hotel.service.UserService;
+import com.hotel.util.UserContextHolder;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
+import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
@@ -477,6 +483,63 @@ public class ReservationController {
             response.put("success", false);
             response.put("message", "获取预订统计数据失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(response);
+        }
+    }
+
+    // 新增：获取当前用户的预订列表（分页和状态过滤）
+    @GetMapping("/user")
+    public ResponseEntity<?> getCurrentUserReservations(
+            @RequestParam(defaultValue = "1") int page,
+            @RequestParam(defaultValue = "10") int pageSize,
+            @RequestParam(required = false) String status) { // status 作为 String 接收
+        try {
+            Long userId = UserContextHolder.getCurrentUserId(); // 获取当前用户 ID
+            
+            // 处理 status 字符串到枚举的转换
+            Reservation.ReservationStatus reservationStatus = null;
+            if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) {
+                try {
+                    reservationStatus = Reservation.ReservationStatus.valueOf(status.toUpperCase());
+                } catch (IllegalArgumentException e) {
+                    Map<String, Object> response = new HashMap<>();
+                    response.put("success", false);
+                    response.put("message", "无效的状态参数: " + status);
+                    return ResponseEntity.badRequest().body(response);
+                }
+            }
+
+            // 创建 Pageable 对象 (注意 page 是 0-based)
+            Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
+
+            // 调用服务层方法
+            Page<Reservation> reservationPage = reservationService.getUserReservationsPaginated(userId, reservationStatus, pageable);
+
+            // 构建响应数据
+            Map<String, Object> responseData = new HashMap<>();
+            responseData.put("list", reservationPage.getContent());
+            responseData.put("total", reservationPage.getTotalElements());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", responseData);
+
+            return ResponseEntity.ok(response);
+
+        } catch (Exception e) {
+            System.err.println("获取当前用户预订列表失败: " + e.getMessage());
+            // 可以根据异常类型返回更具体的错误，例如用户未登录
+            if (e instanceof RuntimeException && e.getMessage().contains("用户未登录")) {
+                 Map<String, Object> response = new HashMap<>();
+                 response.put("success", false);
+                 response.put("message", "用户未登录，请先登录");
+                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
+            }
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", false);
+            response.put("message", "获取预订列表失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); // 使用 500
         }
     }
 }

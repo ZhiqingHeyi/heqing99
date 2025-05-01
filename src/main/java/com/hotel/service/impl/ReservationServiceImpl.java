@@ -9,7 +9,10 @@ import com.hotel.repository.RoomRepository;
 import com.hotel.repository.CheckInRecordRepository;
 import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
+import com.hotel.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -39,6 +42,9 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Autowired
     private RoomService roomService;
+
+    @Autowired
+    private UserService userService;
 
     @Override
     public Reservation createReservation(Reservation reservation) {
@@ -205,26 +211,6 @@ public class ReservationServiceImpl implements ReservationService {
         Room room = roomOpt.get();
         List<Reservation> reservations = reservationRepository.findByRoom(room);
         return !reservations.isEmpty();
-    }
-
-    private boolean hasTimeConflict(Reservation newReservation) {
-        List<Reservation> existingReservations = reservationRepository.findByRoom(newReservation.getRoom());
-
-        for (Reservation existing : existingReservations) {
-            // 跳过取消的预订
-            if (existing.getStatus() == Reservation.ReservationStatus.CANCELLED || 
-                existing.getStatus() == Reservation.ReservationStatus.COMPLETED) {
-                continue;
-            }
-            
-            // 检查时间冲突
-            if (!(newReservation.getCheckOutTime().isBefore(existing.getCheckInTime()) ||
-                  newReservation.getCheckInTime().isAfter(existing.getCheckOutTime()))) {
-                return true;
-            }
-        }
-
-        return false;
     }
 
     @Override
@@ -498,5 +484,35 @@ public class ReservationServiceImpl implements ReservationService {
             })
             .sorted((a, b) -> ((String)a.get("date")).compareTo((String)b.get("date")))
             .collect(Collectors.toList());
+    }
+
+    @Override
+    public Page<Reservation> getUserReservationsPaginated(Long userId, Reservation.ReservationStatus status, Pageable pageable) {
+        User user = userService.getUserById(userId);
+        if (status == null) {
+            return reservationRepository.findByUser(user, pageable);
+        } else {
+            return reservationRepository.findByUserAndStatus(user, status, pageable);
+        }
+    }
+
+    private boolean hasTimeConflict(Reservation newReservation) {
+        List<Reservation> existingReservations = reservationRepository.findByRoom(newReservation.getRoom());
+
+        for (Reservation existing : existingReservations) {
+            // 跳过取消的预订
+            if (existing.getStatus() == Reservation.ReservationStatus.CANCELLED || 
+                existing.getStatus() == Reservation.ReservationStatus.COMPLETED) {
+                continue;
+            }
+            
+            // 检查时间冲突
+            if (!(newReservation.getCheckOutTime().isBefore(existing.getCheckInTime()) ||
+                  newReservation.getCheckInTime().isAfter(existing.getCheckOutTime()))) {
+                return true;
+            }
+        }
+
+        return false;
     }
 }
