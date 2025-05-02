@@ -2,6 +2,7 @@ package com.hotel.service;
 
 import com.hotel.entity.User;
 import com.hotel.dto.UserDTO;
+import com.hotel.dto.StaffRegistrationDto;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -117,4 +118,7 @@ public interface UserService {
      * 根据条件分页和过滤员工列表 (RECEPTIONIST, CLEANER)
      */
     Page<UserDTO> findStaffPaginatedAndFiltered(int page, int pageSize, String username, String phone, String status);
+
+    // 新增员工注册方法声明
+    User registerStaff(StaffRegistrationDto dto);
 }

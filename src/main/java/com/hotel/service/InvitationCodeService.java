@@ -18,4 +18,6 @@ public interface InvitationCodeService {
     List<InvitationCode> getInvitationCodesByRole(User.UserRole role);
     
     void disableInvitationCode(Long id);
+    
+    InvitationCode validateCodeOnly(String code);
 }

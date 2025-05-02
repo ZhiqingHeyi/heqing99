@@ -4,6 +4,15 @@ import AdminLayout from '../views/admin/Layout.vue'
 import AdminLogin from '../views/admin/Login.vue'
 import InviteCodes from '../views/admin/InviteCodes.vue'
 import AdminRegister from '../views/admin/Register.vue'
+import AdminDashboard from '../views/admin/Dashboard.vue'
+import AdminUsers from '../views/admin/Users.vue'
+import AdminStaff from '../views/admin/Staff.vue'
+import AdminRoomManagement from '../views/admin/RoomManagement.vue'
+import ReceptionBookings from '../views/admin/reception/Bookings.vue'
+import ReceptionCheckin from '../views/admin/reception/Checkin.vue'
+import ReceptionVisitors from '../views/admin/reception/Visitors.vue'
+import CleaningTasks from '../views/admin/cleaning/Tasks.vue'
+import CleaningRecords from '../views/admin/cleaning/Records.vue'
 
 const router = createRouter({
   history: createWebHistory(),
@@ -89,51 +98,72 @@ const router = createRouter({
     {
       path: '/admin',
       component: AdminLayout,
+      meta: { requiresAdminAuth: true },
       children: [
         {
           path: 'dashboard',
           name: 'admin-dashboard',
+          component: AdminDashboard,
+          meta: { title: '数据看板' }
         },
         {
           path: 'users',
           name: 'admin-users',
+          component: AdminUsers,
+          meta: { title: '用户管理' }
         },
         {
           path: 'staff',
           name: 'admin-staff',
+          component: AdminStaff,
+          meta: { title: '员工管理' }
         },
         {
           path: 'invite-codes',
           name: 'admin-invite-codes',
-          component: InviteCodes
+          component: InviteCodes,
+          meta: { title: '邀请码管理' }
         },
         {
           path: 'reception/bookings',
           name: 'reception-bookings',
+          component: ReceptionBookings,
+          meta: { title: '预订管理' }
         },
         {
           path: 'reception/checkin',
           name: 'reception-checkin',
+          component: ReceptionCheckin,
+          meta: { title: '入住登记' }
         },
         {
           path: 'reception/visitors',
           name: 'reception-visitors',
+          component: ReceptionVisitors,
+          meta: { title: '访客登记' }
         },
         {
           path: 'reception/visitor-records',
           name: 'reception-visitor-records',
+          meta: { title: '访客记录' }
         },
         {
           path: 'cleaning/tasks',
           name: 'cleaning-tasks',
+          component: CleaningTasks,
+          meta: { title: '清洁任务' }
         },
         {
           path: 'cleaning/records',
           name: 'cleaning-records',
+          component: CleaningRecords,
+          meta: { title: '清洁记录' }
         },
         {
           path: 'rooms',
           name: 'room-management',
+          component: AdminRoomManagement,
+          meta: { title: '房间管理' }
         }
       ]
     }
@@ -151,31 +181,19 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  // 获取登录状态 (管理员和普通用户)
-  const adminToken = localStorage.getItem('adminToken');
-  const isAdminFlagSet = localStorage.getItem('isAdmin') === 'true';
-  const isAdminAuthenticated = adminToken !== null && isAdminFlagSet;
+  // 更新后台登录状态检查
+  const token = localStorage.getItem('token');
+  const userRole = localStorage.getItem('userRole');
+  const allowedAdminRoles = ['ADMIN', 'RECEPTIONIST', 'CLEANER'];
+  const isAdminAuthenticated = token !== null && userRole !== null && allowedAdminRoles.includes(userRole);
 
-  const userToken = localStorage.getItem('userToken');
-  const isUserLoggedIn = userToken !== null;
+  // 普通用户登录状态检查
+  const isUserLoggedIn = token !== null && userRole === 'CUSTOMER';
 
-  console.log(`管理员登录状态: ${isAdminAuthenticated} (Token: ${adminToken ? '存在' : '不存在'}, Flag: ${isAdminFlagSet}), 普通用户登录状态: ${isUserLoggedIn}`);
+  console.log(`后台认证状态: ${isAdminAuthenticated} (Token: ${token ? '存在' : '不存在'}, Role: ${userRole}), 普通用户登录状态: ${isUserLoggedIn}`);
 
-  // 如果直接访问邀请码管理页面，更新逻辑 (使用 isAdminAuthenticated)
-  if (to.path === '/admin/invite-codes') {
-    console.log('尝试访问邀请码管理页面');
-    if (isAdminAuthenticated) {
-      console.log('管理员已认证，允许访问');
-      next();
-    } else {
-      console.log('管理员未认证，重定向到登录页');
-      next({ path: '/admin/login', query: { redirect: to.fullPath } });
-    }
-    return; // 结束此路径的处理
-  }
-
-  // 检查是否需要普通用户登录
-  if (to.meta.requiresAuth && !isUserLoggedIn) {
+  // 检查是否需要普通用户认证 (如 /user/**)
+  if (to.matched.some(record => record.meta.requiresAuth) && !isUserLoggedIn) {
     console.log('目标路由需要普通用户认证，但用户未登录，重定向到 /login');
     next({
       path: '/login',
@@ -184,36 +202,22 @@ router.beforeEach((to, from, next) => {
     return;
   }
 
-  // 如果访问管理员登录页 (/admin/login)
-  if (to.path === '/admin/login') {
-    if (isAdminAuthenticated) {
-      // 管理员已登录，重定向到后台主页
-      console.log('管理员已登录，从登录页重定向到 /admin/dashboard');
-      next('/admin/dashboard');
-    } else {
-      // 管理员未登录，允许访问登录页
-      console.log('管理员未登录，允许访问登录页');
-      next();
-    }
-    return; // 结束此路径的处理
+  // 检查是否需要后台用户认证 (如 /admin/** 下的路由)
+  // 使用 to.matched.some 检查匹配到的所有路由记录，包括父路由
+  if (to.matched.some(record => record.meta.requiresAdminAuth) && !isAdminAuthenticated) {
+    console.log('访问后台页面，但后台用户未认证，重定向到 /admin/login');
+    next({ path: '/admin/login', query: { redirect: to.fullPath } });
+    return; 
   }
 
-  // 如果访问后台页面 (除 /admin/login 和 /admin/register)
-  if (to.path.startsWith('/admin')) {
-    if (!isAdminAuthenticated) {
-      // 管理员未登录，重定向到登录页
-      console.log('访问后台页面，但管理员未认证，重定向到 /admin/login');
-      next({ path: '/admin/login', query: { redirect: to.fullPath } });
-    } else {
-      // 管理员已登录，允许访问
-      // 移除旧的基于角色的路径检查逻辑
-      console.log('管理员已认证，允许访问后台页面:', to.path);
-      next();
-    }
-    return; // 结束此路径的处理
+  // 如果已登录的后台用户访问登录页，重定向到 dashboard
+  if (to.path === '/admin/login' && isAdminAuthenticated) {
+    console.log('后台用户已登录，从登录页重定向到 /admin/dashboard');
+    next('/admin/dashboard');
+    return;
   }
 
-  // 其他所有情况 (例如公共页面或普通用户已登录访问用户页面)
+  // 其他所有情况
   console.log('无需特殊处理或已处理，允许导航');
   next();
 });

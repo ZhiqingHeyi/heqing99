@@ -1,7 +1,7 @@
 <template>
   <div class="dashboard-container">
     <!-- 管理员才能看到的内容 -->
-    <div v-if="userRole === 'admin'">
+    <div v-if="userRole === 'ADMIN'">
       <el-skeleton :rows="5" animated v-if="isLoading" />
 
       <el-alert
@@ -407,7 +407,7 @@ const fetchDashboardData = async () => {
   isLoading.value = true
   error.value = null
   try {
-    const response = await adminApi.getDashboardStatistics()
+    const response = await adminApi.getDashboardStats()
     const stats = response
 
     // 数据映射
@@ -444,7 +444,7 @@ const fetchDashboardData = async () => {
 // 初始化图表
 onMounted(() => {
   // 只有管理员角色才初始化图表和获取数据
-  if (userRole.value === 'admin') {
+  if (userRole.value === 'ADMIN') {
     fetchDashboardData()
 
     // 入住率趋势图

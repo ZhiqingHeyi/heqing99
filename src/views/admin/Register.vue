@@ -119,6 +119,7 @@
 import { ref, reactive } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage } from 'element-plus'
+import apiClient from '@/api'; // 确认或添加 API 客户端导入
 
 const router = useRouter()
 const staffFormRef = ref(null)
@@ -167,7 +168,7 @@ const validateStaffPass2 = (rule, value, callback) => {
 const staffRules = {
   inviteCode: [
     { required: true, message: '请输入邀请码', trigger: 'blur' },
-    { min: 12, max: 12, message: '邀请码长度为12位', trigger: 'blur' }
+    { min: 8, max: 8, message: '邀请码长度为8位', trigger: 'blur' }
   ],
   username: [
     { required: true, message: '请输入用户名', trigger: 'blur' },
@@ -205,92 +206,92 @@ const staffRules = {
 
 // 验证邀请码
 const verifyInviteCode = async () => {
+  // 首先通过前端规则校验，避免不必要的API请求
+  try {
+    await staffFormRef.value?.validateField('inviteCode');
+  } catch (error) {
+    // 校验失败，validateField会触发el-form-item的错误提示，这里无需额外处理
+    return; 
+  }
+
+  // 如果 inviteCode 为空（虽然规则要求，但以防万一）
   if (!staffForm.inviteCode) {
-    ElMessage.warning('请输入邀请码')
-    return
+    // ElMessage.warning('请输入邀请码'); // 规则已处理
+    return;
   }
   
-  verifyingCode.value = true
-  
+  verifyingCode.value = true;
+  inviteCodeVerified.value = false; // 重置验证状态
+  inviteCodeRole.value = '';
+
   try {
-    // 模拟API调用验证邀请码
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用后端 API 验证邀请码
+    const response = await apiClient.get(`/api/invitation-codes/validate/${staffForm.inviteCode}`);
     
-    // 这里应该是实际调用API验证邀请码的地方
-    // 以下仅为模拟数据
-    const mockValidCodes = [
-      { code: 'HQ2404A1BCD3', role: 'receptionist', expireAt: '2024-04-30 10:00:00' },
-      { code: 'HQ2404B2EFG4', role: 'cleaner', expireAt: '2024-05-15 14:30:00' },
-      { code: 'HQ2404ABCDEF1', role: 'receptionist', expireAt: '2024-06-01 09:00:00' },
-      { code: 'HQ2404GHIJKL2', role: 'cleaner', expireAt: '2024-05-20 16:00:00' }
-    ]
-    
-    const foundCode = mockValidCodes.find(item => item.code === staffForm.inviteCode)
-    
-    if (foundCode) {
-      // 检查邀请码是否过期
-      const expireTime = new Date(foundCode.expireAt).getTime()
-      const now = new Date().getTime()
-      
-      if (expireTime < now) {
-        inviteCodeVerified.value = false
-        ElMessage.error('邀请码已过期')
-      } else {
-        inviteCodeVerified.value = true
-        inviteCodeRole.value = foundCode.role
-        ElMessage.success('邀请码验证成功')
-      }
+    // 假设后端成功响应包含 role 字段，例如 { "role": "RECEPTIONIST" } 
+    // 需要根据后端实际返回的 role 字符串转换为前端显示
+    if (response && response.role) { 
+      inviteCodeVerified.value = true;
+      // 将后端角色 (e.g., RECEPTIONIST) 转换为前端显示用的字符串 (e.g., receptionist)
+      inviteCodeRole.value = response.role.toLowerCase(); 
+      ElMessage.success('邀请码验证成功');
     } else {
-      inviteCodeVerified.value = false
-      ElMessage.error('邀请码无效或已过期')
+      // 理论上后端验证失败会抛异常进入catch，但以防万一
+      ElMessage.error(response?.message || '邀请码无效或信息不完整'); 
     }
   } catch (error) {
-    console.error('验证邀请码失败:', error)
-    ElMessage.error('验证邀请码失败，请稍后重试')
+    console.error('验证邀请码失败:', error);
+    // 优先使用后端返回的错误消息 (通常由axios拦截器处理放入 error.message)
+    ElMessage.error(error?.message || '验证邀请码失败，请稍后重试'); 
   } finally {
-    verifyingCode.value = false
+    verifyingCode.value = false;
   }
-}
+};
 
 // 员工注册处理
 const handleStaffRegister = async () => {
-  if (!staffFormRef.value) return
+  if (!staffFormRef.value) return;
   
+  // 首先触发表单整体校验
   await staffFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true
-      
-      try {
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 1000))
-        
-        // 这里应该是实际调用API注册员工的地方
-        console.log('员工注册提交的数据:', {
-          inviteCode: staffForm.inviteCode,
+    if (valid && inviteCodeVerified.value) { // 确保表单有效且邀请码已验证通过
+      loading.value = true;
+
+      // 准备请求体数据
+      const registrationData = {
           username: staffForm.username,
           phone: staffForm.phone,
-          password: staffForm.password,
+        password: staffForm.password, // 发送原始密码
           email: staffForm.email,
           realName: staffForm.realName,
-          role: inviteCodeRole.value
-        })
+        inviteCode: staffForm.inviteCode
+      };
+
+      try {
+        // 调用后端员工注册 API
+        await apiClient.post('/api/users/register/staff', registrationData);
         
         // 注册成功后提示
-        ElMessage.success('注册成功，请等待管理员审核')
+        ElMessage.success('注册成功，请等待管理员审核');
         
         // 跳转到登录页
         setTimeout(() => {
-          router.push('/admin/login')
-        }, 1500)
+          router.push('/admin/login');
+        }, 1500);
+
       } catch (error) {
-        console.error('员工注册失败:', error)
-        ElMessage.error('注册失败，请稍后重试')
+        console.error('员工注册失败:', error);
+        // 显示后端返回的错误信息或通用信息
+        ElMessage.error(error?.message || '注册失败，请稍后重试');
       } finally {
-        loading.value = false
+        loading.value = false;
       }
+    } else if (!inviteCodeVerified.value) {
+        ElMessage.warning('请先验证有效的邀请码');
     }
-  })
-}
+     // 如果 valid 为 false，el-form 会自动显示错误，无需额外处理
+  });
+};
 
 // 跳转到登录页
 const goToLogin = () => {

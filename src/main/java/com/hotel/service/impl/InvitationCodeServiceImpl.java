@@ -77,6 +77,26 @@ public class InvitationCodeServiceImpl implements InvitationCodeService {
         invitationCodeRepository.save(invitationCode);
     }
 
+    @Override
+    public InvitationCode validateCodeOnly(String code) {
+        InvitationCode invitationCode = invitationCodeRepository.findByCode(code)
+                .orElseThrow(() -> new RuntimeException("邀请码无效"));
+
+        if (!invitationCode.getEnabled()) {
+            throw new RuntimeException("邀请码已被禁用");
+        }
+
+        if (invitationCode.getExpiryDate().isBefore(LocalDateTime.now())) {
+            throw new RuntimeException("邀请码已过期");
+        }
+
+        if (invitationCode.getCurrentUses() >= invitationCode.getMaxUses()) {
+            throw new RuntimeException("邀请码已达到最大使用次数");
+        }
+
+        return invitationCode;
+    }
+
     private String generateUniqueCode() {
         String code;
         do {

@@ -41,7 +41,7 @@ public class AdminDashboardController {
     /**
      * 获取仪表盘统计数据
      */
-    @GetMapping("/dashboard/statistics")
+    @GetMapping("/dashboard/stats")
     public ResponseEntity<Map<String, Object>> getDashboardStatistics() {
         Map<String, Object> statistics = new HashMap<>();
         

@@ -3,7 +3,9 @@ package com.hotel.service.impl;
 import com.hotel.entity.MemberLevel;
 import com.hotel.entity.User;
 import com.hotel.dto.UserDTO;
+import com.hotel.dto.StaffRegistrationDto;
 import com.hotel.repository.UserRepository;
+import com.hotel.entity.InvitationCode;
 import com.hotel.service.InvitationCodeService;
 import com.hotel.service.UserService;
 import com.hotel.util.JwtUtil;
@@ -549,5 +551,68 @@ public class UserServiceImpl implements UserService {
         dto.setUpdateTime(user.getUpdateTime());
         // 注意：这里没有设置 password
         return dto;
+    }
+
+    @Override
+    @Transactional
+    public User registerStaff(StaffRegistrationDto dto) {
+        System.out.println("===== 开始员工注册处理 =====");
+        System.out.println("注册 DTO: " + dto);
+
+        // 1. 检查用户名是否已存在
+        if (userRepository.findByUsername(dto.getUsername()).isPresent()) {
+            System.out.println("用户名已存在: " + dto.getUsername());
+            throw new RuntimeException("用户名已存在");
+        }
+        System.out.println("用户名可用: " + dto.getUsername());
+
+        // 2. 再次验证邀请码
+        System.out.println("验证邀请码: " + dto.getInviteCode());
+        InvitationCode validCode = invitationCodeService.validateCodeOnly(dto.getInviteCode());
+        System.out.println("邀请码验证成功，角色: " + validCode.getRole());
+
+        // 3. 标记邀请码为已使用
+        System.out.println("标记邀请码为已使用: " + dto.getInviteCode());
+        invitationCodeService.useInvitationCode(dto.getInviteCode());
+        System.out.println("邀请码状态更新成功");
+
+        // 4. 创建用户实体
+        User newUser = new User();
+        System.out.println("创建新 User 实体");
+
+        // 5. 设置用户信息
+        newUser.setUsername(dto.getUsername());
+        newUser.setName(dto.getRealName()); // 使用 realName 作为 name
+        newUser.setPhone(dto.getPhone());
+        newUser.setEmail(dto.getEmail());
+        System.out.println("设置用户基本信息");
+
+        // 6. 加密密码
+        System.out.println("加密密码");
+        newUser.setPassword(passwordEncoder.encode(dto.getPassword()));
+
+        // 7. 设置角色 (从验证后的邀请码获取)
+        newUser.setRole(validCode.getRole());
+        System.out.println("设置用户角色: " + validCode.getRole());
+
+        // 8. 设置邀请码关联 (可选，如果需要记录)
+        newUser.setInvitationCode(dto.getInviteCode());
+        System.out.println("设置关联邀请码");
+
+        // 9. 设置默认值 (员工不需要会员等级/积分，但需要设置状态为启用)
+        newUser.setStatus("ACTIVE"); // 默认启用状态
+        // 员工通常不需要会员等级和积分，保持默认或null
+        // newUser.setMemberLevel(MemberLevel.REGULAR); 
+        // newUser.setPoints(0);
+        // newUser.setTotalSpent(BigDecimal.ZERO);
+        System.out.println("设置默认状态为 ACTIVE");
+
+        // 10. 保存用户
+        System.out.println("保存员工用户到数据库");
+        User savedUser = userRepository.save(newUser);
+        System.out.println("员工用户保存成功，ID: " + savedUser.getId());
+
+        // 11. 返回用户
+        return savedUser;
     }
 }

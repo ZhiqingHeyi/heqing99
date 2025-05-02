@@ -121,27 +121,30 @@ const handleLogin = async () => {
         const response = await userApi.login({
           username: loginForm.username,
           password: loginForm.password
-          // isAdmin: true // 移除
         })
         
-        // 直接检查响应的 success 状态和 role
-        if (response.success && response.role === 'ADMIN') { 
-          // 保存登录状态 (直接从 response 获取)
-          localStorage.setItem('adminToken', response.token); // 使用 response.token
-          localStorage.setItem('adminId', response.userId);   // 使用 response.userId
-          localStorage.setItem('adminName', response.username); // 使用 response.username
-          localStorage.setItem('isAdmin', 'true'); // 标记为管理员登录状态
+        // 允许 ADMIN, RECEPTIONIST, CLEANER 登录后台
+        const allowedRoles = ['ADMIN', 'RECEPTIONIST', 'CLEANER'];
+
+        if (response.success && response.role && allowedRoles.includes(response.role.toUpperCase())) {
+          // 保存通用登录状态 (不再区分 adminToken 等)
+          localStorage.setItem('token', response.token);
+          localStorage.setItem('userId', response.userId);
+          localStorage.setItem('username', response.username);
+          localStorage.setItem('userRole', response.role.toUpperCase()); // 统一保存大写角色
+          localStorage.setItem('name', response.username); // 或从其他地方获取真实姓名
+          // 可以移除 isAdmin 标记，或者根据需要保留
+          // localStorage.setItem('isAdmin', response.role.toUpperCase() === 'ADMIN' ? 'true' : 'false'); 
           
-          // 登录成功提示
           ElMessage.success('登录成功');
           
-          // 跳转到管理后台首页
-          router.push('/admin/dashboard');
-        } else if (response.success && response.role !== 'ADMIN') {
-          // 登录成功但不是管理员
-          ElMessage.error('非管理员账号不能登录管理后台');
+          // 跳转到管理后台首页 (或者根据角色跳转到不同页面)
+          router.push('/admin/dashboard'); 
+        } else if (response.success && response.role && !allowedRoles.includes(response.role.toUpperCase())) {
+          // 登录成功但角色不允许登录后台
+          ElMessage.error('该角色账号无权登录管理后台');
         } else {
-          // 登录失败 (response.success 为 false)
+          // 登录失败 (response.success 为 false 或缺少 role)
           ElMessage.error(response?.message || '登录失败，请检查用户名和密码');
         }
       } catch (error) {

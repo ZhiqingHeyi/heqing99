@@ -984,7 +984,19 @@ export const cleaningApi = {
 // 添加 adminApi 用于管理端特定的接口
 export const adminApi = {
   // 获取仪表盘统计数据
-  getDashboardStatistics: () => apiClient.get('/api/admin/dashboard/statistics'),
+  getDashboardStats: () => { 
+    console.log('调用获取仪表盘统计数据API');
+    return apiClient.get('/api/admin/dashboard/stats') 
+      .then(response => {
+        console.log('获取仪表盘统计数据API响应:', response);
+        return response; 
+      })
+      .catch(error => {
+        console.error('获取仪表盘统计数据API错误:', error);
+        throw error; 
+      });
+  },
+
   // ... 未来可以添加更多 admin 相关的 API 函数
 };
 

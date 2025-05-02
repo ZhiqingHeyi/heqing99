@@ -109,6 +109,10 @@ public class SecurityConfig {
                 // 检查用户名和手机号是否可用的接口允许匿名访问
                 .antMatchers(HttpMethod.GET, "/api/users/check-username").permitAll()
                 .antMatchers(HttpMethod.GET, "/api/users/check-phone").permitAll()
+                // 新增：允许匿名访问邀请码验证接口
+                .antMatchers(HttpMethod.GET, "/api/invitation-codes/validate/**").permitAll()
+                // 新增：允许匿名访问员工注册接口
+                .antMatchers(HttpMethod.POST, "/api/users/register/staff").permitAll()
                 // 用户个人信息接口需要认证
                 .antMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
                 // 修改用户信息接口需要认证

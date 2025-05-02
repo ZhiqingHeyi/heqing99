@@ -6,6 +6,7 @@ import com.hotel.service.UserService;
 import com.hotel.dto.LoginRequest;
 import com.hotel.dto.LoginResponse;
 import com.hotel.dto.UserDTO;
+import com.hotel.dto.StaffRegistrationDto;
 import com.hotel.util.JwtTokenProvider;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -157,6 +158,40 @@ public class UserController {
             // 使用API响应工具类返回错误信息
             ApiResponse<?> errorResponse = ApiResponse.fail("注册失败: " + e.getMessage());
             return ResponseEntity.badRequest().body(errorResponse);
+        }
+    }
+    
+    /**
+     * 员工注册接口
+     */
+    @PostMapping("/register/staff")
+    @PreAuthorize("permitAll()") // 允许匿名访问
+    public ResponseEntity<?> registerStaff(@RequestBody StaffRegistrationDto registrationDto) {
+        try {
+            // 可以在这里添加一些基本的 DTO 验证 (e.g., @Valid 注解和 BindingResult)
+            // 但核心验证在 Service 层完成
+            
+            User registeredStaff = userService.registerStaff(registrationDto);
+            
+            // 注册成功，返回 201 Created 和成功信息
+            // 不返回敏感信息如密码
+            UserDTO responseDto = UserDTO.fromEntity(registeredStaff);
+            return ResponseEntity.status(HttpStatus.CREATED).body(ApiResponse.success("员工注册成功，请等待审核", responseDto));
+            
+        } catch (RuntimeException e) {
+            // 捕获 Service 层抛出的所有运行时异常 (包括验证失败、用户名冲突等)
+            System.err.println("员工注册失败: " + e.getMessage());
+            // 根据异常类型可以返回更具体的 HTTP 状态码，例如用户名冲突用 409
+            HttpStatus status = HttpStatus.BAD_REQUEST; // 默认为 400
+            if (e.getMessage() != null && e.getMessage().contains("用户名已存在")) {
+                status = HttpStatus.CONFLICT; // 409
+            }
+            return ResponseEntity.status(status).body(ApiResponse.fail(e.getMessage()));
+        } catch (Exception e) {
+            // 捕获其他意外异常
+            System.err.println("员工注册时发生意外错误: " + e.getMessage());
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail("注册过程中发生意外错误，请稍后重试"));
         }
     }
     
