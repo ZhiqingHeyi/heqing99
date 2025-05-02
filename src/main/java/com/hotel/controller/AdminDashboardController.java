@@ -238,24 +238,35 @@ public class AdminDashboardController {
         }
     }
 
-    /**
-     * 更新房间信息
-     */
-    @PutMapping("/rooms/{id}")
-    public ResponseEntity<?> updateRoom(@PathVariable Long id, @RequestBody Room room) {
-        try {
-            room.setId(id);
-            Room updatedRoom = roomService.updateRoom(room);
-            if (updatedRoom == null) {
-                return ResponseEntity.notFound().build();
-            }
-            return ResponseEntity.ok(updatedRoom);
-        } catch (Exception e) {
-            Map<String, String> errorResponse = new HashMap<>();
-            errorResponse.put("message", "更新房间失败: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
-        }
-    }
+    // /**
+    //  * 更新房间信息 (与 AdminRoomController 冲突，已注释掉)
+    //  */
+    // @PutMapping("/rooms/{id}")
+    // public ResponseEntity<?> updateRoom(@PathVariable Long id, @RequestBody Room room) {
+    //     try {
+    //         room.setId(id);
+    //         Room updatedRoom = roomService.updateRoom(room);
+    //         if (updatedRoom == null) {
+    //             return ResponseEntity.notFound().build();
+    //         }
+    //         // 构建响应...
+    //         Map<String, Object> response = new HashMap<>();
+    //         response.put("success", true);
+    //         response.put("code", 200);
+    //         response.put("message", "更新成功");
+    //         // 假设存在 convertRoomToMap 方法
+    //         // response.put("data", convertRoomToMap(updatedRoom)); 
+    //         response.put("data", updatedRoom); // 或者直接返回实体
+    //         return ResponseEntity.ok(response);
+    //     } catch (Exception e) {
+    //         e.printStackTrace();
+    //         Map<String, Object> errorResponse = new HashMap<>();
+    //         errorResponse.put("success", false);
+    //         errorResponse.put("code", 500);
+    //         errorResponse.put("message", "更新房间失败: " + e.getMessage());
+    //         return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+    //     }
+    // }
 
     /**
      * 获取员工列表

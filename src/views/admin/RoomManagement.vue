@@ -35,6 +35,9 @@
           <el-button type="primary" @click="openAddRoomDialog" class="add-button">
              <el-icon class="button-icon"><Plus /></el-icon>添加房间
           </el-button>
+          <el-button type="warning" @click="openBatchAddRoomDialog" class="batch-add-button" style="margin-left: 10px;">
+            <el-icon class="button-icon"><Upload /></el-icon>批量添加
+          </el-button>
           <el-button type="success" @click="openAddRoomTypeDialog" class="add-type-button">
              <el-icon class="button-icon"><Plus /></el-icon>添加房型
           </el-button>
@@ -247,6 +250,61 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 批量添加房间对话框 -->
+    <el-dialog
+      v-model="batchAddRoomDialogVisible"
+      title="批量添加房间"
+      width="80%"
+      destroy-on-close
+      class="custom-dialog batch-add-dialog">
+      <el-table :data="batchRoomsData" style="width: 100%" border stripe>
+        <el-table-column label="房间号" width="120">
+          <template #default="scope">
+            <el-input v-model="scope.row.roomNumber" placeholder="例如：301"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="楼层" width="120">
+          <template #default="scope">
+            <el-input-number v-model="scope.row.floor" :min="1" :max="20" placeholder="楼层" style="width: 100%"></el-input-number>
+          </template>
+        </el-table-column>
+        <el-table-column label="房型" min-width="160">
+          <template #default="scope">
+            <el-select v-model="scope.row.roomTypeId" placeholder="选择房型" style="width: 100%">
+              <el-option v-for="type in roomTypes" :key="type.id" :label="type.name" :value="type.id"></el-option>
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="状态" width="150">
+          <template #default="scope">
+            <el-select v-model="scope.row.status" placeholder="选择状态" style="width: 100%">
+              <el-option v-for="status in statusOptions" :key="status.value" :label="status.label" :value="status.value"></el-option>
+            </el-select>
+          </template>
+        </el-table-column>
+        <el-table-column label="清洁状态" width="120">
+          <template #default="scope">
+            <el-switch v-model="scope.row.needCleaning" active-text="需要清洁" inactive-text="已清洁"></el-switch>
+          </template>
+        </el-table-column>
+        <el-table-column label="备注" min-width="200">
+          <template #default="scope">
+            <el-input v-model="scope.row.notes" type="textarea" :rows="2" placeholder="房间备注信息"></el-input>
+          </template>
+        </el-table-column>
+        <el-table-column label="操作" width="80" fixed="right">
+          <template #default="scope">
+            <el-button size="small" type="danger" @click="removeBatchRow(scope.$index)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <div class="batch-add-footer">
+        <el-button type="primary" @click="addBatchRow" class="add-row-button">添加一行</el-button>
+        <el-button @click="batchAddRoomDialogVisible = false" class="cancel-button">取消</el-button>
+        <el-button type="success" @click="submitBatchRoomForm" :loading="submitting" class="confirm-button">确定</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -306,6 +364,7 @@ const changeStatusDialogVisible = ref(false);
 const isEditing = ref(false);
 const isEditingType = ref(false);
 const manageRoomTypeDialogVisible = ref(false);
+const batchAddRoomDialogVisible = ref(false);
 
 // 表单对象
 const roomFormRef = ref(null);
@@ -339,6 +398,9 @@ const statusForm = reactive({
   currentStatus: '',
   newStatus: '',
 });
+
+// 批量添加表单数据
+const batchRoomsData = ref([]);
 
 // 表单验证规则
 const roomRules = {
@@ -400,34 +462,48 @@ const filteredRooms = computed(() => {
 const loadRooms = async () => {
   loading.value = true;
   try {
-    // 获取所有房间
-    const response = await apiClient.get('/api/admin/rooms');
-    
-    // --- 注意：后端 AdminRoomController 的 getAllRooms 返回了包装后的数据格式 --- 
-    // { success: true, code: 200, message: '获取成功', data: { total: ..., list: [...] } }
-    // --- 而不是直接返回数组或分页对象 --- 
-    
+    // 准备请求参数，包含分页和筛选
+    const params = {
+      page: currentPage.value - 1, // 后端分页从 0 开始
+      size: pageSize.value,
+      // 只有当筛选条件有值时才传递，否则传递 null 或 undefined (取决于后端接受方式，通常不传即可)
+      floor: filterOptions.floorFilter || null,
+      roomTypeId: filterOptions.typeFilter || null,
+      status: filterOptions.statusFilter || null,
+      keyword: filterOptions.searchKeyword || null,
+    };
+
+    // 清理 params 对象，移除值为 null 或空字符串的键
+    Object.keys(params).forEach(key => {
+      if (params[key] === null || params[key] === '') {
+        delete params[key];
+      }
+    });
+
+    // 使用 params 调用 API
+    const response = await apiClient.get('/api/admin/rooms', { params });
+
     // 检查响应是否成功且包含 data 字段
     if (response && response.success && response.data) {
       rooms.value = response.data.list; // 从 data.list 获取房间列表
       totalRooms.value = response.data.total; // 从 data.total 获取总数
-      // 加载房型 (保持不变，假设也使用 apiClient)
-      await loadRoomTypes(); 
+      // 仅在首次加载或需要时加载房型
+      if (roomTypes.value.length === 0) {
+          await loadRoomTypes(); 
+      }
     } else {
       // 处理获取数据失败的情况
       console.error('加载房间失败: 响应格式不正确或失败', response);
-      // 使用后端返回的错误消息，如果没有则使用默认消息
       ElMessage.error(response?.message || '加载房间列表失败，响应格式不正确');
       rooms.value = []; // 清空列表
       totalRooms.value = 0; // 重置总数
     }
 
   } catch (error) {
-    // axios 拦截器已经处理了基本错误并设置了 error.message
     console.error('加载房间失败 (catch):', error);
     ElMessage.error(error.message || '加载房间列表时发生未知错误');
-    rooms.value = []; // 清空列表
-    totalRooms.value = 0; // 重置总数
+    rooms.value = [];
+    totalRooms.value = 0;
   } finally {
     loading.value = false;
   }
@@ -750,6 +826,117 @@ const deleteRoomType = async (typeId) => {
   } finally {
     submitting.value = false;
   }
+};
+
+// 打开批量添加房间对话框
+const openBatchAddRoomDialog = () => {
+  batchRoomsData.value = []; // 清空数据
+  batchAddRoomDialogVisible.value = true;
+};
+
+// 批量添加表格 - 删除一行
+const removeBatchRow = (index) => {
+  batchRoomsData.value.splice(index, 1);
+};
+
+// 提交批量添加表单
+const submitBatchRoomForm = async () => {
+  submitting.value = true;
+  let hasValidationError = false;
+  const validationErrors = [];
+
+  // 1. 前端基础校验 & 数据清理
+  const roomsPayload = batchRoomsData.value
+    .map((row, index) => {
+      const rowNum = index + 1;
+      // 移除临时 ID
+      const { _tempId, ...payloadRow } = row;
+      
+      // 基础校验
+      if (!payloadRow.roomNumber) validationErrors.push(`第 ${rowNum} 行: 房间号不能为空`);
+      if (!payloadRow.floor) validationErrors.push(`第 ${rowNum} 行: 楼层不能为空`);
+      if (!payloadRow.roomTypeId) validationErrors.push(`第 ${rowNum} 行: 请选择房型`);
+      if (!payloadRow.status) validationErrors.push(`第 ${rowNum} 行: 请选择状态`);
+
+      // 可选：更具体的校验
+      const roomNumberRegex = /^[0-9A-Z]{1,10}$/;
+      if (payloadRow.roomNumber && !roomNumberRegex.test(payloadRow.roomNumber)) {
+         validationErrors.push(`第 ${rowNum} 行: 房间号格式不正确 (1-10位字母或数字)`);
+      }
+      if (payloadRow.floor && (payloadRow.floor < 1 || payloadRow.floor > 50)) {
+          validationErrors.push(`第 ${rowNum} 行: 楼层必须在 1 到 50 之间`);
+      }
+
+      return payloadRow;
+    });
+
+  // 检查是否有空数据行（所有字段都为空或默认值）
+  const validRoomsPayload = roomsPayload.filter(row => 
+     row.roomNumber || row.floor || row.roomTypeId || row.status || row.notes
+  );
+
+  // 如果有校验错误或没有有效数据，则停止提交
+  if (validationErrors.length > 0) {
+    ElMessageBox.alert(validationErrors.join('<br>'), '输入数据校验失败', {
+        dangerouslyUseHTMLString: true,
+        type: 'warning',
+    });
+    submitting.value = false;
+    return;
+  }
+  
+  if (validRoomsPayload.length === 0) {
+      ElMessage.warning('没有有效的房间数据可供添加，请至少填写一行。');
+      submitting.value = false;
+      return;
+  }
+
+  // 2. 调用后端 API
+  try {
+    const response = await apiClient.post('/api/admin/rooms/batch', validRoomsPayload);
+    
+    // 检查后端响应
+    if (response && response.success) {
+      ElMessage.success(response.message || `成功添加 ${response.data?.count || validRoomsPayload.length} 个房间`);
+      batchAddRoomDialogVisible.value = false;
+      await loadRooms(); // 刷新列表
+    } else {
+      // 处理后端校验错误或其他失败情况
+      let errorMsg = response?.message || '批量添加房间失败';
+      if (response?.errors && Array.isArray(response.errors)) {
+        const detailedErrors = response.errors.map(err => 
+          `房间 ${err.roomNumber || '-'}: ${err.error}`
+        ).join('<br>');
+        errorMsg = '批量添加失败，详情如下:<br>' + detailedErrors;
+        ElMessageBox.alert(errorMsg, '批量添加失败', { 
+          type: 'error',
+          dangerouslyUseHTMLString: true
+        });
+      } else {
+         ElMessage.error(errorMsg);
+      }
+       console.error('批量添加失败:', response);
+    }
+  } catch (error) {
+    // 处理网络错误或 axios 拦截器抛出的错误
+    console.error('批量添加请求失败 (catch):', error);
+    ElMessage.error(error.message || '批量添加房间时发生网络错误');
+  } finally {
+    submitting.value = false;
+  }
+};
+
+// 添加批量添加表格 - 添加一行
+const addBatchRow = () => {
+  batchRoomsData.value.push({
+    _tempId: Date.now(),
+    roomNumber: '',
+    floor: 1,
+    roomTypeId: null,
+    status: 'AVAILABLE',
+    needCleaning: false,
+    notes: '',
+  });
 };
 
 // 初始化

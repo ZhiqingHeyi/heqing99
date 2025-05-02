@@ -1,5 +1,6 @@
 package com.hotel.service;
 
+import com.hotel.dto.RoomBatchDTO;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
 import org.springframework.data.domain.Page;
@@ -157,4 +158,12 @@ public interface RoomService {
      * @throws RuntimeException 如果房型不存在
      */
     void deleteRoomType(Long id);
+
+    /**
+     * 批量添加新房间
+     * @param roomDTOs 包含房间信息的DTO列表
+     * @return 成功保存的房间列表
+     * @throws com.hotel.exception.BatchAddException 如果校验失败或保存出错
+     */
+    List<Room> addMultipleRooms(List<RoomBatchDTO> roomDTOs);
 }

@@ -1,7 +1,9 @@
 package com.hotel.service.impl;
 
+import com.hotel.dto.RoomBatchDTO;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
+import com.hotel.exception.BatchAddException;
 import com.hotel.repository.RoomRepository;
 import com.hotel.repository.RoomTypeRepository;
 import com.hotel.service.RoomService;
@@ -22,9 +24,13 @@ import javax.persistence.criteria.CriteriaQuery;
 import javax.persistence.criteria.Predicate;
 import javax.persistence.criteria.Root;
 import java.time.LocalDateTime;
-import java.util.List;
-import java.util.Optional;
 import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Set;
+import java.util.stream.Collectors;
 
 @Service
 @Transactional
@@ -338,5 +344,92 @@ public class RoomServiceImpl implements RoomService {
         }
         
         return availableCount;
+    }
+
+    @Override
+    @Transactional(rollbackFor = Exception.class)
+    public List<Room> addMultipleRooms(List<RoomBatchDTO> roomDTOs) {
+        List<Map<String, String>> errors = new ArrayList<>();
+        Set<String> inputRoomNumbers = roomDTOs.stream().map(RoomBatchDTO::getRoomNumber).collect(Collectors.toSet());
+
+        // 1. 检查输入列表中是否有重复的房间号
+        if (inputRoomNumbers.size() < roomDTOs.size()) {
+            Map<String, Integer> counts = new HashMap<>();
+            for (RoomBatchDTO dto : roomDTOs) {
+                counts.put(dto.getRoomNumber(), counts.getOrDefault(dto.getRoomNumber(), 0) + 1);
+            }
+            for (Map.Entry<String, Integer> entry : counts.entrySet()) {
+                if (entry.getValue() > 1) {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("roomNumber", entry.getKey());
+                    error.put("error", "输入列表中存在重复的房间号");
+                    errors.add(error);
+                }
+            }
+        }
+
+        // 2. 检查数据库中是否已存在这些房间号
+        List<Room> existingRooms = roomRepository.findByRoomNumberIn(new ArrayList<>(inputRoomNumbers));
+        if (!existingRooms.isEmpty()) {
+            for (Room existing : existingRooms) {
+                Map<String, String> error = new HashMap<>();
+                error.put("roomNumber", existing.getRoomNumber());
+                error.put("error", "房间号已在数据库中存在");
+                errors.add(error);
+            }
+        }
+
+        // 3. 检查房型是否存在和转换DTO
+        List<Room> roomsToSave = new ArrayList<>();
+        Map<Long, RoomType> roomTypeCache = new HashMap<>(); // 缓存房型查询结果
+
+        for (RoomBatchDTO dto : roomDTOs) {
+            RoomType roomType = roomTypeCache.get(dto.getRoomTypeId());
+            if (roomType == null) {
+                Optional<RoomType> roomTypeOpt = roomTypeRepository.findById(dto.getRoomTypeId());
+                if (!roomTypeOpt.isPresent()) {
+                    Map<String, String> error = new HashMap<>();
+                    error.put("roomNumber", dto.getRoomNumber());
+                    error.put("error", "指定的房型ID不存在: " + dto.getRoomTypeId());
+                    errors.add(error);
+                    continue; // 如果房型不存在，跳过此DTO
+                } else {
+                    roomType = roomTypeOpt.get();
+                    roomTypeCache.put(dto.getRoomTypeId(), roomType);
+                }
+            }
+            
+            // 只有在没有其他错误时才添加到待保存列表
+            // 需要检查此DTO对应的roomNumber是否已在错误列表中
+            boolean hasErrorForThisRoom = errors.stream()
+                .anyMatch(err -> err.containsKey("roomNumber") && err.get("roomNumber").equals(dto.getRoomNumber()));
+
+            if (!hasErrorForThisRoom) {
+                 Room room = new Room();
+                 room.setRoomNumber(dto.getRoomNumber());
+                 room.setFloor(dto.getFloor());
+                 room.setRoomType(roomType); // 使用查询到的房型
+                 room.setStatus(dto.getStatus());
+                 room.setNotes(dto.getNotes());
+                 // 从 DTO 获取 needCleaning 值，如果DTO中为null则默认为 false
+                 room.setNeedCleaning(dto.getNeedCleaning() != null ? dto.getNeedCleaning() : false);
+                 roomsToSave.add(room);
+            }
+        }
+
+        // 4. 如果存在任何错误，抛出异常
+        if (!errors.isEmpty()) {
+            throw new BatchAddException(errors);
+        }
+
+        // 5. 保存房间列表 (确保列表不为空)
+        if (roomsToSave.isEmpty()) {
+           // 如果所有输入都有错误，可能 roomsToSave 是空的
+           // 此时应该已经在上面抛出 BatchAddException 了
+           // 但作为防御性编程，可以再加一层判断
+           return new ArrayList<>(); // 或者根据业务逻辑决定是否抛异常
+        }
+        
+        return roomRepository.saveAll(roomsToSave);
     }
 }
