@@ -119,7 +119,11 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.PUT, "/api/users/{id}").authenticated()
                 // 修改用户密码接口需要认证
                 .antMatchers(HttpMethod.PUT, "/api/users/{id}/password").authenticated()
-                // 管理员相关 API 需要管理员角色
+                // ADD: Allow ADMIN or RECEPTIONIST to access specific stats endpoints
+                .antMatchers(HttpMethod.GET, "/api/admin/dashboard/stats", "/api/admin/checkin/today-stats").hasAnyRole("ADMIN", "RECEPTIONIST")
+                // ADD: Allow ADMIN or RECEPTIONIST to access rooms list for status view
+                .antMatchers(HttpMethod.GET, "/api/admin/rooms").hasAnyRole("ADMIN", "RECEPTIONIST")
+                // 管理员相关 API 需要管理员角色 (Keep this general rule after specific ones)
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("ADMIN")
                 // 添加 OPTIONS 请求支持，用于 CORS 预检
