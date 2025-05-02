@@ -149,10 +149,10 @@
                     </span>
                     <template #dropdown>
                       <el-dropdown-menu class="user-dropdown-menu">
-                        <el-dropdown-item>
+                        <el-dropdown-item @click="showPersonalInfo">
                           <el-icon><User /></el-icon>个人信息
                         </el-dropdown-item>
-                        <el-dropdown-item>
+                        <el-dropdown-item @click="showSystemSettings">
                           <el-icon><Setting /></el-icon>系统设置
                         </el-dropdown-item>
                         <el-dropdown-item divided @click="handleLogout">
@@ -168,13 +168,40 @@
           
           <el-main class="tech-main">
             <div class="content-wrapper">
-              <!-- 使用动态组件渲染 -->
               <component :is="currentComponent" />
             </div>
           </el-main>
         </el-container>
       </template>
     </el-container>
+
+    <!-- 个人信息模态框 -->
+    <el-dialog
+      v-model="personalInfoDialogVisible"
+      title="个人信息"
+      width="30%"
+    >
+      <span>这里是管理员 {{ username }} 的个人信息占位符。</span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="personalInfoDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
+
+    <!-- 系统设置模态框 -->
+    <el-dialog
+      v-model="systemSettingsDialogVisible"
+      title="系统设置"
+      width="30%"
+    >
+      <span>这里是系统设置占位符。功能开发中...</span>
+      <template #footer>
+        <span class="dialog-footer">
+          <el-button @click="systemSettingsDialogVisible = false">关闭</el-button>
+        </span>
+      </template>
+    </el-dialog>
   </div>
 </template>
 
@@ -198,6 +225,10 @@ import CleaningTasks from './cleaning/Tasks.vue'
 import CleaningRecords from './cleaning/Records.vue'
 
 const router = useRouter()
+
+// 模态框可见性状态
+const personalInfoDialogVisible = ref(false)
+const systemSettingsDialogVisible = ref(false)
 
 // 从登录状态获取用户数据
 const userRole = ref(localStorage.getItem('userRole') || 'admin')
@@ -292,12 +323,24 @@ const switchComponent = (componentName) => {
 
 // 处理退出登录
 const handleLogout = () => {
-  // 清除登录状态
+  // 清除所有可能的登录状态
   localStorage.removeItem('userRole')
   localStorage.removeItem('username')
-  localStorage.removeItem('token')
+  localStorage.removeItem('token') // 清除旧的或通用的 token
+  localStorage.removeItem('adminToken') // 清除路由守卫使用的 token
+  localStorage.removeItem('isAdmin') // 清除路由守卫使用的 flag
   // 重定向到登录页面
   router.push('/admin/login?logout=true')
+}
+
+// 显示个人信息模态框
+const showPersonalInfo = () => {
+  personalInfoDialogVisible.value = true
+}
+
+// 显示系统设置模态框
+const showSystemSettings = () => {
+  systemSettingsDialogVisible.value = true
 }
 
 // 组件挂载时设置初始组件和开始时间更新
