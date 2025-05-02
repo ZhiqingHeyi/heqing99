@@ -418,7 +418,9 @@ const fetchInviteCodes = async () => {
   try {
     // console.log('[InviteCodes.vue] Calling API: /api/invitation-codes'); // 移除日志6
     // 使用导入的 apiClient 发起请求
-    const response = await apiClient.get('/api/invitation-codes'); 
+    // const response = await apiClient.get('/api/invitation-codes'); 
+    // 修改：调用新的API方法获取所有邀请码
+    const response = await apiClient.get('/api/invitation-codes/all'); 
     // console.log('[InviteCodes.vue] API response received:', response); // 移除日志7
     // 注意：axios 响应拦截器已经处理了 response.data，这里直接使用 response
     if (response && Array.isArray(response)) { // 检查是否为数组

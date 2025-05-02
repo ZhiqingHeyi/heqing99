@@ -970,7 +970,8 @@ export const checkOutApi = {
 export const invitationCodeApi = {
   generateCode: () => apiClient.post('/api/invitation-codes'),
   validateCode: (code) => apiClient.get(`/api/invitation-codes/validate/${code}`),
-  getAllCodes: () => apiClient.get('/api/invitation-codes'),
+  getValidCodes: () => apiClient.get('/api/invitation-codes'),
+  getAllCodes: () => apiClient.get('/api/invitation-codes/all'),
   deleteCode: (id) => apiClient.delete(`/api/invitation-codes/${id}`),
 };
 

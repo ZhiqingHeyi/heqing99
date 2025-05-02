@@ -5,6 +5,7 @@ import com.hotel.entity.User;
 import com.hotel.repository.InvitationCodeRepository;
 import com.hotel.service.InvitationCodeService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -95,6 +96,11 @@ public class InvitationCodeServiceImpl implements InvitationCodeService {
         }
 
         return invitationCode;
+    }
+
+    @Override
+    public List<InvitationCode> getAllInvitationCodes() {
+        return invitationCodeRepository.findAll(Sort.by(Sort.Direction.DESC, "createTime"));
     }
 
     private String generateUniqueCode() {

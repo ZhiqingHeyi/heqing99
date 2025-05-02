@@ -248,6 +248,52 @@ public class RoomServiceImpl implements RoomService {
     }
     
     @Override
+    public boolean isRoomTypeInUse(Long typeId) {
+        return roomRepository.existsByRoomTypeId(typeId);
+    }
+
+    @Override
+    public RoomType updateRoomType(Long id, RoomType roomTypeDetails) {
+        RoomType existingType = roomTypeRepository.findById(id)
+                .orElseThrow(() -> new RuntimeException("房间类型不存在，ID: " + id));
+
+        // 检查名称是否变更以及是否冲突
+        if (roomTypeDetails.getName() != null && !roomTypeDetails.getName().equals(existingType.getName())) {
+            if (roomTypeRepository.existsByName(roomTypeDetails.getName())) {
+                throw new RuntimeException("房间类型名称 '" + roomTypeDetails.getName() + "' 已存在");
+            }
+            existingType.setName(roomTypeDetails.getName());
+        }
+
+        // 更新其他字段
+        if (roomTypeDetails.getBasePrice() != null) {
+            existingType.setBasePrice(roomTypeDetails.getBasePrice());
+        }
+        if (roomTypeDetails.getCapacity() != null) {
+            existingType.setCapacity(roomTypeDetails.getCapacity());
+        }
+        if (roomTypeDetails.getAmenities() != null) {
+            existingType.setAmenities(roomTypeDetails.getAmenities());
+        }
+        if (roomTypeDetails.getDescription() != null) {
+            existingType.setDescription(roomTypeDetails.getDescription());
+        }
+        
+        // 注意：这里没有更新 createTime，updateTime 会由 JPA 自动处理
+
+        return roomTypeRepository.save(existingType);
+    }
+
+    @Override
+    public void deleteRoomType(Long id) {
+        if (!roomTypeRepository.existsById(id)) {
+            throw new RuntimeException("房间类型不存在，ID: " + id);
+        }
+        // 注意：在使用此方法前，应在 Controller 层检查 isRoomTypeInUse
+        roomTypeRepository.deleteById(id);
+    }
+    
+    @Override
     public long countAvailableRoomsByType(Long typeId) {
         Optional<RoomType> roomType = roomTypeRepository.findById(typeId);
         if (!roomType.isPresent()) {

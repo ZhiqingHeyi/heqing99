@@ -195,6 +195,50 @@ public class AdminDashboardController {
     }
 
     /**
+     * 更新房间类型
+     */
+    @PutMapping("/roomtypes/{typeId}")
+    public ResponseEntity<?> updateRoomType(@PathVariable Long typeId, @RequestBody RoomType roomTypeDetails) {
+        try {
+            // 基础验证
+            if (roomTypeDetails.getName() == null || roomTypeDetails.getName().trim().isEmpty()) {
+                throw new IllegalArgumentException("房型名称不能为空");
+            }
+            if (roomTypeDetails.getBasePrice() == null || roomTypeDetails.getBasePrice().doubleValue() <= 0) {
+                throw new IllegalArgumentException("基础价格必须大于0");
+            }
+            if (roomTypeDetails.getCapacity() == null || roomTypeDetails.getCapacity() <= 0) {
+                throw new IllegalArgumentException("可住人数必须大于0");
+            }
+            
+            RoomType updatedRoomType = roomService.updateRoomType(typeId, roomTypeDetails);
+            
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "更新房型成功");
+            response.put("data", convertRoomTypeToMap(updatedRoomType));
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) { // 捕获 Service 层抛出的异常 (Not Found, Name Conflict)
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 400);
+            errorResponse.put("message", "更新房型失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "更新房型失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
      * 更新房间信息
      */
     @PutMapping("/rooms/{id}")
@@ -239,18 +283,60 @@ public class AdminDashboardController {
     }
 
     /**
-     * 将RoomType实体转换为Map
+     * 删除房间类型
+     */
+    @DeleteMapping("/roomtypes/{typeId}")
+    public ResponseEntity<?> deleteRoomType(@PathVariable Long typeId) {
+        try {
+            // 检查房型是否在使用中
+            if (roomService.isRoomTypeInUse(typeId)) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("code", 400);
+                errorResponse.put("message", "删除失败：该房型已被一个或多个房间使用");
+                return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+            }
+            
+            // 删除房型
+            roomService.deleteRoomType(typeId);
+            
+            // 构建响应
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "删除房型成功");
+            
+            return ResponseEntity.ok(response);
+        } catch (RuntimeException e) { // 捕获 Service 层抛出的异常 (Not Found)
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 404);
+            errorResponse.put("message", "删除房型失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "删除房型失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 将 RoomType 转换为 Map
      */
     private Map<String, Object> convertRoomTypeToMap(RoomType roomType) {
-        Map<String, Object> roomTypeMap = new HashMap<>();
-        roomTypeMap.put("id", roomType.getId());
-        roomTypeMap.put("name", roomType.getName());
-        roomTypeMap.put("basePrice", roomType.getBasePrice());
-        roomTypeMap.put("capacity", roomType.getCapacity());
-        roomTypeMap.put("amenities", roomType.getAmenities());
-        roomTypeMap.put("description", roomType.getDescription());
-        // 可以根据需要添加更多属性
-        
-        return roomTypeMap;
+        Map<String, Object> map = new HashMap<>();
+        map.put("id", roomType.getId());
+        map.put("name", roomType.getName());
+        map.put("basePrice", roomType.getBasePrice());
+        map.put("capacity", roomType.getCapacity());
+        map.put("amenities", roomType.getAmenities());
+        map.put("description", roomType.getDescription());
+        map.put("createTime", roomType.getCreateTime());
+        map.put("updateTime", roomType.getUpdateTime());
+        return map;
     }
 } 

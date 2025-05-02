@@ -20,4 +20,10 @@ public interface InvitationCodeService {
     void disableInvitationCode(Long id);
     
     InvitationCode validateCodeOnly(String code);
+
+    /**
+     * 获取所有邀请码（包括有效、已使用、已过期）
+     * @return 所有邀请码的列表
+     */
+    List<InvitationCode> getAllInvitationCodes();
 }

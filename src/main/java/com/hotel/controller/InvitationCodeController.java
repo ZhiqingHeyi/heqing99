@@ -49,6 +49,17 @@ public class InvitationCodeController {
         return ResponseEntity.ok(invitationCodeService.getInvitationCodesByRole(role));
     }
 
+    /**
+     * 获取所有邀请码 (管理员权限)
+     * @return 所有邀请码的列表
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasRole('ADMIN')")
+    public ResponseEntity<List<InvitationCode>> getAllInvitationCodes() {
+        List<InvitationCode> allCodes = invitationCodeService.getAllInvitationCodes();
+        return ResponseEntity.ok(allCodes);
+    }
+
     @PutMapping("/{id}/disable")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> disableInvitationCode(@PathVariable Long id) {

@@ -134,4 +134,27 @@ public interface RoomService {
      * 获取指定日期范围内、指定类型的可用房间数量
      */
     int getAvailableRoomsCountByTypeAndDateRange(Long typeId, LocalDateTime checkIn, LocalDateTime checkOut);
+
+    /**
+     * 检查指定房型是否被任何房间使用
+     * @param typeId 房型ID
+     * @return 如果被使用则返回 true，否则返回 false
+     */
+    boolean isRoomTypeInUse(Long typeId);
+
+    /**
+     * 更新房间类型信息
+     * @param id 房间类型ID
+     * @param roomTypeDetails 包含更新信息的RoomType对象
+     * @return 更新后的RoomType对象
+     * @throws RuntimeException 如果房型不存在或名称冲突
+     */
+    RoomType updateRoomType(Long id, RoomType roomTypeDetails);
+
+    /**
+     * 删除房间类型
+     * @param id 房间类型ID
+     * @throws RuntimeException 如果房型不存在
+     */
+    void deleteRoomType(Long id);
 }

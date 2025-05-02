@@ -38,6 +38,9 @@
           <el-button type="success" @click="openAddRoomTypeDialog" class="add-type-button">
              <el-icon class="button-icon"><Plus /></el-icon>添加房型
           </el-button>
+          <el-button type="info" plain @click="openManageRoomTypeDialog" class="manage-type-button">
+             <el-icon class="button-icon"><Setting /></el-icon>管理房型
+          </el-button>
           <el-button @click="resetFilters" class="reset-button">
              <el-icon class="button-icon"><Refresh /></el-icon>重置
           </el-button>
@@ -187,6 +190,37 @@
       </template>
     </el-dialog>
 
+    <!-- 管理房型对话框 -->
+    <el-dialog
+      v-model="manageRoomTypeDialogVisible"
+      title="管理房型"
+      width="80%"
+      destroy-on-close
+      class="custom-dialog manage-type-dialog">
+      <el-table :data="roomTypes" style="width: 100%" border stripe>
+        <el-table-column prop="name" label="房型名称" min-width="150"></el-table-column>
+        <el-table-column prop="basePrice" label="基础价格" width="120">
+          <template #default="scope">¥{{ scope.row.basePrice.toFixed(2) }}</template>
+        </el-table-column>
+        <el-table-column prop="capacity" label="容量" width="100">
+          <template #default="scope">{{ scope.row.capacity }}人</template>
+        </el-table-column>
+        <el-table-column prop="amenities" label="设施" min-width="200"></el-table-column>
+        <el-table-column prop="description" label="描述" min-width="200"></el-table-column>
+        <el-table-column label="操作" width="180" fixed="right">
+          <template #default="scope">
+            <el-button size="small" type="primary" @click="editRoomTypeFromManageDialog(scope.row)">编辑</el-button>
+            <el-button size="small" type="danger" @click="confirmDeleteRoomType(scope.row)">删除</el-button>
+          </template>
+        </el-table-column>
+      </el-table>
+      <template #footer>
+        <div class="dialog-footer">
+          <el-button @click="manageRoomTypeDialogVisible = false" class="cancel-button">关闭</el-button>
+        </div>
+      </template>
+    </el-dialog>
+
     <!-- 修改房间状态对话框 -->
     <el-dialog
       v-model="changeStatusDialogVisible"
@@ -271,6 +305,7 @@ const addRoomTypeDialogVisible = ref(false);
 const changeStatusDialogVisible = ref(false);
 const isEditing = ref(false);
 const isEditingType = ref(false);
+const manageRoomTypeDialogVisible = ref(false);
 
 // 表单对象
 const roomFormRef = ref(null);
@@ -549,12 +584,12 @@ const submitRoomTypeForm = async () => {
       submitting.value = true;
       try {
         if (isEditingType.value) {
-          // 更新房型
-          await apiClient.put(`/api/roomtypes/${roomTypeForm.id}`, roomTypeForm);
+          // 更新房型 - 使用正确的路径
+          await apiClient.put(`/api/admin/roomtypes/${roomTypeForm.id}`, roomTypeForm);
           ElMessage.success('更新房型成功');
         } else {
-          // 添加新房型
-          await apiClient.post('/api/admin/rooms/types', roomTypeForm);
+          // 添加新房型 - 使用正确的路径
+          await apiClient.post('/api/admin/roomtypes', roomTypeForm);
           ElMessage.success('添加房型成功');
         }
         
@@ -654,6 +689,67 @@ const formatDateTime = (dateTime) => {
     second: '2-digit',
     hour12: false
   });
+};
+
+// 打开管理房型对话框
+const openManageRoomTypeDialog = () => {
+  manageRoomTypeDialogVisible.value = true;
+};
+
+// 从管理对话框编辑房型
+const editRoomTypeFromManageDialog = (roomType) => {
+  isEditingType.value = true;
+  // 填充表单
+  Object.assign(roomTypeForm, {
+    id: roomType.id,
+    name: roomType.name,
+    basePrice: roomType.basePrice,
+    capacity: roomType.capacity,
+    amenities: roomType.amenities,
+    description: roomType.description,
+  });
+  manageRoomTypeDialogVisible.value = false; // 关闭管理对话框
+  addRoomTypeDialogVisible.value = true;    // 打开编辑对话框
+};
+
+// 确认删除房型
+const confirmDeleteRoomType = (roomType) => {
+  ElMessageBox.confirm(
+    `确定要删除房型 ${roomType.name} 吗？此操作不可撤销！请确保没有房间正在使用此房型。`,
+    '警告',
+    {
+      confirmButtonText: '确定删除',
+      cancelButtonText: '取消',
+      type: 'warning',
+    }
+  )
+    .then(() => {
+      deleteRoomType(roomType.id);
+    })
+    .catch(() => {
+      ElMessage({ type: 'info', message: '已取消删除' });
+    });
+};
+
+// 删除房型
+const deleteRoomType = async (typeId) => {
+  submitting.value = true; // 可以用 submitting 或 loading
+  try {
+    const response = await apiClient.delete(`/api/admin/roomtypes/${typeId}`);
+    if (response && response.success) {
+      ElMessage.success(response.message || '删除房型成功');
+      await loadRoomTypes();
+    } else {
+      // 后端应该在 response.message 中返回具体错误
+      ElMessage.error(response?.message || '删除房型失败');
+    }
+  } catch (error) {
+    console.error('删除房型失败 (catch):', error);
+    // error.message 通常由 apiClient 拦截器设置
+    ElMessage.error(error.message || '删除房型失败，请重试');
+  } finally {
+    submitting.value = false;
+  }
 };
 
 // 初始化
