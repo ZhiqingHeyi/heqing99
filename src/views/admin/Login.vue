@@ -62,11 +62,13 @@ import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { userApi } from '@/api'
+import { useAuthStore } from '@/store/auth'
 
 const router = useRouter()
 const route = useRoute()
 const loginFormRef = ref(null)
 const loading = ref(false)
+const authStore = useAuthStore()
 
 // 当组件挂载时检查登录状态
 onMounted(() => {
@@ -91,11 +93,7 @@ onMounted(() => {
 
 // 清除登录状态的函数
 const clearLoginState = () => {
-  localStorage.removeItem('token')
-  localStorage.removeItem('userRole')
-  localStorage.removeItem('username')
-  localStorage.removeItem('userId')
-  localStorage.removeItem('name')
+  authStore.logout()
 }
 
 const loginForm = reactive({
@@ -127,30 +125,16 @@ const handleLogin = async () => {
         const allowedRoles = ['ADMIN', 'RECEPTIONIST', 'CLEANER'];
 
         if (response.success && response.role && allowedRoles.includes(response.role.toUpperCase())) {
-          // 保存通用登录状态 (不再区分 adminToken 等)
-          localStorage.setItem('token', response.token);
-          localStorage.setItem('userId', response.userId);
-          localStorage.setItem('username', response.username);
-          localStorage.setItem('userRole', response.role.toUpperCase()); // 统一保存大写角色
-          localStorage.setItem('name', response.username); // 或从其他地方获取真实姓名
-          // 可以移除 isAdmin 标记，或者根据需要保留
-          // localStorage.setItem('isAdmin', response.role.toUpperCase() === 'ADMIN' ? 'true' : 'false');
+          // 3. Call authStore.login()
+          authStore.login({
+            token: response.token,
+            userId: response.userId,
+            username: response.username,
+            role: response.role.toUpperCase() // Ensure role is uppercase for store
+          });
           
           ElMessage.success('登录成功');
-          
-          // 根据角色跳转到不同的后台页面
-          const userRole = response.role.toUpperCase();
-          if (userRole === 'ADMIN') {
-            router.push('/admin/dashboard');
-          } else if (userRole === 'RECEPTIONIST') {
-            router.push('/admin/reception/bookings');
-          } else if (userRole === 'CLEANER') {
-            router.push('/admin/cleaning/tasks');
-          } else {
-            // 理论上不应该发生，因为上面已经检查了 allowedRoles，但作为保险
-            console.error('未知的后台角色:', userRole);
-            router.push('/admin/login'); // 或者跳转到错误页
-          }
+          router.push('/admin/dashboard');
         } else if (response.success && response.role && !allowedRoles.includes(response.role.toUpperCase())) {
           // 登录成功但角色不允许登录后台
           ElMessage.error('该角色账号无权登录管理后台');

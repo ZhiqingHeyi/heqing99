@@ -254,10 +254,12 @@ import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { User, Tickets, Medal, Setting } from '@element-plus/icons-vue'
 import { userApi, membershipApi, reservationApi } from '@/api'
+import { useAuthStore } from '@/store/auth'
 
 console.log('Profile.vue组件加载')
 
 const router = useRouter()
+const authStore = useAuthStore()
 const isEditing = ref(false)
 const loading = ref(false)
 const activeMenu = ref('profile')
@@ -569,18 +571,23 @@ const handleLogout = async () => {
       // 即使API失败，也继续前端登出流程
     }
     
-    // 清除登录信息
-    localStorage.removeItem('userToken')
-    localStorage.removeItem('userName')
-    localStorage.removeItem('userId')
-    localStorage.removeItem('userLevel')
-    localStorage.removeItem('userPoints')
-    localStorage.removeItem('userTotalSpent')
+    // 3. Call authStore.logout()
+    authStore.logout();
+    // 4. Remove localStorage.removeItem calls
+    // localStorage.removeItem('userToken')
+    // localStorage.removeItem('userName')
+    // localStorage.removeItem('userId')
+    // localStorage.removeItem('userLevel')
+    // localStorage.removeItem('userPoints')
+    // localStorage.removeItem('userTotalSpent')
     
     ElMessage.success('已退出登录')
-    router.push('/')
+    router.push('/') // 5. Keep router.push
   } catch (error) {
     // 用户取消操作
+    if (error !== 'cancel') {
+       ElMessage.info('取消退出'); // Improved cancel message handling
+    }
   }
 }
 

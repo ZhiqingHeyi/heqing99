@@ -172,6 +172,7 @@
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue' // Removed shallowRef, markRaw
 import { useRoute, useRouter } from 'vue-router' // Added useRoute
 import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch, Bell, HomeFilled } from '@element-plus/icons-vue'
+import { useAuthStore } from '@/store/auth' // 1. Import Auth Store
 
 // --- Removed component imports, they are loaded via router ---
 // import Dashboard from './Dashboard.vue'
@@ -179,6 +180,7 @@ import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown,
 
 const router = useRouter()
 const route = useRoute() // Get current route instance
+const authStore = useAuthStore() // 2. Get Auth Store instance
 
 // Dialog visibility
 const personalInfoDialogVisible = ref(false)
@@ -216,12 +218,14 @@ const navigateTo = (path) => {
 
 // Logout handler
 const handleLogout = () => {
-  localStorage.removeItem('userRole')
-  localStorage.removeItem('username')
-  localStorage.removeItem('token')
-  localStorage.removeItem('userId') // Also clear userId and name if set
-  localStorage.removeItem('name')
-  router.push('/admin/login?logout=true')
+  authStore.logout(); // 3. Call authStore.logout()
+  // 4. Remove localStorage.removeItem calls
+  // localStorage.removeItem('userRole')
+  // localStorage.removeItem('username')
+  // localStorage.removeItem('token')
+  // localStorage.removeItem('userId')
+  // localStorage.removeItem('name')
+  router.push('/admin/login?logout=true'); // 5. Keep router.push
 }
 
 // Show dialogs

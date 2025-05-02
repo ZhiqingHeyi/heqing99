@@ -68,11 +68,13 @@ import { ref, reactive } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { ElMessage } from 'element-plus'
 import { userApi, membershipApi } from '@/api' // 导入API服务
+import { useAuthStore } from '@/store/auth' // 导入 Auth Store
 
 const router = useRouter()
 const route = useRoute()
 const loginFormRef = ref(null)
 const loading = ref(false)
+const authStore = useAuthStore() // 获取 Auth Store 实例
 
 const loginForm = reactive({
   username: '',
@@ -117,22 +119,18 @@ const handleLogin = async () => {
         
         // 如果登录成功
         if (response && response.success && response.token) {
-          // const userData = response.data; // 删除或注释掉此行
-          
-          // 保存登录状态到localStorage，直接使用 response 的字段
-          localStorage.setItem('userToken', response.token);
-          localStorage.setItem('userName', response.username || loginForm.username); // 使用 response.username
-          localStorage.setItem('userId', response.userId || ''); // 使用 response.userId
-          localStorage.setItem('userRole', response.role || 'USER'); // 使用 response.role
+          // 使用 Auth Store 的 login action 保存状态
+          authStore.login({
+            token: response.token,
+            userId: response.userId,
+            username: response.username,
+            role: response.role
+          });
           
           // 获取用户详细信息
           try {
-            // 使用 response.userId 进行判断
             if (response.userId) { 
-              // 使用新的API调用，传递 response.userId
-              const userInfo = await userApi.getUserInfo(response.userId); 
-              
-              // 确保使用正确的响应结构
+              const userInfo = await userApi.getUserInfo(response.userId);
               if (userInfo && userInfo.data) {
                 localStorage.setItem('userRealName', userInfo.data.name || '');
                 localStorage.setItem('userPhone', userInfo.data.phone || '');
@@ -141,29 +139,23 @@ const handleLogin = async () => {
                 localStorage.setItem('userGender', userInfo.data.gender || '');
               }
               
-              // 获取会员信息，传递 response.userId
-              const memberInfo = await membershipApi.getMemberInfo(response.userId); 
-              
-              // 保存会员信息
+              const memberInfo = await membershipApi.getMemberInfo(response.userId);
               if (memberInfo && memberInfo.data) {
                 localStorage.setItem('userLevel', memberInfo.data.level || '普通用户');
                 localStorage.setItem('userPoints', String(memberInfo.data.points || 0));
                 localStorage.setItem('userTotalSpent', String(memberInfo.data.totalSpent || 0));
               } else {
-                // 设置默认值
                 localStorage.setItem('userLevel', '普通用户');
                 localStorage.setItem('userPoints', '0');
                 localStorage.setItem('userTotalSpent', '0');
               }
             } else {
-              // 设置默认值
               localStorage.setItem('userLevel', '普通用户');
               localStorage.setItem('userPoints', '0');
               localStorage.setItem('userTotalSpent', '0');
             }
           } catch (error) {
             console.error('获取用户信息失败:', error);
-            // 如果获取用户信息失败，设置默认值
             localStorage.setItem('userLevel', '普通用户');
             localStorage.setItem('userPoints', '0');
             localStorage.setItem('userTotalSpent', '0');

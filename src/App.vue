@@ -23,6 +23,7 @@
           <template v-if="isLoggedIn">
             <el-menu-item index="/user">个人中心</el-menu-item>
             <el-menu-item index="/user/membership">会员中心</el-menu-item>
+            <el-menu-item index="" @click="handleLogout">退出登录</el-menu-item>
           </template>
           <template v-else>
             <el-menu-item index="" @click="goToLogin">登录</el-menu-item>
@@ -92,22 +93,22 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { ElMessageBox, ElMessage } from 'element-plus'
+import { useAuthStore } from '@/store/auth'
 
 const route = useRoute()
 const router = useRouter()
+const authStore = useAuthStore()
 const isAdminRoute = computed(() => route.path.startsWith('/admin'))
 
 // 获取当前路由路径作为激活菜单项
 const currentRoute = computed(() => route.path)
 
 // 检查用户是否登录
-const isLoggedIn = computed(() => {
-  return localStorage.getItem('userToken') !== null
-})
+const isLoggedIn = computed(() => authStore.isLoggedIn)
 
 // 获取用户名
 const userName = computed(() => {
-  return localStorage.getItem('userName') || '用户'
+  return authStore.username || '个人中心'
 })
 
 // 跳转到用户中心
@@ -144,9 +145,7 @@ const handleLogout = async () => {
       type: 'warning'
     })
     
-    // 清除登录信息
-    localStorage.removeItem('userToken')
-    localStorage.removeItem('userName')
+    authStore.logout()
     
     ElMessage.success('已退出登录')
     
@@ -155,7 +154,9 @@ const handleLogout = async () => {
       router.push('/')
     }
   } catch (error) {
-    // 用户取消操作
+    if (error !== 'cancel') {
+       ElMessage.info('取消退出');
+    }
   }
 }
 </script>
