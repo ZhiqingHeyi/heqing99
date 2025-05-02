@@ -134,12 +134,23 @@ const handleLogin = async () => {
           localStorage.setItem('userRole', response.role.toUpperCase()); // 统一保存大写角色
           localStorage.setItem('name', response.username); // 或从其他地方获取真实姓名
           // 可以移除 isAdmin 标记，或者根据需要保留
-          // localStorage.setItem('isAdmin', response.role.toUpperCase() === 'ADMIN' ? 'true' : 'false'); 
+          // localStorage.setItem('isAdmin', response.role.toUpperCase() === 'ADMIN' ? 'true' : 'false');
           
           ElMessage.success('登录成功');
           
-          // 跳转到管理后台首页 (或者根据角色跳转到不同页面)
-          router.push('/admin/dashboard'); 
+          // 根据角色跳转到不同的后台页面
+          const userRole = response.role.toUpperCase();
+          if (userRole === 'ADMIN') {
+            router.push('/admin/dashboard');
+          } else if (userRole === 'RECEPTIONIST') {
+            router.push('/admin/reception/bookings');
+          } else if (userRole === 'CLEANER') {
+            router.push('/admin/cleaning/tasks');
+          } else {
+            // 理论上不应该发生，因为上面已经检查了 allowedRoles，但作为保险
+            console.error('未知的后台角色:', userRole);
+            router.push('/admin/login'); // 或者跳转到错误页
+          }
         } else if (response.success && response.role && !allowedRoles.includes(response.role.toUpperCase())) {
           // 登录成功但角色不允许登录后台
           ElMessage.error('该角色账号无权登录管理后台');

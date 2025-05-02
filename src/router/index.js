@@ -213,8 +213,24 @@ router.beforeEach((to, from, next) => {
   // 如果已登录的后台用户访问登录页，重定向到 dashboard
   if (to.path === '/admin/login' && isAdminAuthenticated) {
     console.log('后台用户已登录，从登录页重定向到 /admin/dashboard');
-    next('/admin/dashboard');
+    // 注意：登录页的重定向也需要考虑角色，但暂时先处理 dashboard 访问
+    // 理想情况下，这里也应该根据角色重定向
+    next('/admin/dashboard'); // 保持现有行为，后续可优化
     return;
+  }
+
+  // 增加：只允许 ADMIN 访问 /admin/dashboard
+  if (to.path === '/admin/dashboard' && isAdminAuthenticated && userRole !== 'ADMIN') {
+    console.log(`非 ADMIN 角色 (${userRole}) 尝试访问 /admin/dashboard，进行重定向。`);
+    if (userRole === 'RECEPTIONIST') {
+      next('/admin/reception/bookings');
+    } else if (userRole === 'CLEANER') {
+      next('/admin/cleaning/tasks');
+    } else {
+      // 其他已认证的后台角色（理论上不存在，但作为保险）
+      next('/admin/login'); // 重定向到登录页
+    }
+    return; // 阻止继续执行 next()
   }
 
   // 其他所有情况
