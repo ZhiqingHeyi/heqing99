@@ -744,33 +744,27 @@ const handleLogout = async () => {
       cancelButtonText: '取消',
       type: 'warning'
     })
-    
-    try {
-      // 调用API退出登录
-      await userApi.logout()
-    } catch (apiError) {
-      console.error('API退出登录失败:', apiError)
-      // 即使API失败，也继续前端登出流程
-    }
-    
-    // 3. Call authStore.logout()
-    authStore.logout();
-    // 4. Remove localStorage.removeItem calls
-    // localStorage.removeItem('userToken')
-    // localStorage.removeItem('userName')
-    // localStorage.removeItem('userId')
-    // localStorage.removeItem('userLevel')
-    // localStorage.removeItem('userPoints')
-    // localStorage.removeItem('userTotalSpent')
-    
-    ElMessage.success('已退出登录')
-    router.push('/') // 5. Keep router.push
   } catch (error) {
     // 用户取消操作
     if (error !== 'cancel') {
        ElMessage.info('取消退出'); // Improved cancel message handling
     }
+     return; // Stop further execution if cancelled
   }
+  
+  try {
+    // 调用API退出登录
+    await userApi.logout()
+  } catch (apiError) {
+    console.error('API退出登录失败:', apiError)
+    // 即使API失败，也继续前端登出流程
+  }
+  
+  // 3. Call authStore.logout()
+  authStore.logout();
+  
+  ElMessage.success('已退出登录')
+  router.push('/') // 5. Keep router.push
 }
 
 // 查看预订详情
@@ -1398,4 +1392,6 @@ const handlePointsCurrentChange = (newPage) => {
   border-color: #c59d5f !important; /* 主金色 */
 }
 /* End Switch Gold Style */
+
+/* Removed the specific gold styles for .bookings-filter-bar and .no-bookings .el-button--primary */
 </style>

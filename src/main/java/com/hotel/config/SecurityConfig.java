@@ -113,6 +113,8 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.GET, "/api/invitation-codes/validate/**").permitAll()
                 // 新增：允许匿名访问员工注册接口
                 .antMatchers(HttpMethod.POST, "/api/users/register/staff").permitAll()
+                // 新增：允许匿名访问获取房型列表接口
+                .antMatchers(HttpMethod.GET, "/api/rooms/types").permitAll()
                 // 用户个人信息接口需要认证
                 .antMatchers(HttpMethod.GET, "/api/users/profile").authenticated()
                 // 修改用户信息接口需要认证

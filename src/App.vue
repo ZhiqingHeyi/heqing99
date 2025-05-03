@@ -162,6 +162,49 @@ const handleLogout = async () => {
 </script>
 
 <style>
+/* Global Element Plus Theme Override */
+:root {
+  --el-color-primary: #C0A062;
+  --el-color-primary-light-3: #D3B88A; /* For hover effects, adjust lightness if needed */
+  /* You might need to define other light shades if components use them */
+  /* --el-color-primary-light-5: #E6D0B0; */
+  /* --el-color-primary-light-7: #F3E6D5; */
+  /* --el-color-primary-light-8: #F8F0E5; */
+  /* --el-color-primary-light-9: #FCF8F2; */
+  --el-color-primary-dark-2: #A78B54;  /* For active/focus effects, adjust darkness if needed */
+
+  /* Ensure Button colors inherit from the primary color */
+  --el-button-primary-bg-color: var(--el-color-primary);
+  --el-button-primary-border-color: var(--el-color-primary);
+  --el-button-primary-hover-bg-color: var(--el-color-primary-light-3);
+  --el-button-primary-hover-border-color: var(--el-color-primary-light-3);
+  --el-button-primary-active-bg-color: var(--el-color-primary-dark-2);
+  --el-button-primary-active-border-color: var(--el-color-primary-dark-2);
+  
+  /* You might need to override other component variables if they don't inherit properly */
+}
+
+/* Add any other global non-scoped styles here */
+html, body, #app {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '\\5FAE\8F6F\96C5\9ED1', Arial, sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background-color: #f8f5f0; /* Example global background */
+}
+
+/* Example: Global link styling */
+a {
+  color: var(--el-color-primary); /* Use the new primary color for links */
+  text-decoration: none;
+}
+a:hover {
+  color: var(--el-color-primary-light-3);
+  text-decoration: underline;
+}
+
 :root {
   --primary-color: #c59d5f;
   --secondary-color: #1a1a1a;
