@@ -50,4 +50,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     int countByCheckInTimeAfter(LocalDateTime time);
 
     boolean existsByRoomId(Long roomId);
+
+    @Query("SELECT r FROM Reservation r WHERE r.room.id = :roomId " +
+           "AND r.status IN :statuses " +
+           "AND (:endTime > r.checkInTime AND :startTime < r.checkOutTime)") // Overlap condition
+    List<Reservation> findConflictingReservationsForRoom(
+            @Param("roomId") Long roomId,
+            @Param("startTime") LocalDateTime startTime,
+            @Param("endTime") LocalDateTime endTime,
+            @Param("statuses") List<Reservation.ReservationStatus> statuses);
 }

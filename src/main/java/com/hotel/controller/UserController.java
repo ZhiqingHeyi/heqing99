@@ -320,22 +320,26 @@ public class UserController {
         try {
             System.out.println("接收到获取用户信息请求, userId: " + id);
             User user = userService.getUserById(id);
-            
-            // 移除敏感信息
-            user.setPassword(null);
-            
-            // 使用API响应工具类返回统一格式
-            ApiResponse<User> response = ApiResponse.success(user);
-            
-            System.out.println("返回用户信息成功, userId: " + id);
+
+            // 将 User 实体转换为 UserDTO
+            UserDTO userDTO = UserDTO.fromEntity(user);
+
+            // 使用API响应工具类返回统一格式，包含 DTO
+            ApiResponse<UserDTO> response = ApiResponse.success(userDTO);
+
+            System.out.println("返回用户信息 DTO 成功, userId: " + id);
             return ResponseEntity.ok(response);
-        } catch (Exception e) {
-            System.err.println("获取用户信息失败: " + e.getMessage());
-            e.printStackTrace();
             
+        } catch (RuntimeException e) {
+             System.err.println("获取用户信息失败, userId: " + id + ", 错误: " + e.getMessage());
+            // 用户不存在或其他运行时错误
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail("获取用户信息失败: " + e.getMessage()));
+        } catch (Exception e) {
+            System.err.println("获取用户信息时发生意外错误, userId: " + id);
+            e.printStackTrace();
             // 使用API响应工具类返回错误信息
-            ApiResponse<?> errorResponse = ApiResponse.fail("获取用户信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            ApiResponse<?> errorResponse = ApiResponse.fail("获取用户信息时发生意外错误");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
@@ -345,61 +349,65 @@ public class UserController {
             System.out.println("接收到获取用户信息请求, username: " + username);
             User user = userService.getUserByUsername(username);
             
-            // 移除敏感信息
-            user.setPassword(null);
+            // 将 User 实体转换为 UserDTO
+            UserDTO userDTO = UserDTO.fromEntity(user);
             
-            // 使用API响应工具类返回统一格式
-            ApiResponse<User> response = ApiResponse.success(user);
+            // 使用API响应工具类返回统一格式，包含 DTO
+            ApiResponse<UserDTO> response = ApiResponse.success(userDTO);
             
-            System.out.println("返回用户信息成功, username: " + username);
+            System.out.println("返回用户信息 DTO 成功, username: " + username);
             return ResponseEntity.ok(response);
+        } catch (RuntimeException e) {
+             System.err.println("获取用户信息失败, username: " + username + ", 错误: " + e.getMessage());
+            // 用户不存在或其他运行时错误
+            return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail("获取用户信息失败: " + e.getMessage()));
         } catch (Exception e) {
-            System.err.println("获取用户信息失败: " + e.getMessage());
+            System.err.println("获取用户信息时发生意外错误, username: " + username);
             e.printStackTrace();
-            
             // 使用API响应工具类返回错误信息
-            ApiResponse<?> errorResponse = ApiResponse.fail("获取用户信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            ApiResponse<?> errorResponse = ApiResponse.fail("获取用户信息时发生意外错误");
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 
     @PutMapping("/{id}")
-    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody User userUpdate) {
+    public ResponseEntity<?> updateUser(@PathVariable Long id, @RequestBody UserDTO userUpdateDto) { // Receive DTO
         try {
             System.out.println("接收到更新用户信息请求, userId: " + id);
             
-            // 获取当前用户信息
-            User existingUser = userService.getUserById(id);
+            // Convert DTO to an update-specific entity or pass DTO to service
+            // For simplicity, let's assume service handles DTO update or partial update
+            // User updatedUser = userService.updateUserProfile(id, userUpdateDto);
             
-            // 只更新允许的字段
-            User user = new User();
-            user.setId(id);
-            user.setName(userUpdate.getName());
-            user.setPhone(userUpdate.getPhone());
-            user.setEmail(userUpdate.getEmail());
-            user.setGender(userUpdate.getGender());
-            user.setBirthday(userUpdate.getBirthday());
+            // --- OR --- Map necessary fields manually (Example)
+             User existingUser = userService.getUserById(id); // Fetch existing to merge
+             existingUser.setName(userUpdateDto.getName());
+             existingUser.setPhone(userUpdateDto.getPhone());
+             existingUser.setEmail(userUpdateDto.getEmail());
+             existingUser.setGender(userUpdateDto.getGender());
+             existingUser.setBirthday(userUpdateDto.getBirthday());
+             // Do NOT update username, role, status, points etc. from this endpoint typically
+ 
+             User updatedUser = userService.updateUser(existingUser); // Use existing updateUser method
             
-            // 保持原有的角色和其他字段不变
-            user.setRole(existingUser.getRole());
-            
-            User updatedUser = userService.updateUser(user);
-            
-            // 移除敏感信息
-            updatedUser.setPassword(null);
+            // Convert result back to DTO for response
+            UserDTO responseDto = UserDTO.fromEntity(updatedUser);
             
             // 使用API响应工具类返回统一格式
-            ApiResponse<User> response = ApiResponse.success("用户信息更新成功", updatedUser);
+            ApiResponse<UserDTO> response = ApiResponse.success("用户信息更新成功", responseDto);
             
             System.out.println("用户信息更新成功, userId: " + id);
             return ResponseEntity.ok(response);
+            
+        } catch (RuntimeException e) {
+             System.err.println("更新用户信息失败, userId: " + id + ", 错误: " + e.getMessage());
+             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail("更新用户信息失败: " + e.getMessage()));
         } catch (Exception e) {
             System.err.println("更新用户信息失败: " + e.getMessage());
             e.printStackTrace();
-            
             // 使用API响应工具类返回错误信息
             ApiResponse<?> errorResponse = ApiResponse.fail("更新用户信息失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(errorResponse);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 

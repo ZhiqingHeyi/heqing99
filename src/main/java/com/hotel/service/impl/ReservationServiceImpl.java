@@ -4,9 +4,11 @@ import com.hotel.entity.CheckInRecord;
 import com.hotel.entity.Reservation;
 import com.hotel.entity.Room;
 import com.hotel.entity.User;
+import com.hotel.entity.RoomType;
 import com.hotel.repository.ReservationRepository;
 import com.hotel.repository.RoomRepository;
 import com.hotel.repository.CheckInRecordRepository;
+import com.hotel.repository.RoomTypeRepository;
 import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
 import com.hotel.service.UserService;
@@ -26,6 +28,8 @@ import java.util.HashMap;
 import java.util.ArrayList;
 import java.time.LocalDate;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.util.Arrays;
 
 @Service
 @Transactional
@@ -41,31 +45,117 @@ public class ReservationServiceImpl implements ReservationService {
     private CheckInRecordRepository checkInRecordRepository;
 
     @Autowired
+    private RoomTypeRepository roomTypeRepository;
+
+    @Autowired
     private RoomService roomService;
 
     @Autowired
     private UserService userService;
 
     @Override
-    public Reservation createReservation(Reservation reservation) {
-        // 检查房间是否可用
-        Room room = roomRepository.findById(reservation.getRoom().getId())
-                .orElseThrow(() -> new RuntimeException("房间不存在"));
-
-        if (room.getStatus() != Room.RoomStatus.AVAILABLE) {
-            throw new RuntimeException("房间当前不可预订");
+    public Reservation createReservation(Map<String, Object> reservationData) throws RuntimeException {
+        // 1. Parse reservation data from Map
+        Long userId = Long.parseLong(reservationData.get("userId").toString());
+        Long roomTypeId = Long.parseLong(reservationData.get("roomType").toString());
+        String checkInDateStr = reservationData.get("checkIn").toString();
+        String checkOutDateStr = reservationData.get("checkOut").toString();
+        Integer roomCount = Integer.parseInt(reservationData.get("roomCount").toString());
+        String contactName = reservationData.get("contactName").toString();
+        String phone = reservationData.get("phone").toString();
+        String remarks = reservationData.containsKey("remarks") ? reservationData.get("remarks").toString() : "";
+        Double totalAmount = Double.parseDouble(reservationData.get("totalAmount").toString());
+        
+        // Parse dates (reuse logic from controller if complex, simplify if possible)
+        LocalDateTime checkInTime;
+        LocalDateTime checkOutTime;
+        try {
+            // Assume ISO format first
+            checkInTime = LocalDateTime.parse(checkInDateStr);
+            checkOutTime = LocalDateTime.parse(checkOutDateStr);
+        } catch (DateTimeParseException e) {
+            try {
+                // Fallback to ZonedDateTime format
+                 DateTimeFormatter formatter = DateTimeFormatter.ISO_OFFSET_DATE_TIME; // More robust standard format
+                 checkInTime = LocalDateTime.parse(checkInDateStr, formatter);
+                 checkOutTime = LocalDateTime.parse(checkOutDateStr, formatter);
+            } catch (DateTimeParseException e2) {
+                 System.err.println("日期解析失败: " + checkInDateStr + ", " + checkOutDateStr + ", Error: " + e2.getMessage());
+                 throw new RuntimeException("日期格式无效，请使用ISO日期时间格式 (e.g., YYYY-MM-DDTHH:mm:ssZ)");
+            }
         }
 
-        // 检查预订时间段是否有冲突
-        if (hasTimeConflict(reservation)) {
-            throw new RuntimeException("该时间段房间已被预订");
+        // 2. Get User and RoomType
+        User user = userService.getUserById(userId); // Assumes userService throws exception if not found
+        RoomType roomType = roomTypeRepository.findById(roomTypeId)
+                .orElseThrow(() -> new RuntimeException("指定的房间类型不存在"));
+
+        // 3. Find an available room of the specified type for the given time range
+        List<Room> roomsOfType = roomRepository.findByRoomTypeId(roomTypeId);
+        if (roomsOfType.isEmpty()) {
+            throw new RuntimeException("系统中没有录入该类型的房间");
         }
 
-        // 设置预订状态为待确认
+        Room availableRoom = null;
+        List<Reservation.ReservationStatus> conflictingStatuses = Arrays.asList(
+                Reservation.ReservationStatus.PENDING,
+                Reservation.ReservationStatus.CONFIRMED,
+                Reservation.ReservationStatus.CHECKED_IN
+        );
+
+        for (Room room : roomsOfType) {
+            List<Reservation> conflicts = reservationRepository.findConflictingReservationsForRoom(
+                    room.getId(),
+                    checkInTime,
+                    checkOutTime,
+                    conflictingStatuses
+            );
+            if (conflicts.isEmpty()) {
+                availableRoom = room; // Found an available room
+                System.out.println("为预订找到了可用房间: Room ID " + availableRoom.getId() + ", Number " + availableRoom.getRoomNumber());
+                break;
+            }
+        }
+
+        // 4. Check if a room was found
+        if (availableRoom == null) {
+             System.out.println("房型ID " + roomTypeId + " 在时间段 " + checkInTime + " - " + checkOutTime + " 内已预订满");
+            throw new RuntimeException("该房型在指定时间段内已预订满");
+        }
+        
+        // Check the status of the specific chosen room (double check)
+        if (availableRoom.getStatus() != Room.RoomStatus.AVAILABLE && availableRoom.getStatus() != Room.RoomStatus.CLEANING) {
+             System.out.println("找到的房间 " + availableRoom.getRoomNumber() + " 状态为 " + availableRoom.getStatus() + ", 不可用");
+             // This case should ideally not happen if the conflict check is correct and room status is managed properly
+             // But as a safeguard, we re-check. Consider re-running the loop or throwing a specific error.
+             // For now, let's throw an error indicating inconsistency.
+             throw new RuntimeException("找到的房间当前状态不可用，请稍后重试或联系管理员"); 
+        }
+
+        // 5. Apply discount and create Reservation entity
+        BigDecimal discount = userService.getDiscountByUserId(userId);
+        BigDecimal originalAmount = BigDecimal.valueOf(totalAmount);
+        BigDecimal finalAmount = originalAmount.multiply(discount).setScale(2, BigDecimal.ROUND_HALF_UP); // Scale for currency
+
+        Reservation reservation = new Reservation();
+        reservation.setUser(user);
+        reservation.setRoom(availableRoom); // Set the found available room
+        reservation.setCheckInTime(checkInTime);
+        reservation.setCheckOutTime(checkOutTime);
+        reservation.setGuestName(contactName);
+        reservation.setGuestPhone(phone);
+        reservation.setSpecialRequests(remarks);
+        reservation.setTotalPrice(finalAmount);
+        reservation.setRoomCount(roomCount);
         reservation.setStatus(Reservation.ReservationStatus.PENDING);
         reservation.setCreateTime(LocalDateTime.now());
 
-        return reservationRepository.save(reservation);
+        // 6. Save reservation and update user spending
+        Reservation savedReservation = reservationRepository.save(reservation);
+        userService.addSpending(userId, finalAmount);
+
+        System.out.println("预订创建成功，Reservation ID: " + savedReservation.getId() + ", Room ID: " + availableRoom.getId());
+        return savedReservation;
     }
 
     @Override

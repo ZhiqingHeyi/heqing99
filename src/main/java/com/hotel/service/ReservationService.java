@@ -16,7 +16,7 @@ public interface ReservationService {
     /**
      * 创建预订
      */
-    Reservation createReservation(Reservation reservation);
+    Reservation createReservation(Map<String, Object> reservationData) throws RuntimeException;
 
     /**
      * 获取指定用户的预订列表

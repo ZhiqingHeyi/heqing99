@@ -94,6 +94,10 @@ onMounted(() => {
 // 清除登录状态的函数
 const clearLoginState = () => {
   authStore.logout()
+  // Also remove the admin token from localStorage
+  localStorage.removeItem('adminToken')
+  // Optionally remove userToken too if clearing all states
+  // localStorage.removeItem('userToken')
 }
 
 const loginForm = reactive({
@@ -132,6 +136,8 @@ const handleLogin = async () => {
             username: response.username,
             role: response.role.toUpperCase() // Ensure role is uppercase for store
           });
+          // Store admin token in localStorage
+          localStorage.setItem('adminToken', response.token);
           
           ElMessage.success('登录成功');
           router.push('/admin/dashboard');

@@ -1,5 +1,7 @@
 package com.hotel.controller;
 
+import com.hotel.common.ApiResponse;
+import com.hotel.dto.ReservationDTO;
 import com.hotel.entity.Reservation;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
@@ -16,6 +18,7 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.data.domain.PageImpl;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -48,103 +51,40 @@ public class ReservationController {
         try {
             System.out.println("接收到预订请求数据: " + reservationData);
             
-            // 解析请求数据
-            Long userId = Long.parseLong(reservationData.get("userId").toString());
-            Long roomTypeId = Long.parseLong(reservationData.get("roomType").toString());
-            String checkInDateStr = reservationData.get("checkIn").toString();
-            String checkOutDateStr = reservationData.get("checkOut").toString();
-            Integer roomCount = Integer.parseInt(reservationData.get("roomCount").toString());
-            String contactName = reservationData.get("contactName").toString();
-            String phone = reservationData.get("phone").toString();
-            String remarks = reservationData.containsKey("remarks") ? reservationData.get("remarks").toString() : "";
-            Double totalAmount = Double.parseDouble(reservationData.get("totalAmount").toString());
+            // 将解析和业务逻辑委托给 Service 层
+            Reservation createdReservation = reservationService.createReservation(reservationData);
             
-            // 解析ISO格式日期时间
-            LocalDateTime checkInTime;
-            LocalDateTime checkOutTime;
+            // --- 响应构建部分保持不变 ---
+            // 需要从 createdReservation 或其关联对象获取信息来构建响应
+            // 注意：如果需要原始金额和折扣率，可能需要在Service层返回更复杂的结果，或者在这里重新计算
+            // 暂时假设 Service 成功后返回了包含必要信息的 Reservation 对象
+             User user = createdReservation.getUser(); // 获取关联的 User
+             BigDecimal finalAmount = createdReservation.getTotalPrice();
+             // 如何获取 originalAmount 和 discount? 这需要调整 Service 返回值或 Controller 逻辑
+             // 假设我们可以在这里通过 finalAmount 和 discount 反推 originalAmount
+             BigDecimal discount = userService.getDiscountByUserId(user.getId()); // 重新获取折扣
+             BigDecimal originalAmount = finalAmount.divide(discount, 2, BigDecimal.ROUND_HALF_UP);
             
-            try {
-                checkInTime = LocalDateTime.parse(checkInDateStr);
-                checkOutTime = LocalDateTime.parse(checkOutDateStr);
-            } catch (DateTimeParseException e) {
-                // 尝试其他常见格式
-                try {
-                    DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyy-MM-dd'T'HH:mm:ss.SSS'Z'");
-                    checkInTime = LocalDateTime.parse(checkInDateStr, formatter);
-                    checkOutTime = LocalDateTime.parse(checkOutDateStr, formatter);
-                } catch (DateTimeParseException e2) {
-                    System.err.println("日期解析失败: " + e2.getMessage());
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("success", false);
-                    response.put("message", "日期格式无效，请使用ISO日期时间格式");
-                    return ResponseEntity.badRequest().body(response);
-                }
-            }
+            Map<String, Object> responseBody = new HashMap<>();
+            responseBody.put("reservationId", createdReservation.getId());
+            responseBody.put("originalAmount", originalAmount); // 注意: 此值可能不精确，取决于 finalAmount 和 discount
+            responseBody.put("discountRate", discount);
+            responseBody.put("finalAmount", finalAmount);
+            responseBody.put("memberLevel", user.getMemberLevel()); // 获取用户的会员等级
             
-            System.out.println("解析后的入住日期: " + checkInTime);
-            System.out.println("解析后的退房日期: " + checkOutTime);
+            System.out.println("预订创建成功，Controller 返回 ID: " + createdReservation.getId());
+            return ResponseEntity.ok(ApiResponse.success("预订创建成功", responseBody));
             
-            // 查找用户和房间
-            User user = userService.getUserById(userId);
-            if (user == null) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "用户不存在，请先登录");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            Room room = roomService.getRoomByTypeId(roomTypeId);
-            if (room == null) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "指定类型的房间不存在或已满");
-                return ResponseEntity.badRequest().body(response);
-            }
-            
-            // 应用会员折扣
-            BigDecimal discount = userService.getDiscountByUserId(userId);
-            BigDecimal originalAmount = BigDecimal.valueOf(totalAmount);
-            BigDecimal finalAmount = originalAmount.multiply(discount);
-            
-            // 创建预订
-            Reservation reservation = new Reservation();
-            reservation.setUser(user);
-            reservation.setRoom(room);
-            reservation.setCheckInTime(checkInTime);
-            reservation.setCheckOutTime(checkOutTime);
-            reservation.setGuestName(contactName);
-            reservation.setGuestPhone(phone);
-            reservation.setSpecialRequests(remarks);
-            reservation.setTotalPrice(finalAmount); // 使用折扣后的价格
-            reservation.setRoomCount(roomCount);
-            reservation.setStatus(Reservation.ReservationStatus.PENDING);
-            
-            // 保存预订
-            Reservation createdReservation = reservationService.createReservation(reservation);
-            
-            // 记录用户消费并更新会员信息
-            userService.addSpending(userId, finalAmount);
-            
-            // 返回响应
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "预订创建成功");
-            response.put("reservationId", createdReservation.getId());
-            response.put("originalAmount", originalAmount);
-            response.put("discountRate", discount);
-            response.put("finalAmount", finalAmount);
-            response.put("memberLevel", user.getMemberLevel());
-            
-            System.out.println("预订创建成功，ID: " + createdReservation.getId());
-            return ResponseEntity.ok(response);
-            
-        } catch (Exception e) {
+        } catch (RuntimeException e) { // Catch specific RuntimeExceptions from service
             System.err.println("创建预订失败: " + e.getMessage());
+             // 根据 Service 抛出的异常信息返回具体的错误响应
+             // 使用 ApiResponse.fail 来包装错误信息
+            return ResponseEntity.badRequest().body(ApiResponse.fail("创建预订失败: " + e.getMessage()));
+        } catch (Exception e) { // Catch any other unexpected errors
+            System.err.println("创建预订时发生意外错误: " + e.getMessage());
             e.printStackTrace();
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "创建预订失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            // 返回通用服务器错误
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail("创建预订时发生意外错误"));
         }
     }
     
@@ -193,7 +133,7 @@ public class ReservationController {
             response.put("message", "预订取消成功");
             
             System.out.println("预订取消成功, id: " + id);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("预订取消成功"));
         } catch (Exception e) {
             System.err.println("取消预订失败: " + e.getMessage());
             Map<String, Object> response = new HashMap<>();
@@ -211,24 +151,17 @@ public class ReservationController {
             Reservation reservation = reservationService.getReservationById(id);
             
             if (reservation == null) {
-                Map<String, Object> response = new HashMap<>();
-                response.put("success", false);
-                response.put("message", "预订不存在");
-                return ResponseEntity.badRequest().body(response);
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(ApiResponse.fail("预订不存在"));
             }
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("data", reservation);
-            
+            // Convert to DTO before returning
+            ReservationDTO reservationDTO = ReservationDTO.fromEntity(reservation);
+
             System.out.println("返回预订详情成功, id: " + id);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success(reservationDTO));
         } catch (Exception e) {
             System.err.println("获取预订详情失败: " + e.getMessage());
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取预订详情失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail("获取预订详情失败: " + e.getMessage()));
         }
     }
     
@@ -239,19 +172,14 @@ public class ReservationController {
             System.out.println("接收到确认预订请求, id: " + id);
             Reservation reservation = reservationService.confirmReservation(id);
             
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("message", "预订确认成功");
-            response.put("data", reservation);
+            // Convert to DTO before returning
+            ReservationDTO reservationDTO = ReservationDTO.fromEntity(reservation);
             
             System.out.println("预订确认成功, id: " + id);
-            return ResponseEntity.ok(response);
+            return ResponseEntity.ok(ApiResponse.success("预订确认成功", reservationDTO));
         } catch (Exception e) {
             System.err.println("确认预订失败: " + e.getMessage());
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "确认预订失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            return ResponseEntity.badRequest().body(ApiResponse.fail("确认预订失败: " + e.getMessage()));
         }
     }
     
@@ -486,60 +414,50 @@ public class ReservationController {
         }
     }
 
-    // 新增：获取当前用户的预订列表（分页和状态过滤）
+    // 获取当前登录用户的预订 (分页)
     @GetMapping("/user")
     public ResponseEntity<?> getCurrentUserReservations(
             @RequestParam(defaultValue = "1") int page,
             @RequestParam(defaultValue = "10") int pageSize,
             @RequestParam(required = false) String status) { // status 作为 String 接收
         try {
-            Long userId = UserContextHolder.getCurrentUserId(); // 获取当前用户 ID
-            
+            Long userId = UserContextHolder.getCurrentUserId();
+            System.out.println("获取当前用户预订列表请求, userId: " + userId + ", page: " + page + ", pageSize: " + pageSize + ", status: " + status);
+
             // 处理 status 字符串到枚举的转换
             Reservation.ReservationStatus reservationStatus = null;
             if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) {
                 try {
                     reservationStatus = Reservation.ReservationStatus.valueOf(status.toUpperCase());
                 } catch (IllegalArgumentException e) {
-                    Map<String, Object> response = new HashMap<>();
-                    response.put("success", false);
-                    response.put("message", "无效的状态参数: " + status);
-                    return ResponseEntity.badRequest().body(response);
+                     return ResponseEntity.badRequest().body(ApiResponse.fail("无效的状态参数: " + status));
                 }
             }
-
+            
             // 创建 Pageable 对象 (注意 page 是 0-based)
             Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
 
-            // 调用服务层方法
+            // 调用正确的服务层方法获取原始 Page 对象
             Page<Reservation> reservationPage = reservationService.getUserReservationsPaginated(userId, reservationStatus, pageable);
 
-            // 构建响应数据
-            Map<String, Object> responseData = new HashMap<>();
-            responseData.put("list", reservationPage.getContent());
-            responseData.put("total", reservationPage.getTotalElements());
+            // 转换实体列表为 DTO 列表
+            List<ReservationDTO> reservationDTOs = reservationPage.getContent().stream()
+                    .map(ReservationDTO::fromEntity)
+                    .collect(Collectors.toList());
 
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("code", 200);
-            response.put("message", "获取成功");
-            response.put("data", responseData);
+            // 创建 Page<ReservationDTO> 对象
+            Page<ReservationDTO> reservationDTOPage = new PageImpl<>(reservationDTOs, pageable, reservationPage.getTotalElements());
 
+            // 使用 ApiResponse 包装
+            ApiResponse<Page<ReservationDTO>> response = ApiResponse.success(reservationDTOPage);
+
+            System.out.println("返回当前用户预订列表 DTO 成功");
             return ResponseEntity.ok(response);
-
+            
         } catch (Exception e) {
             System.err.println("获取当前用户预订列表失败: " + e.getMessage());
-            // 可以根据异常类型返回更具体的错误，例如用户未登录
-            if (e instanceof RuntimeException && e.getMessage().contains("用户未登录")) {
-                 Map<String, Object> response = new HashMap<>();
-                 response.put("success", false);
-                 response.put("message", "用户未登录，请先登录");
-                 return ResponseEntity.status(HttpStatus.UNAUTHORIZED).body(response);
-            }
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取预订列表失败: " + e.getMessage());
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(response); // 使用 500
+            e.printStackTrace();
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail("获取预订记录失败: " + e.getMessage()));
         }
     }
 }

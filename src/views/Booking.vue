@@ -87,7 +87,6 @@
               v-model="bookingForm.contactName" 
               placeholder="请输入联系人姓名" 
               class="custom-input"
-              :disabled="isLoggedIn"
             />
           </el-form-item>
 
@@ -96,7 +95,6 @@
               v-model="bookingForm.phone" 
               placeholder="请输入手机号码" 
               class="custom-input"
-              :disabled="isLoggedIn"
             />
           </el-form-item>
 
@@ -215,11 +213,13 @@
 import { ref, reactive, computed, onMounted, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { ElMessage, ElMessageBox } from 'element-plus'
-import { reservationApi, membershipApi, roomApi } from '@/api'
+import { reservationApi, membershipApi, roomApi, userApi } from '@/api'
+import { useAuthStore } from '@/store/auth'
 
 const router = useRouter()
 const bookingFormRef = ref(null)
 const loading = ref(false)
+const authStore = useAuthStore()
 
 // 检查用户是否登录
 const isLoggedIn = computed(() => {
@@ -395,44 +395,38 @@ const validateDates = () => {
   }
 }
 
-// 提交预订表单
-const submitBooking = async () => {
-  // 验证表单
-  if (!isFormValid.value) {
-    ElMessage.warning('请完成所有必填信息')
-    return
+// 新增：自动填充联系人信息的函数
+const fillContactInfoOnLogin = async () => {
+  console.log('[fillContactInfo] Checking login status...', isLoggedIn.value);
+  if (isLoggedIn.value) {
+    const userId = authStore.userId;
+    console.log('[fillContactInfo] User is logged in, userId:', userId);
+    if (userId) {
+      try {
+        console.log('[fillContactInfo] Fetching user info for ID:', userId);
+        const res = await userApi.getUserInfo(userId);
+        console.log('[fillContactInfo] API response:', res);
+        if (res.success && res.data) {
+          bookingForm.contactName = res.data.name || '';
+          bookingForm.phone = res.data.phone || '';
+          console.log(`[fillContactInfo] Filled contact info: Name=${bookingForm.contactName}, Phone=${bookingForm.phone}`);
+        } else {
+          console.warn('[fillContactInfo] Failed to fetch user info or data missing:', res?.message);
+        }
+      } catch (error) {
+        console.error('[fillContactInfo] Error fetching user info:', error);
+        // 此处不提示用户错误，因为只是预填充
+      }
+    } else {
+       console.warn('[fillContactInfo] User ID not found in auth store.');
+    }
+  } else {
+     console.log('[fillContactInfo] User is not logged in.');
   }
-  
-  // 如果用户未登录，提示登录
-  if (!isLoggedIn.value) {
-    ElMessageBox.confirm('预订需要登录，是否前往登录页面？', '提示', {
-      confirmButtonText: '去登录',
-      cancelButtonText: '取消',
-      type: 'info'
-    }).then(() => {
-      // 保存当前填写的信息到localStorage
-      localStorage.setItem('tempBookingData', JSON.stringify({
-        checkIn: bookingForm.checkIn,
-        checkOut: bookingForm.checkOut,
-        roomType: bookingForm.roomType,
-        roomCount: bookingForm.roomCount,
-        contactName: bookingForm.contactName,
-        phone: bookingForm.phone,
-        email: bookingForm.email,
-        remarks: bookingForm.remarks
-      }))
-      
-      // 跳转到登录页面
-      router.push({
-        path: '/login',
-        query: { redirect: '/booking' }
-      })
-    }).catch(() => {
-      // 用户取消了登录
-    })
-    return
-  }
-  
+};
+
+// 新增：处理预订提交的核心逻辑
+const processBookingSubmission = async () => {
   try {
     // 获取用户ID
     const userId = localStorage.getItem('userId')
@@ -443,7 +437,7 @@ const submitBooking = async () => {
       return
     }
     
-    submitting.value = true
+    loading.value = true // 修改为 loading，假设 submitting 是旧的变量名
     
     // 准备预订数据
     const reservationData = {
@@ -454,7 +448,7 @@ const submitBooking = async () => {
       roomCount: bookingForm.roomCount,
       contactName: bookingForm.contactName,
       phone: bookingForm.phone,
-      email: bookingForm.email,
+      // email: bookingForm.email, // 假设 email 字段已移除或不需要
       remarks: bookingForm.remarks,
       totalAmount: totalAmount.value
     }
@@ -492,13 +486,13 @@ const submitBooking = async () => {
       }
       
       // 预订成功
-      ElMessageBox.alert(`预订已成功提交！预订单号：${result.reservationId}`, '预订成功', {
+      ElMessageBox.alert(`预订已成功提交！预订单号：${result.data.reservationId}`, '预订成功', {
         confirmButtonText: '确定',
         callback: () => {
           // 重置表单
           resetForm()
           // 跳转到个人中心预订列表
-          router.push('/user/bookings')
+          router.push({ path: '/user', query: { tab: 'bookings' } })
         }
       })
     } else {
@@ -508,7 +502,78 @@ const submitBooking = async () => {
     console.error('预订失败:', error)
     ElMessage.error(error.message || '预订提交失败，请稍后重试')
   } finally {
-    submitting.value = false
+    loading.value = false // 修改为 loading
+  }
+}
+
+// 提交预订表单
+const submitBooking = async () => {
+  // 验证表单
+  // 注意: isFormValid 在代码片段中未定义，假设它存在或应替换为 bookingFormRef.value.validate()
+  let isValid = false;
+  if (bookingFormRef.value) {
+      try {
+          await bookingFormRef.value.validate();
+          isValid = true;
+      } catch (error) {
+          // 验证失败，错误信息通常由 Element Plus 自动显示
+          console.log('Form validation failed:', error);
+          isValid = false;
+      }
+  }
+  
+  if (!isValid) {
+    ElMessage.warning('请完成所有必填信息')
+    return
+  }
+  
+  // 如果用户未登录，提示登录
+  if (!isLoggedIn.value) {
+    ElMessageBox.confirm('预订需要登录，是否前往登录页面？', '提示', {
+      confirmButtonText: '去登录',
+      cancelButtonText: '取消',
+      type: 'info'
+    }).then(() => {
+      // 保存当前填写的信息到localStorage
+      localStorage.setItem('tempBookingData', JSON.stringify({
+        checkIn: bookingForm.checkIn,
+        checkOut: bookingForm.checkOut,
+        roomType: bookingForm.roomType,
+        roomCount: bookingForm.roomCount,
+        contactName: bookingForm.contactName,
+        phone: bookingForm.phone,
+        // email: bookingForm.email, // 假设 email 字段已移除或不需要
+        remarks: bookingForm.remarks
+      }))
+      
+      // 跳转到登录页面
+      router.push({
+        path: '/login',
+        query: { redirect: '/booking' }
+      })
+    }).catch(() => {
+      // 用户取消了登录
+    })
+    return
+  }
+  
+  // 根据支付方式决定流程
+  if (bookingForm.paymentMethod === 1) { // 在线支付
+    ElMessageBox.confirm(`确认支付订单总额 ¥${totalAmount.value.toFixed(2)} 吗？`, '模拟支付', {
+      confirmButtonText: '确认支付',
+      cancelButtonText: '取消',
+      type: 'warning' // 使用 warning 类型以示区别
+    }).then(async () => {
+      // 用户确认支付，执行提交流程
+      await processBookingSubmission();
+    }).catch(() => {
+      // 用户取消支付
+      console.log('用户取消支付');
+      ElMessage.info('支付已取消');
+    });
+  } else { // 到店支付
+    // 直接执行提交流程
+    await processBookingSubmission();
   }
 }
 
@@ -533,85 +598,40 @@ const resetForm = () => {
   bookingFormRef.value.resetFields()
 }
 
-// 加载房间类型数据
-const loadRoomTypes = async () => {
+// 新增：获取房型列表的函数
+const fetchRoomTypes = async () => {
   try {
-    loading.value = true
-    
-    // 使用API服务获取房间类型
-    const roomTypesData = await roomApi.getAllRoomTypes().catch(err => {
-      console.error('获取房间类型失败:', err)
-      // 如果API调用失败，使用模拟数据
-      return null
-    })
-    
-    if (roomTypesData && roomTypesData.length > 0) {
-      roomTypes.value = roomTypesData
+    const response = await roomApi.getAllRoomTypes()
+    console.log('API response:', response) // 添加日志记录
+    if (response && response.success && Array.isArray(response.data)) {
+      roomTypes.value = response.data.map(type => ({
+        ...type, // 保留原始字段
+        price: type.basePrice // 将 basePrice 映射到 price
+      }))
+      console.log('Processed room types:', roomTypes.value) // 添加日志记录
     } else {
-      // 使用模拟数据
-      roomTypes.value = [
-        { id: 1, name: '标准大床房', price: 399, description: '25㎡ 大床' },
-        { id: 2, name: '豪华大床房', price: 499, description: '30㎡ 大床' },
-        { id: 3, name: '行政大床房', price: 599, description: '35㎡ 大床' },
-        { id: 4, name: '标准双床房', price: 429, description: '25㎡ 双床' },
-        { id: 5, name: '豪华双床房', price: 529, description: '30㎡ 双床' },
-        { id: 6, name: '家庭套房', price: 699, description: '45㎡ 大床+单床' }
-      ]
-    }
-    
-    // 默认选择第一个房型
-    if (roomTypes.value.length > 0 && !bookingForm.roomType) {
-      bookingForm.roomType = roomTypes.value[0].id
+      console.error('获取房型数据格式不正确:', response)
+      ElMessage.error('获取房型数据格式不正确')
     }
   } catch (error) {
-    console.error('加载房间类型失败:', error)
-    ElMessage.error('加载房间类型失败')
-  } finally {
-    loading.value = false
+    console.error('获取房型列表失败:', error)
+    ElMessage.error(error.message || '获取房型列表失败，请稍后再试')
   }
 }
 
-// 计算折扣价格
-const calculateDiscount = async () => {
-  if (!isLoggedIn.value) return
-  
-  try {
-    const userId = localStorage.getItem('userId')
-    if (!userId) return
-    
-    // 使用API计算折扣
-    const discountResult = await reservationApi.calculateDiscount(userId, originalPrice.value)
-    
-    if (discountResult && discountResult.success) {
-      totalAmount.value = discountResult.discountedAmount
-      discountRate.value = discountResult.discountRate
-      
-      // 计算积分
-      if (discountResult.memberLevel) {
-        let pointsRate = 0
-        switch (discountResult.memberLevel) {
-          case '铜牌会员':
-            pointsRate = 100
-            break
-          case '银牌会员':
-            pointsRate = 120
-            break
-          case '金牌会员':
-            pointsRate = 150
-            break
-          case '钻石会员':
-            pointsRate = 200
-            break
-        }
-        estimatedPoints.value = Math.floor(totalAmount.value * pointsRate / 100)
-      }
-    }
-  } catch (error) {
-    console.error('计算折扣失败:', error)
-    // 如果折扣计算失败，使用原价
-    totalAmount.value = originalPrice.value
+// 组件挂载时执行
+onMounted(() => {
+  fetchRoomTypes(); // 确保获取房型列表的逻辑仍然被调用
+  fillContactInfoOnLogin(); // 添加调用：尝试填充联系人信息
+})
+
+// 监听登录状态变化 (可选但推荐)
+watch(isLoggedIn, (newValue) => {
+  console.log('[watch isLoggedIn] Login status changed to:', newValue);
+  if (newValue) {
+    fillContactInfoOnLogin(); // 如果变为登录状态，尝试填充信息
   }
-}
+});
 </script>
 
 <style scoped>

@@ -123,6 +123,9 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.GET, "/api/admin/dashboard/stats", "/api/admin/checkin/today-stats").hasAnyRole("ADMIN", "RECEPTIONIST")
                 // ADD: Allow ADMIN or RECEPTIONIST to access rooms list for status view
                 .antMatchers(HttpMethod.GET, "/api/admin/rooms").hasAnyRole("ADMIN", "RECEPTIONIST")
+                // ADD: Explicit rules for admin access to non-admin prefixed APIs
+                .antMatchers(HttpMethod.GET, "/api/users").hasRole("ADMIN")
+                .antMatchers(HttpMethod.GET, "/api/reservations").hasAnyRole("ADMIN", "RECEPTIONIST")
                 // 管理员相关 API 需要管理员角色 (Keep this general rule after specific ones)
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("ADMIN")

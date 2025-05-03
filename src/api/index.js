@@ -16,15 +16,19 @@ apiClient.interceptors.request.use(
     const method = (config.method || '').toUpperCase();
     console.log(`[Request Interceptor] URL: ${url}, Method: ${method}`);
 
-    // 定义需要管理员权限的 API 路径判断逻辑
+    // 定义需要管理员权限的 API 路径判断逻辑 (修正版)
     const isAdminPath = 
       url.startsWith('/api/admin/') ||
-      (url === '/api/users' && (method === 'GET' || method === 'DELETE')) ||
+      (url === '/api/users' && (method === 'GET' || method === 'DELETE' || method === 'POST')) || // GET/DELETE/POST /api/users assumed admin
       (url.startsWith('/api/users/') && url.endsWith('/status') && method === 'PUT') || // toggleUserStatus
       url.startsWith('/api/users/staff/active') ||
-      url.startsWith('/api/users/staff') || // 添加对 /api/users/staff 的判断 (应该放在 /active 之前，但这里也行)
+      url.startsWith('/api/users/staff') || 
       url.startsWith('/api/users/count/') ||
-      url.startsWith('/api/invitation-codes');
+      url.startsWith('/api/invitation-codes') ||
+      (url === '/api/reservations' && method === 'GET') || // Added: GET /api/reservations for admin view
+      (url.startsWith('/api/reservations/') && (url.endsWith('/confirm') || url.endsWith('/cancel') || url.endsWith('/complete'))) || // Reservation actions
+      (url.startsWith('/api/reservations/') && method === 'PUT') || // updateReservationStatus
+      url.startsWith('/api/rooms'); // Added: Managing rooms
     console.log(`[Request Interceptor] Is Admin Path? ${isAdminPath}`);
 
     let token = null;
