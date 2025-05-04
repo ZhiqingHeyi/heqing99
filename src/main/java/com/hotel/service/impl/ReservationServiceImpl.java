@@ -149,6 +149,28 @@ public class ReservationServiceImpl implements ReservationService {
         BigDecimal originalAmount = BigDecimal.valueOf(totalAmount);
         BigDecimal finalAmount = originalAmount.multiply(discount).setScale(2, BigDecimal.ROUND_HALF_UP); // Scale for currency
 
+        // --- Determine Payment Status --- Start
+        String determinedPaymentStatusString = "UNPAID"; // Default as String
+        if (reservationData.containsKey("paymentStatus")) {
+            Object paymentStatusObj = reservationData.get("paymentStatus");
+            if (paymentStatusObj != null) {
+                String paymentStatusStr = paymentStatusObj.toString().toUpperCase();
+                // Basic check if the string matches known values (optional, but good practice)
+                if (Arrays.asList("UNPAID", "DEPOSIT_PAID", "PAID_FULL").contains(paymentStatusStr)) {
+                     determinedPaymentStatusString = paymentStatusStr;
+                     log.info("Using paymentStatus from request: {}", determinedPaymentStatusString);
+                } else {
+                    log.warn("Invalid paymentStatus string received: '{}'. Using default UNPAID.", paymentStatusObj);
+                    // Keep default UNPAID string
+                }
+            } else {
+                log.warn("Received null for paymentStatus. Using default UNPAID.");
+            }
+        } else {
+            log.info("No paymentStatus provided in request. Using default UNPAID.");
+        }
+        // --- Determine Payment Status --- End
+
         Reservation reservation = new Reservation();
         reservation.setUser(user);
         reservation.setRoom(availableRoom); // Set the found available room
@@ -160,6 +182,7 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setTotalPrice(finalAmount);
         reservation.setRoomCount(roomCount);
         reservation.setStatus(Reservation.ReservationStatus.PENDING);
+        reservation.setPaymentStatus(determinedPaymentStatusString); // Set String
         reservation.setCreateTime(LocalDateTime.now());
 
         // 6. Save reservation
@@ -487,26 +510,18 @@ public class ReservationServiceImpl implements ReservationService {
 
     @Override
     public Page<ReservationSummaryDTO> getAllReservations(Pageable pageable, String statusStr, String guestName, String guestPhone, LocalDateTime startDate, LocalDateTime endDate, String bookingNo) {
-        ReservationStatus status = null;
+        ReservationStatus statusEnum = null;
         if (StringUtils.hasText(statusStr)) {
             try {
-                status = ReservationStatus.valueOf(statusStr.toUpperCase());
+                statusEnum = ReservationStatus.valueOf(statusStr.toUpperCase());
             } catch (IllegalArgumentException e) {
-                log.warn("Invalid reservation status string provided: {}", statusStr);
-                // Optionally handle invalid status, e.g., return empty page or throw exception
-                // For now, we proceed with status as null (no status filter)
+                 log.warn("Invalid reservation status string provided for getAllReservations: {}", statusStr);
             }
         }
 
-        // Restore original call - modified to match simplified repository signature
         Page<Reservation> reservationPage = reservationRepository.findAllWithFilters(
             pageable,
-            status // Pass only status, as other params are removed from repo method
-            // StringUtils.hasText(guestName) ? guestName : null,
-            // StringUtils.hasText(guestPhone) ? guestPhone : null,
-            // startDate,
-            // endDate,
-            // StringUtils.hasText(bookingNo) ? bookingNo : null
+            statusEnum // Pass the enum here
         );
 
         log.debug("Repository returned Page: PageNumber={}, Size={}, TotalElements={}, TotalPages={}",
@@ -533,7 +548,7 @@ public class ReservationServiceImpl implements ReservationService {
             dto.setCheckInTime(reservation.getCheckInTime());
             dto.setCheckOutTime(reservation.getCheckOutTime());
             dto.setStatus(reservation.getStatus() != null ? reservation.getStatus().name() : null);
-            dto.setPaymentStatus("未支付"); // Hardcoded for now
+            dto.setPaymentStatus(reservation.getPaymentStatus());
 
             Room room = reservation.getRoom();
             log.debug("  Room object is null? {}", room == null);
@@ -691,13 +706,16 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
-    public Page<Reservation> getUserReservationsPaginated(Long userId, Reservation.ReservationStatus status, Pageable pageable) {
+    public Page<Reservation> getUserReservationsPaginated(Long userId, String statusStr, Pageable pageable) {
         User user = userService.getUserById(userId);
-        if (status == null) {
-            return reservationRepository.findByUser(user, pageable);
-        } else {
-            return reservationRepository.findByUserAndStatus(user, status, pageable);
-        }
+        Page<Reservation> resultPage;
+
+        // --- TEMPORARY MODIFICATION: Ignore status filter ---
+        log.warn("getUserReservationsPaginated TEMPORARILY ignoring status filter '{}' and calling findByUser only.", statusStr);
+        resultPage = reservationRepository.findByUser(user, pageable);
+        // --- END TEMPORARY MODIFICATION ---
+
+        return resultPage;
     }
 
     private boolean hasTimeConflict(Reservation newReservation) {

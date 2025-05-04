@@ -529,12 +529,13 @@ const pointsList = ref([])
 // 获取预订状态对应的类型
 const getStatusType = (status) => {
   const statusMap = {
-    pending: 'warning',
-    confirmed: 'success',
-    cancelled: 'danger',
-    completed: 'info'
-  }
-  return statusMap[status]
+    pending: 'warning',     // 待确认
+    confirmed: 'primary',   // 已确认
+    'checked-in': 'success',// 已入住 (注意 key 使用 checked-in)
+    completed: 'info',      // 已完成 (改为 info 更好区分)
+    cancelled: 'danger'     // 已取消 (改为 danger 醒目)
+  };
+  return statusMap[status ? status.toLowerCase() : '']; // 处理 null 并转小写
 }
 
 // 获取预订状态对应的文本
@@ -542,10 +543,11 @@ const getStatusText = (status) => {
   const statusMap = {
     pending: '待确认',
     confirmed: '已确认',
-    cancelled: '已取消',
-    completed: '已完成'
-  }
-  return statusMap[status]
+    'checked-in': '已入住',
+    completed: '已完成',
+    cancelled: '已取消'
+  };
+  return statusMap[status ? status.toLowerCase() : ''] || '未知状态'; // 处理 null 并转小写，增加默认值
 }
 
 // 处理菜单选择

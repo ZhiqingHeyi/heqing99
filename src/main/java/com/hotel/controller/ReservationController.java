@@ -23,6 +23,8 @@ import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.format.annotation.DateTimeFormat;
 import com.hotel.dto.ReservationSummaryDTO;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -55,8 +57,19 @@ public class ReservationController {
     @PostMapping
     public ResponseEntity<?> createReservation(@RequestBody Map<String, Object> reservationData) {
         try {
-            System.out.println("接收到预订请求数据: " + reservationData);
-            
+            log.info("接收到预订请求数据 Map:", reservationData);
+
+            // --- Detailed Log BEFORE calling service --- Start
+            log.info("--- Debugging reservationData before service call ---");
+            log.info("Contains 'paymentStatus' key? {}", reservationData.containsKey("paymentStatus"));
+            if (reservationData.containsKey("paymentStatus")) {
+                Object paymentStatusValue = reservationData.get("paymentStatus");
+                log.info("Value of 'paymentStatus': {}", paymentStatusValue);
+                log.info("Type of 'paymentStatus' value: {}", (paymentStatusValue != null ? paymentStatusValue.getClass().getName() : "null"));
+            }
+            log.info("--- End Debugging reservationData ---");
+            // --- Detailed Log BEFORE calling service --- End
+
             // 将解析和业务逻辑委托给 Service 层
             Reservation createdReservation = reservationService.createReservation(reservationData);
             
@@ -361,48 +374,34 @@ public class ReservationController {
 
     // 获取当前登录用户的预订 (分页)
     @GetMapping("/user")
-    public ResponseEntity<?> getCurrentUserReservations(
+    public ResponseEntity<ApiResponse<Page<ReservationDTO>>> getCurrentUserReservations(
             @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize,
-            @RequestParam(required = false) String status) { // status 作为 String 接收
+            @RequestParam(defaultValue = "5") int pageSize,
+            @RequestParam(required = false) String status
+    ) {
         try {
-            Long userId = UserContextHolder.getCurrentUserId();
+            Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+            String username = authentication.getName();
+            User currentUser = userService.getUserByUsername(username);
+            Long userId = currentUser.getId();
+
             System.out.println("获取当前用户预订列表请求, userId: " + userId + ", page: " + page + ", pageSize: " + pageSize + ", status: " + status);
 
-            // 处理 status 字符串到枚举的转换
-            Reservation.ReservationStatus reservationStatus = null;
-            if (status != null && !status.trim().isEmpty() && !status.equalsIgnoreCase("all")) {
-                try {
-                    reservationStatus = Reservation.ReservationStatus.valueOf(status.toUpperCase());
-                } catch (IllegalArgumentException e) {
-                     return ResponseEntity.badRequest().body(ApiResponse.fail("无效的状态参数: " + status));
-                }
-            }
+            // Spring Pageable is 0-indexed
+            Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by("createTime").descending());
             
-            // 创建 Pageable 对象 (注意 page 是 0-based)
-            Pageable pageable = PageRequest.of(page - 1, pageSize, Sort.by(Sort.Direction.DESC, "createTime"));
-
-            // 调用正确的服务层方法获取原始 Page 对象
-            Page<Reservation> reservationPage = reservationService.getUserReservationsPaginated(userId, reservationStatus, pageable);
-
-            // 转换实体列表为 DTO 列表
-            List<ReservationDTO> reservationDTOs = reservationPage.getContent().stream()
-                    .map(ReservationDTO::fromEntity)
-                    .collect(Collectors.toList());
-
-            // 创建 Page<ReservationDTO> 对象
-            Page<ReservationDTO> reservationDTOPage = new PageImpl<>(reservationDTOs, pageable, reservationPage.getTotalElements());
-
-            // 使用 ApiResponse 包装
-            ApiResponse<Page<ReservationDTO>> response = ApiResponse.success(reservationDTOPage);
-
+            // Call service with String status
+            Page<Reservation> userReservationsPage = reservationService.getUserReservationsPaginated(userId, status, pageable);
+            
+            // Convert to DTO Page
+            Page<ReservationDTO> dtoPage = userReservationsPage.map(ReservationDTO::fromEntity);
+            
             System.out.println("返回当前用户预订列表 DTO 成功");
-            return ResponseEntity.ok(response);
-            
+            return ResponseEntity.ok(ApiResponse.success(dtoPage));
         } catch (Exception e) {
             System.err.println("获取当前用户预订列表失败: " + e.getMessage());
-            e.printStackTrace();
-            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(ApiResponse.fail("获取预订记录失败: " + e.getMessage()));
+            log.error("Error fetching current user reservations", e);
+            return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(ApiResponse.fail(400, "获取预订记录失败: " + e.getMessage()));
         }
     }
 }

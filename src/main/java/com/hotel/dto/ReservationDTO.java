@@ -30,7 +30,7 @@ public class ReservationDTO {
         this.checkInTime = reservation.getCheckInTime();
         this.checkOutTime = reservation.getCheckOutTime();
         this.totalPrice = reservation.getTotalPrice();
-        this.status = reservation.getStatus() != null ? reservation.getStatus().name().toLowerCase() : null;
+        this.status = reservation.getStatus() != null ? reservation.getStatus().name() : null;
         this.createTime = reservation.getCreateTime();
 
         if (reservation.getRoom() != null) {

@@ -11,6 +11,7 @@ import org.springframework.data.jpa.domain.support.AuditingEntityListener;
 import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDateTime;
+import javax.validation.constraints.NotNull;
 
 @Data
 @Entity
@@ -47,7 +48,8 @@ public class Reservation {
     @Column(nullable = false)
     private LocalDateTime checkOutTime;
 
-    @Column(nullable = false)
+    @NotNull
+    @Column(name = "total_price", nullable = false)
     private BigDecimal totalPrice;
 
     @Column(nullable = false)
@@ -56,6 +58,10 @@ public class Reservation {
 
     @Column(name = "special_requests")
     private String specialRequests;
+
+    @NotNull
+    @Column(name = "payment_status", nullable = false)
+    private String paymentStatus;
 
     @CreatedDate
     private LocalDateTime createTime;
@@ -73,5 +79,25 @@ public class Reservation {
         CHECKED_IN, // 已入住
         COMPLETED,  // 已完成
         CANCELLED   // 已取消
+    }
+
+    public BigDecimal getTotalPrice() {
+        return totalPrice;
+    }
+
+    public void setTotalPrice(BigDecimal totalPrice) {
+        this.totalPrice = totalPrice;
+    }
+
+    public String getPaymentStatus() {
+        return paymentStatus;
+    }
+
+    public void setPaymentStatus(String paymentStatus) {
+        this.paymentStatus = paymentStatus;
+    }
+
+    public LocalDateTime getCreateTime() {
+        return createTime;
     }
 }

@@ -142,7 +142,7 @@ public interface ReservationService {
     /**
      * 获取用户的预订列表（分页和可选状态过滤）
      */
-    Page<Reservation> getUserReservationsPaginated(Long userId, Reservation.ReservationStatus status, Pageable pageable);
+    Page<Reservation> getUserReservationsPaginated(Long userId, String statusStr, Pageable pageable);
 
     /**
      * 获取预订列表（分页和过滤），返回DTO
