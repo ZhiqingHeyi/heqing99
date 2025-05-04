@@ -7,6 +7,8 @@ import com.hotel.repository.ConsumptionRecordRepository;
 import com.hotel.service.ConsumptionRecordService;
 import com.hotel.service.MemberLevelChangeRecordService;
 import com.hotel.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -18,8 +20,8 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Service
-@Transactional
 public class ConsumptionRecordServiceImpl implements ConsumptionRecordService {
+    private static final Logger log = LoggerFactory.getLogger(ConsumptionRecordServiceImpl.class);
 
     @Autowired
     private ConsumptionRecordRepository consumptionRecordRepository;
@@ -40,7 +42,9 @@ public class ConsumptionRecordServiceImpl implements ConsumptionRecordService {
         if (record.getConsumptionTime() == null) {
             record.setConsumptionTime(LocalDateTime.now());
         }
-        return consumptionRecordRepository.save(record);
+        ConsumptionRecord saved = consumptionRecordRepository.save(record);
+        log.info("[SAVE_POINTS] Inside addConsumptionRecord. Saved entity ID: {}, Points Earned: {}", saved.getId(), saved.getPointsEarned());
+        return saved;
     }
 
     @Override
@@ -192,7 +196,6 @@ public class ConsumptionRecordServiceImpl implements ConsumptionRecordService {
     public User recordConsumptionAndUpdateMembership(Long userId, BigDecimal amount, String type, String description, Long reservationId, Long roomId) {
         User user = userService.getUserById(userId);
         
-        // 创建消费记录
         ConsumptionRecord record = new ConsumptionRecord();
         record.setUser(user);
         record.setAmount(amount);
@@ -202,58 +205,59 @@ public class ConsumptionRecordServiceImpl implements ConsumptionRecordService {
         record.setRoomId(roomId);
         record.setConsumptionTime(LocalDateTime.now());
         
-        // 应用折扣
         double discountRate = user.getDiscountRate();
         record.setDiscountRate(discountRate);
         record.setDiscountedAmount(amount.multiply(BigDecimal.valueOf(discountRate)));
         
-        // 计算获得的积分
         int pointsRate = 0;
         switch (user.getMemberLevel()) {
-            case BRONZE:
-                pointsRate = 100;
-                break;
-            case SILVER:
-                pointsRate = 120;
-                break;
-            case GOLD:
-                pointsRate = 150;
-                break;
-            case DIAMOND:
-                pointsRate = 200;
-                break;
-            default:
-                pointsRate = 0;
+            case BRONZE: pointsRate = 100; break;
+            case SILVER: pointsRate = 120; break;
+            case GOLD:   pointsRate = 150; break;
+            case DIAMOND: pointsRate = 200; break;
+            default:     pointsRate = 0; // REGULAR
         }
         
         int pointsEarned = amount.multiply(BigDecimal.valueOf(pointsRate))
                 .divide(BigDecimal.valueOf(100), BigDecimal.ROUND_DOWN)
                 .intValue();
         record.setPointsEarned(pointsEarned);
-        
+        log.info("[SAVE_POINTS] Calculated pointsEarned: {} for amount: {}", pointsEarned, amount);
+        log.info("[SAVE_POINTS] ConsumptionRecord before save: {}", record);
+
         // 保存消费记录
-        createConsumptionRecord(record);
+        ConsumptionRecord savedRecord = null;
+        try {
+            savedRecord = createConsumptionRecord(record);
+            if (savedRecord != null && savedRecord.getId() != null) {
+                log.info("[SAVE_POINTS] ConsumptionRecord saved successfully. ID: {}, Points Earned in returned entity: {}", savedRecord.getId(), savedRecord.getPointsEarned());
+            } else {
+                 log.error("[SAVE_POINTS] ConsumptionRecord save call returned null or without ID.");
+            }
+        } catch (Exception e) {
+             log.error("[SAVE_POINTS] Error during createConsumptionRecord call", e);
+             throw e;
+        }
         
-        // 记录旧会员等级
         MemberLevel oldLevel = user.getMemberLevel();
-        
-        // 更新用户累计消费和积分
+        int pointsBeforeUpdate = user.getPoints();
         user.setTotalSpent(user.getTotalSpent().add(amount));
-        user.setPoints(user.getPoints() + pointsEarned);
+        user.setPoints(pointsBeforeUpdate + pointsEarned);
+        log.info("[SAVE_POINTS] User points before update: {}, adding: {}, after update: {}", pointsBeforeUpdate, pointsEarned, user.getPoints());
         
-        // 更新会员等级
         user.updateMemberLevel();
         
-        // 如果会员等级有变化，创建变更记录
         if (!oldLevel.equals(user.getMemberLevel())) {
-            memberLevelChangeRecordService.createChangeRecord(
+             memberLevelChangeRecordService.createChangeRecord(
                 user, 
                 oldLevel, 
                 user.getMemberLevel(), 
                 "消费升级: " + amount + "元");
         }
         
-        // 保存用户更新
-        return userService.updateUser(user);
+        userService.updateUser(user);
+        log.info("[SAVE_POINTS] userService.updateUser called successfully for userId: {}", userId);
+        
+        return user;
     }
 } 

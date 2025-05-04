@@ -13,6 +13,8 @@ import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
 import com.hotel.service.UserService;
 import com.hotel.service.ConsumptionRecordService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
@@ -35,6 +37,8 @@ import java.util.Arrays;
 @Service
 @Transactional
 public class ReservationServiceImpl implements ReservationService {
+
+    private static final Logger log = LoggerFactory.getLogger(ReservationServiceImpl.class);
 
     @Autowired
     private ReservationRepository reservationRepository;
@@ -154,11 +158,37 @@ public class ReservationServiceImpl implements ReservationService {
         reservation.setStatus(Reservation.ReservationStatus.PENDING);
         reservation.setCreateTime(LocalDateTime.now());
 
-        // 6. Save reservation and update user spending
+        // 6. Save reservation
         Reservation savedReservation = reservationRepository.save(reservation);
-        userService.addSpending(userId, finalAmount);
 
-        System.out.println("预订创建成功，Reservation ID: " + savedReservation.getId() + ", Room ID: " + availableRoom.getId());
+        System.out.println("预订创建成功，Reservation ID: " + savedReservation.getId() + ", Room ID: " + (savedReservation.getRoom() != null ? savedReservation.getRoom().getId() : "N/A"));
+
+        try {
+            User userForPoints = savedReservation.getUser(); // 从保存后的预订获取用户
+            BigDecimal amountForPoints = savedReservation.getTotalPrice(); 
+            String type = "ROOM_RESERVATION"; // 类型改为预订相关
+            String description = "Reservation created: ID " + savedReservation.getId();
+            Long resId = savedReservation.getId();
+            Long roomId = (savedReservation.getRoom() != null) ? savedReservation.getRoom().getId() : null;
+
+            if (userForPoints != null && amountForPoints != null && amountForPoints.compareTo(BigDecimal.ZERO) > 0) {
+                log.info("[POINTS_ON_CREATE] Triggering consumption record for Reservation ID: {}", resId); // 添加日志区分
+                consumptionRecordService.recordConsumptionAndUpdateMembership(
+                    userForPoints.getId(), 
+                    amountForPoints, 
+                    type, 
+                    description,
+                    resId,
+                    roomId
+                );
+                 log.info("[POINTS_ON_CREATE] Consumption record processing finished for Reservation ID: {}", resId);
+            } else {
+                log.warn("[POINTS_ON_CREATE] Skipping consumption record for reservation ID: {} due to missing user or zero/null amount.", resId);
+            }
+        } catch (Exception e) {
+            log.error("[POINTS_ON_CREATE] Error processing consumption record after reservation creation for ID: " + savedReservation.getId(), e);
+        }
+
         return savedReservation;
     }
 
@@ -257,38 +287,6 @@ public class ReservationServiceImpl implements ReservationService {
         // 实际的退房时间，如果需要精确记录
         // reservation.setActualCheckOutTime(LocalDateTime.now()); // 如果有此字段则取消注释
         Reservation savedReservation = reservationRepository.save(reservation);
-
-        if (savedReservation != null && savedReservation.getStatus() == Reservation.ReservationStatus.COMPLETED) {
-            User user = savedReservation.getUser();
-            BigDecimal amount = savedReservation.getTotalPrice(); // 使用预订的总价作为消费金额
-            String type = "ROOM_CHARGE"; // 定义消费类型，例如：房间费用
-            String description = "Reservation checkout: ID " + savedReservation.getId(); // 消费描述
-            Long resId = savedReservation.getId();
-            Long roomId = (savedReservation.getRoom() != null) ? savedReservation.getRoom().getId() : null; // 获取房间ID，注意判空
-
-            if (user != null && amount != null && amount.compareTo(BigDecimal.ZERO) > 0) { // 确保用户存在且金额有效
-                try {
-                    consumptionRecordService.recordConsumptionAndUpdateMembership(
-                        user.getId(), 
-                        amount, 
-                        type, 
-                        description,
-                        resId,
-                        roomId
-                    );
-                    System.out.println("Successfully recorded consumption and updated membership for user ID: " + user.getId() + " for reservation ID: " + resId);
-                } catch (Exception e) {
-                    // 添加日志记录，处理调用失败的情况
-                    System.err.println("Error recording consumption/updating membership for reservation ID: " + resId + ", User ID: " + user.getId() + " - " + e.getMessage());
-                    // 根据业务需求决定是否需要回滚之前的状态变更或其他处理
-                    // 例如: logger.error("...", e);
-                }
-            } else {
-                 System.err.println("Skipping consumption record for reservation ID: " + resId + " due to missing user or zero/null amount.");
-                 // 添加日志，说明为何跳过
-                 // 例如: logger.warn("Skipping...");
-            }
-        }
 
         return savedReservation; // 返回更新后的预订信息
     }

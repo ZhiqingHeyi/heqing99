@@ -221,26 +221,31 @@
               </el-table-column>
               <el-table-column prop="type" label="类型" width="100">
                 <template #default="{ row }">
-                  <el-tag :type="row.type === 'EARN' ? 'success' : (row.type === 'REDEEM' ? 'warning' : 'info')">
+                  <el-tag :type="row.type.toLowerCase() === 'earn' ? 'success' : (row.type.toLowerCase() === 'redeem' ? 'warning' : 'info')">
                     {{ getPointsTypeText(row.type) }}
                   </el-tag>
                 </template>
               </el-table-column>
-              <el-table-column prop="pointsChange" label="积分变化" width="100">
+              <el-table-column prop="points" label="积分变化" width="100">
                 <template #default="{ row }">
-                  <span :class="row.pointsChange > 0 ? 'points-up' : 'points-down'">
-                    {{ row.pointsChange > 0 ? '+' : '' }}{{ row.pointsChange }}
+                  <span :class="row.points > 0 ? 'points-up' : 'points-down'">
+                    {{ row.points > 0 ? '+' : '' }}{{ row.points }}
                   </span>
                 </template>
               </el-table-column>
-              <el-table-column prop="currentPoints" label="当前积分" width="100" />
+              <el-table-column prop="balance" label="当前积分" width="100" />
               <el-table-column prop="description" label="描述" />
-              <el-table-column prop="relatedId" label="关联单号" width="120">
+              <el-table-column prop="orderNo" label="关联单号" width="120">
                 <template #default="{ row }">
-                  <el-link v-if="row.relatedId && row.type === 'EARN'" @click="viewRelatedBooking(row.relatedId)">
-                    #{{ row.relatedId }}
+                  <el-link 
+                    v-if="row.orderNo && row.type.toLowerCase() === 'earn'" 
+                    @click="viewRelatedBooking(row.orderNo.startsWith('R') ? row.orderNo.substring(1) : row.orderNo)"
+                  >
+                    #{{ row.orderNo.startsWith('R') ? row.orderNo.substring(1) : row.orderNo }}
                   </el-link>
-                  <span v-else-if="row.relatedId">#{{ row.relatedId }}</span>
+                  <span v-else-if="row.orderNo">
+                    #{{ row.orderNo.startsWith('R') ? row.orderNo.substring(1) : row.orderNo }}
+                  </span>
                 </template>
               </el-table-column>
             </el-table>
@@ -365,11 +370,12 @@ const formatDateTime = (dateTimeStr) => {
 
 // 获取积分类型文本
 const getPointsTypeText = (type) => {
-  switch (type) {
-    case 'EARN': return '获得';
-    case 'REDEEM': return '兑换';
-    case 'EXPIRE': return '过期';
-    case 'ADJUST': return '调整';
+  const lowerCaseType = type ? type.toLowerCase() : ''; // Convert to lowercase
+  switch (lowerCaseType) {
+    case 'earn': return '获得';
+    case 'redeem': return '兑换';
+    case 'expire': return '过期'; // Keep others if needed
+    case 'adjust': return '调整';
     default: return '未知';
   }
 }
@@ -405,27 +411,45 @@ const changingPassword = ref(false);
 const savingNotifications = ref(false);
 // --- 结束：修复 Vue 警告所需的定义 ---
 
-// 用户信息
+// 获取用户名和会员等级 (这些 computed 可能不再完全准确，因为 userInfo 会被 API 更新)
+const userName_initial = computed(() => {
+  return localStorage.getItem('userName') || ''
+})
+
+const userLevel_initial = computed(() => {
+  return localStorage.getItem('userLevel') || '普通用户'
+})
+
+const bookingForm = reactive({
+  // ... bookingForm properties
+})
+
+// 用户信息 (主要用于页面显示)
 const userInfo = reactive({
   userName: localStorage.getItem('userName') || '用户名',
-  level: localStorage.getItem('userLevel') || '普通用户',
-  points: parseInt(localStorage.getItem('userPoints') || '0'),
-  totalSpent: parseInt(localStorage.getItem('userTotalSpent') || '0'),
+  level: localStorage.getItem('userLevel') || '普通用户', // Initial value from localStorage
+  points: parseInt(localStorage.getItem('userPoints') || '0'), // Initial value from localStorage
+  totalSpent: parseInt(localStorage.getItem('userTotalSpent') || '0'), // Initial value from localStorage
   nextLevel: ''
 })
 
-// 计算下一个等级需要的消费金额
+// 计算下一个等级需要的消费金额 (依赖 userInfo.level 和 userInfo.totalSpent)
 const updateNextLevel = () => {
-  if (userInfo.level === '普通用户') {
-    userInfo.nextLevel = '铜牌会员（再消费¥' + (1500 - userInfo.totalSpent) + '）'
-  } else if (userInfo.level === '铜牌会员') {
-    userInfo.nextLevel = '银牌会员（再消费¥' + (5000 - userInfo.totalSpent) + '）'
-  } else if (userInfo.level === '银牌会员') {
-    userInfo.nextLevel = '金牌会员（再消费¥' + (10000 - userInfo.totalSpent) + '）'
-  } else if (userInfo.level === '金牌会员') {
-    userInfo.nextLevel = '钻石会员（再消费¥' + (30000 - userInfo.totalSpent) + '）'
-  } else {
+  const currentLevel = userInfo.level; // 使用更新后的 userInfo.level
+  const currentSpent = userInfo.totalSpent;
+
+  if (currentLevel === '普通用户') {
+    userInfo.nextLevel = '铜牌会员（再消费¥' + Math.max(0, 1500 - currentSpent) + '）'
+  } else if (currentLevel === '铜牌会员') {
+    userInfo.nextLevel = '银牌会员（再消费¥' + Math.max(0, 5000 - currentSpent) + '）'
+  } else if (currentLevel === '银牌会员') {
+    userInfo.nextLevel = '金牌会员（再消费¥' + Math.max(0, 10000 - currentSpent) + '）'
+  } else if (currentLevel === '金牌会员') {
+    userInfo.nextLevel = '钻石会员（再消费¥' + Math.max(0, 30000 - currentSpent) + '）'
+  } else if (currentLevel === '钻石会员') {
     userInfo.nextLevel = '已是最高等级'
+  } else {
+    userInfo.nextLevel = ''; // Handle unexpected level
   }
 }
 
@@ -552,35 +576,47 @@ const fetchUserInfo = async () => {
     }
     const res = await userApi.getUserInfo(userId);
      console.log('[fetchUserInfo] API Response:', res);
-    if (res.success && res.data) {
-      const userData = res.data;
-       // 更新 userInfo (用于显示)
-       userInfo.userName = userData.username || '未知用户';
-       userInfo.level = userData.memberLevel?.levelName || '普通用户';
-       userInfo.points = userData.memberLevel?.points || 0;
-       userInfo.totalSpent = userData.memberLevel?.totalSpent || 0;
+     
+    // 检查 API 调用是否成功且包含数据
+    if (res && res.success && res.data) {
+      const userData = res.data; // userData is UserDTO
+
+      // --- 更新 userInfo --- 
+      userInfo.userName = userData.username || '未知用户'; 
+      userInfo.level = getMemberLevelDisplayName(userData.memberLevel); 
+      userInfo.points = userData.points ?? 0;
+      userInfo.totalSpent = userData.totalSpent ?? 0;
+      updateNextLevel(); 
+      // --- 结束更新 userInfo ---
        
-      // 更新 userForm (用于编辑表单)
+      // --- 更新 userForm --- 
       Object.assign(userForm, {
           userName: userData.username || '',
           name: userData.name || '',
           phone: userData.phone || '',
           email: userData.email || '',
-          // 注意：后端返回的 birthday 可能是字符串，表单需要 Date 对象或 null
           birthday: userData.birthday ? userData.birthday : null, 
           gender: userData.gender || '',
-      });
+      }); // <--- 确保这里的括号是配对的
        console.log('[fetchUserInfo] User info updated:', userInfo, userForm);
+       
+       // --- 更新 localStorage --- 
+       localStorage.setItem('userName', userInfo.userName);
+       localStorage.setItem('userLevel', userInfo.level);
+       localStorage.setItem('userPoints', String(userInfo.points));
+       localStorage.setItem('userTotalSpent', String(userInfo.totalSpent));
+       // --- 结束更新 localStorage ---
+       
     } else {
-       console.error('[fetchUserInfo] Failed to fetch user info:', res.message);
-       ElMessage.error(res.message || '获取用户信息失败');
+       console.error('[fetchUserInfo] Failed to fetch user info or data missing:', res?.message || '响应结构不符');
+       ElMessage.error(res?.message || '获取用户信息失败');
+       // 如果获取失败，可以考虑是否需要回退或使用 localStorage 的旧值
+       // 当前实现下，userInfo 会保持旧值
     }
   } catch (error) {
     console.error('[fetchUserInfo] Error fetching user info:', error);
     ElMessage.error(error.message || '获取用户信息时发生错误');
-     // 可以在这里添加登出逻辑，如果获取用户信息是关键操作
-     // authStore.logout();
-     // router.push('/login');
+     // 同样，考虑错误处理策略
   }
 }
 
@@ -751,20 +787,20 @@ const handleLogout = async () => {
     }
      return; // Stop further execution if cancelled
   }
-  
-  try {
-    // 调用API退出登录
-    await userApi.logout()
-  } catch (apiError) {
-    console.error('API退出登录失败:', apiError)
-    // 即使API失败，也继续前端登出流程
-  }
-  
-  // 3. Call authStore.logout()
-  authStore.logout();
-  
-  ElMessage.success('已退出登录')
-  router.push('/') // 5. Keep router.push
+    
+    try {
+      // 调用API退出登录
+      await userApi.logout()
+    } catch (apiError) {
+      console.error('API退出登录失败:', apiError)
+      // 即使API失败，也继续前端登出流程
+    }
+    
+    // 3. Call authStore.logout()
+    authStore.logout();
+    
+    ElMessage.success('已退出登录')
+    router.push('/') // 5. Keep router.push
 }
 
 // 查看预订详情
@@ -1070,11 +1106,14 @@ const fetchPointsHistory = async () => {
         const res = await membershipApi.getPointsHistory(params.page, params.pageSize);
          // console.log('%c[DEBUG Profile.vue fetchPointsHistory] Raw API Response:', 'color: magenta;', res);
         if (res && res.success && res.data) {
-            // Corrected data extraction assuming points API also returns Page
-            const historyData = res.data.content || []; // Use .content
-            const totalHistory = res.data.totalElements || 0; // Use .totalElements
-            // console.log(`%c[DEBUG Profile.vue fetchPointsHistory] API Success. Received list (from .content):`, 'color: magenta;', historyData);
-            // console.log(`%c[DEBUG Profile.vue fetchPointsHistory] Received total (from .totalElements): ${totalHistory}`, 'color: magenta;');
+            // --- 开始修改的代码 ---
+            // Corrected data extraction based on actual API response structure
+            const historyData = res.data.list || []; // Use .list instead of .content
+            const totalHistory = res.data.total || 0; // Use .total instead of .totalElements
+            // --- 结束修改的代码 ---
+            
+            // console.log(`%c[DEBUG Profile.vue fetchPointsHistory] API Success. Received list (from .list):`, 'color: magenta;', historyData);
+            // console.log(`%c[DEBUG Profile.vue fetchPointsHistory] Received total (from .total): ${totalHistory}`, 'color: magenta;');
             pointsHistory.value = historyData;
             pointsPagination.total = totalHistory;
             // console.log(`%c[DEBUG Profile.vue fetchPointsHistory] Updated pointsHistory.value and pointsPagination.total.`, 'color: magenta;');
@@ -1109,6 +1148,20 @@ const handlePointsCurrentChange = (newPage) => {
 }
 
 // ... (其他可能需要的辅助函数, 如 getStatusText, getStatusType) ...
+
+// --- 开始添加的代码 ---
+const getMemberLevelDisplayName = (levelCode) => {
+  const levelMap = {
+    REGULAR: '普通用户',
+    BRONZE: '铜牌会员',
+    SILVER: '银牌会员',
+    GOLD: '金牌会员',
+    DIAMOND: '钻石会员'
+  };
+  // 如果 levelCode 为 null 或未定义，也返回 '普通用户'
+  return levelMap[levelCode] || '普通用户'; 
+};
+// --- 结束添加的代码 ---
 </script>
 
 <style scoped>

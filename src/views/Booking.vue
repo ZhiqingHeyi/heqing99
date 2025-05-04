@@ -457,28 +457,40 @@ const processBookingSubmission = async () => {
     const result = await reservationApi.createReservation(reservationData)
     
     if (result.success) {
-      console.log('预订已成功提交到后端，预订ID:', result.reservationId)
+      console.log('预订已成功提交到后端，预订ID:', result.data?.reservationId || result.reservationId);
       
       // 如果用户已登录，更新会员信息
       if (isLoggedIn.value) {
         try {
-          // 使用API获取最新会员信息
-          const memberInfo = await membershipApi.getMemberInfo(userId)
-          
-          // 更新本地存储的会员信息
-          if (memberInfo) {
-            localStorage.setItem('userLevel', memberInfo.memberLevel || '普通用户')
-            localStorage.setItem('userPoints', String(memberInfo.points || 0))
-            localStorage.setItem('userTotalSpent', String(memberInfo.totalSpent || 0))
-          }
-          
-          // 显示会员升级提示
-          if (memberInfo && memberInfo.memberLevel !== localStorage.getItem('userLevel')) {
-            ElMessage({
-              type: 'success',
-              message: `恭喜您！会员等级已升级为${memberInfo.memberLevel}！`,
-              duration: 5000
-            })
+          // 使用API获取最新会员信息 (假设 API 成功时返回 { success: true, data: { ... } })
+          const apiResponse = await membershipApi.getMemberInfo(userId); // 重命名变量以示区分
+
+          // 检查 API 调用是否成功且包含数据
+          if (apiResponse && apiResponse.success && apiResponse.data) {
+            const actualMemberData = apiResponse.data; // 提取 data 部分
+            const oldLevel = localStorage.getItem('userLevel'); // 获取旧等级用于比较
+
+            // 更新本地存储的会员信息 (使用 actualMemberData)
+            localStorage.setItem('userLevel', actualMemberData.memberLevel || '普通用户');
+            localStorage.setItem('userPoints', String(actualMemberData.points || 0));
+            localStorage.setItem('userTotalSpent', String(actualMemberData.totalSpent || 0));
+            
+            // 重新从 localStorage 读取新等级，确保一致性
+            const newLevel = localStorage.getItem('userLevel'); 
+
+            // 显示会员升级提示 (比较旧等级和新等级，使用 actualMemberData 显示)
+            if (newLevel && oldLevel !== newLevel) { 
+              ElMessage({
+                type: 'success',
+                message: `恭喜您！会员等级已升级为 ${actualMemberData.memberLevel}！`, // 使用 actualMemberData 中的等级名称
+                duration: 5000,
+                showClose: true // 建议添加关闭按钮
+              });
+            }
+          } else {
+            // 如果 API 调用失败或数据结构不符，记录错误
+            console.error('获取或处理会员信息失败:', apiResponse?.message || '响应结构不符');
+            // 此处可以选择不提示用户，因为核心预订流程已成功
           }
         } catch (error) {
           console.error('更新会员信息失败:', error)
@@ -486,7 +498,7 @@ const processBookingSubmission = async () => {
       }
       
       // 预订成功
-      ElMessageBox.alert(`预订已成功提交！预订单号：${result.data.reservationId}`, '预订成功', {
+      ElMessageBox.alert(`预订已成功提交！预订单号：${result.data?.reservationId || result.reservationId}`, '预订成功', {
         confirmButtonText: '确定',
         callback: () => {
           // 重置表单
