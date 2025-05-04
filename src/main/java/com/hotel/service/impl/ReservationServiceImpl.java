@@ -20,6 +20,8 @@ import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
+import java.util.Objects;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -33,6 +35,8 @@ import java.time.LocalDate;
 import java.util.stream.Collectors;
 import java.math.BigDecimal;
 import java.util.Arrays;
+import com.hotel.dto.ReservationSummaryDTO;
+import com.hotel.entity.Reservation.ReservationStatus;
 
 @Service
 @Transactional
@@ -480,10 +484,64 @@ public class ReservationServiceImpl implements ReservationService {
         user.setId(userId);
         return reservationRepository.findByUser(user);
     }
-    
+
     @Override
-    public List<Reservation> getAllReservations() {
-        return reservationRepository.findAll();
+    public Page<ReservationSummaryDTO> getAllReservations(Pageable pageable, String statusStr, String guestName, String guestPhone, LocalDateTime startDate, LocalDateTime endDate, String bookingNo) {
+        ReservationStatus status = null;
+        if (StringUtils.hasText(statusStr)) {
+            try {
+                status = ReservationStatus.valueOf(statusStr.toUpperCase());
+            } catch (IllegalArgumentException e) {
+                log.warn("Invalid reservation status string provided: {}", statusStr);
+                // Optionally handle invalid status, e.g., return empty page or throw exception
+                // For now, we proceed with status as null (no status filter)
+            }
+        }
+
+        Page<Reservation> reservationPage = reservationRepository.findWithFilters(
+            pageable,
+            status,
+            StringUtils.hasText(guestName) ? guestName : null,
+            StringUtils.hasText(guestPhone) ? guestPhone : null,
+            startDate,
+            endDate,
+            StringUtils.hasText(bookingNo) ? bookingNo : null
+        );
+
+        return reservationPage.map(this::convertToSummaryDTO);
+    }
+
+    private ReservationSummaryDTO convertToSummaryDTO(Reservation reservation) {
+        if (reservation == null) {
+            return null;
+        }
+        ReservationSummaryDTO dto = new ReservationSummaryDTO();
+        dto.setId(reservation.getId());
+        dto.setBookingNo(String.valueOf(reservation.getId())); // Use ID as booking number
+        dto.setGuestName(reservation.getGuestName());
+        dto.setGuestPhone(reservation.getGuestPhone());
+        dto.setCheckInTime(reservation.getCheckInTime());
+        dto.setCheckOutTime(reservation.getCheckOutTime());
+        dto.setStatus(reservation.getStatus() != null ? reservation.getStatus().name() : null);
+        dto.setPaymentStatus("未支付"); // Hardcoded for now
+
+        Room room = reservation.getRoom();
+        if (room != null) {
+            dto.setRoomNumber(room.getRoomNumber());
+            RoomType roomType = room.getRoomType();
+            if (roomType != null) {
+                dto.setRoomTypeName(roomType.getName());
+                dto.setRoomPrice(roomType.getBasePrice()); // Get price from RoomType
+            }
+        }
+        
+        // Optionally include user name if needed, checking user object first
+        // User user = reservation.getUser();
+        // if (user != null) {
+        //     dto.setCustomerName(user.getName()); // Or some other field if guestName is preferred
+        // }
+
+        return dto;
     }
 
     @Override

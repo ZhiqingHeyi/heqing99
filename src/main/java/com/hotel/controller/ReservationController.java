@@ -10,6 +10,8 @@ import com.hotel.service.ReservationService;
 import com.hotel.service.RoomService;
 import com.hotel.service.UserService;
 import com.hotel.util.UserContextHolder;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -19,6 +21,8 @@ import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import org.springframework.data.domain.PageImpl;
+import org.springframework.format.annotation.DateTimeFormat;
+import com.hotel.dto.ReservationSummaryDTO;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -35,6 +39,8 @@ import java.util.stream.Collectors;
 @RestController
 @RequestMapping("/api/reservations")
 public class ReservationController {
+
+    private static final Logger log = LoggerFactory.getLogger(ReservationController.class);
 
     @Autowired
     private ReservationService reservationService;
@@ -211,97 +217,31 @@ public class ReservationController {
         }
     }
     
-    // 获取预订列表
+    // 获取预订列表 (使用DTO和Service层分页过滤)
     @GetMapping
     public ResponseEntity<?> getAllReservations(
-            @RequestParam(defaultValue = "1") int page,
-            @RequestParam(defaultValue = "10") int pageSize,
+            Pageable pageable, // Spring automatically injects Pageable
             @RequestParam(required = false) String status,
-            @RequestParam(required = false) String roomType,
             @RequestParam(required = false) String guestName,
-            @RequestParam(required = false) String startDate,
-            @RequestParam(required = false) String endDate) {
+            @RequestParam(required = false) String guestPhone,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startDate,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endDate,
+            @RequestParam(required = false) String bookingNo) {
         
         try {
-            System.out.println("接收到获取预订列表请求，参数：" + 
-                    "page=" + page + 
-                    ", pageSize=" + pageSize + 
-                    ", status=" + status + 
-                    ", roomType=" + roomType + 
-                    ", guestName=" + guestName + 
-                    ", startDate=" + startDate + 
-                    ", endDate=" + endDate);
+            log.info("Fetching reservations with filters - Page: {}, Size: {}, Status: {}, GuestName: {}, GuestPhone: {}, StartDate: {}, EndDate: {}, BookingNo: {}",
+                    pageable.getPageNumber(), pageable.getPageSize(), status, guestName, guestPhone, startDate, endDate, bookingNo);
+
+            Page<ReservationSummaryDTO> reservationPage = reservationService.getAllReservations(
+                pageable, status, guestName, guestPhone, startDate, endDate, bookingNo
+            );
             
-            // 调用服务层方法获取预订列表
-            List<Reservation> reservations = reservationService.getAllReservations();
-            
-            // 进行过滤处理
-            if (status != null && !status.isEmpty()) {
-                reservations = reservations.stream()
-                        .filter(r -> r.getStatus().toString().equalsIgnoreCase(status))
-                        .collect(Collectors.toList());
-            }
-            
-            if (roomType != null && !roomType.isEmpty()) {
-                reservations = reservations.stream()
-                        .filter(r -> r.getRoom().getRoomType().getName().contains(roomType))
-                        .collect(Collectors.toList());
-            }
-            
-            if (guestName != null && !guestName.isEmpty()) {
-                reservations = reservations.stream()
-                        .filter(r -> r.getGuestName().contains(guestName))
-                        .collect(Collectors.toList());
-            }
-            
-            if (startDate != null && !startDate.isEmpty()) {
-                LocalDate start = LocalDate.parse(startDate);
-                reservations = reservations.stream()
-                        .filter(r -> !r.getCheckInTime().toLocalDate().isBefore(start))
-                        .collect(Collectors.toList());
-            }
-            
-            if (endDate != null && !endDate.isEmpty()) {
-                LocalDate end = LocalDate.parse(endDate);
-                reservations = reservations.stream()
-                        .filter(r -> !r.getCheckOutTime().toLocalDate().isAfter(end))
-                        .collect(Collectors.toList());
-            }
-            
-            // 计算总数
-            int total = reservations.size();
-            
-            // 分页处理
-            int fromIndex = (page - 1) * pageSize;
-            if (fromIndex >= reservations.size()) {
-                reservations = Collections.emptyList();
-            } else {
-                int toIndex = Math.min(fromIndex + pageSize, reservations.size());
-                reservations = reservations.subList(fromIndex, toIndex);
-            }
-            
-            // 构建响应
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", true);
-            response.put("code", 200);
-            response.put("message", "获取成功");
-            
-            Map<String, Object> data = new HashMap<>();
-            data.put("total", total);
-            data.put("list", reservations);
-            
-            response.put("data", data);
-            
-            System.out.println("返回预订列表成功，总数：" + total);
-            return ResponseEntity.ok(response);
-            
+            return ResponseEntity.ok(ApiResponse.success(reservationPage));
+
         } catch (Exception e) {
-            System.err.println("获取预订列表失败: " + e.getMessage());
-            e.printStackTrace();
-            Map<String, Object> response = new HashMap<>();
-            response.put("success", false);
-            response.put("message", "获取预订列表失败: " + e.getMessage());
-            return ResponseEntity.badRequest().body(response);
+            log.error("Error fetching reservations", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(ApiResponse.fail("获取预订列表失败: " + e.getMessage()));
         }
     }
 

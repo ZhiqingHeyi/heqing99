@@ -7,6 +7,7 @@ import com.hotel.entity.Room;
 import com.hotel.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
+import com.hotel.dto.ReservationSummaryDTO;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -37,11 +38,6 @@ public interface ReservationService {
      * 取消预订
      */
     void cancelReservation(Long id);
-
-    /**
-     * 获取所有预订列表
-     */
-    List<Reservation> getAllReservations();
 
     /**
      * 检查房间在指定日期是否可预订
@@ -147,4 +143,9 @@ public interface ReservationService {
      * 获取用户的预订列表（分页和可选状态过滤）
      */
     Page<Reservation> getUserReservationsPaginated(Long userId, Reservation.ReservationStatus status, Pageable pageable);
+
+    /**
+     * 获取预订列表（分页和过滤），返回DTO
+     */
+    Page<ReservationSummaryDTO> getAllReservations(Pageable pageable, String status, String guestName, String guestPhone, LocalDateTime startDate, LocalDateTime endDate, String bookingNo);
 }

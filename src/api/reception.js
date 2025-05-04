@@ -1,4 +1,5 @@
 import axios from 'axios'; // Assuming axios is used, adjust if needed
+console.log("reception.js loaded at:", new Date().toISOString());
 
 const apiClient = axios.create({
   baseURL: '/api', // Adjust baseURL if needed
@@ -12,10 +13,13 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Attempt to get the token from localStorage (or adjust storage as needed)
-    const token = localStorage.getItem('token');
+    const token = localStorage.getItem('auth-token');
+    // console.log('Interceptor Token:', token); // Remove this log
     if (token) {
       // Add the Authorization header
       config.headers.Authorization = `Bearer ${token}`;
+      // Add a custom header for debugging
+      config.headers['X-Debug-Token'] = token;
     }
     return config;
   },
