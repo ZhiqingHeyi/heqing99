@@ -12,14 +12,17 @@ import java.time.LocalDateTime;
 public class ReservationDTO {
 
     private Long id;
-    private String roomTypeName; // Added field
-    private Long roomId;         // Added field
+    private String roomTypeName; // 房间类型名称
+    private Long roomId;         // 房间ID
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
     private BigDecimal totalPrice;
-    private String status;       // Changed to String
+    private String status;       // 状态 (String)
     private LocalDateTime createTime;
-    // Removed fields like user, room, guestName, guestPhone, roomCount etc. if not needed directly in list view
+    private String specialRequests; // 特殊要求
+    private Integer roomCount;      // 房间数量
+    private String contactName;   // 联系人姓名 (映射自 guestName)
+    private String contactPhone;  // 联系人电话 (映射自 guestPhone)
 
     /**
      * Constructor to convert from Reservation entity.
@@ -32,6 +35,10 @@ public class ReservationDTO {
         this.totalPrice = reservation.getTotalPrice();
         this.status = reservation.getStatus() != null ? reservation.getStatus().name() : null;
         this.createTime = reservation.getCreateTime();
+        this.specialRequests = reservation.getSpecialRequests();
+        this.roomCount = reservation.getRoomCount();
+        this.contactName = reservation.getGuestName();
+        this.contactPhone = reservation.getGuestPhone();
 
         if (reservation.getRoom() != null) {
             this.roomId = reservation.getRoom().getId();

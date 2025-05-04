@@ -627,49 +627,29 @@ export const membershipApi = {
 
 // 预订相关API
 export const reservationApi = {
-  // 创建预订
-  createReservation: (reservationData) => apiClient.post('/api/reservations', reservationData),
-  
-  // 获取用户的所有预订
-  getUserReservations: (page = 1, pageSize = 10, status = null) => {
-    console.log('调用获取用户预订API:', { page, pageSize, status })
-    const params = { page, pageSize }
-    if (status) {
-      params.status = status
-    }
-    
-    return apiClient.get('/api/reservations/user', { params })
-      .then(response => {
-        console.log('获取用户预订API响应:', response)
-        if (!response || response.success === false) {
-          throw new Error(response?.message || '获取预订信息失败')
-        }
-        return response
-      })
-      .catch(error => {
-        console.error('获取用户预订API错误:', error)
-        if (error.response) {
-          const serverError = error.response.data
-          throw new Error(serverError.message || `服务器错误 (${error.response.status})`)
-        } else if (error.request) {
-          throw new Error('服务器无响应，请检查网络连接')
-        } else {
-          throw error
-        }
-      })
+  // 创建预订 (使用 POST)
+  createReservation: (data) => apiClient.post('/api/reservations', data),
+  // 获取用户所有预订 (使用 GET, 用于 Profile 列表)
+  getUserReservations: (page = 1, pageSize = 10) => {
+    return apiClient.get('/api/reservations/user', { params: { page: page, pageSize: pageSize } });
   },
-  
-  // 获取预订详情
-  getReservation: (id) => apiClient.get(`/api/reservations/${id}`),
-  
-  // 取消预订
+  // 取消预订 (使用 POST)
   cancelReservation: (id) => apiClient.post(`/api/reservations/${id}/cancel`),
-  
-  // 确认预订（管理员用）
+
+  // 获取单个预订详情 (使用 GET) <--- 新增
+  getReservationDetail: (id) => apiClient.get(`/api/reservations/${id}`),
+
+  // 获取所有预订（管理员/前台） - 确保这个方法在 reservationApi 中
+  getAllReservations: (params) => apiClient.get('/api/reservations', { params }),
+  // 更新预订状态 - 确保这个方法在 reservationApi 中
+  updateReservationStatus: (id, status) => apiClient.put(`/api/reservations/${id}`, { status }),
+  // 确认预订 - 确保这个方法在 reservationApi 中
   confirmReservation: (id) => apiClient.post(`/api/reservations/${id}/confirm`),
+  // 完成预订 (退房) - 确保这个方法在 reservationApi 中
+  completeReservation: (id) => apiClient.put(`/api/reservations/${id}/complete`),
   
   // 计算折扣价格
-  calculateDiscount: (originalPrice) => apiClient.post('/api/membership/calculate-discount', { originalPrice })
+  calculateDiscount: (originalPrice) => apiClient.post('/api/membership/calculate-discount', { originalPrice }),
 };
 
 // 房间相关API

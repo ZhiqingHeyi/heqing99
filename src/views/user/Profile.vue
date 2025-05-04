@@ -132,17 +132,6 @@
               </el-button>
             </div>
 
-            <!-- 预订过滤器 -->
-            <div class="filter-bar bookings-filter-bar">
-              <el-radio-group v-model="statusFilter" @change="filterAndFetchBookings" class="filter-group">
-                <el-radio-button label="all">全部预订</el-radio-button>
-                <el-radio-button label="PENDING">待确认</el-radio-button>
-                <el-radio-button label="CONFIRMED">已确认</el-radio-button>
-                <el-radio-button label="COMPLETED">已完成</el-radio-button>
-                <el-radio-button label="CANCELLED">已取消</el-radio-button>
-              </el-radio-group>
-            </div>
-
             <!-- 加载状态 -->
             <div v-if="bookingsLoading" class="loading-container">
               <el-skeleton :rows="5" animated />
@@ -957,7 +946,6 @@ const getMemberBenefits = () => {
 // --- 从 Bookings.vue 迁移过来的状态 ---
 const userBookings = ref([])
 const bookingsLoading = ref(false)
-const statusFilter = ref('all') // 预订状态过滤器
 const bookingPagination = reactive({
   current: 1,
   size: 5, // 初始每页显示数量
@@ -1045,11 +1033,10 @@ const fetchUserBookings = async () => {
   const params = {
     page: bookingPagination.current,
     pageSize: bookingPagination.size,
-    status: statusFilter.value === 'all' ? null : statusFilter.value,
   };
   // console.log(`%c[DEBUG Profile.vue fetchUserBookings] START - Fetching bookings with params:`, 'color: cyan; font-weight: bold;', params);
   try {
-    const res = await reservationApi.getUserReservations(params.page, params.pageSize, params.status);
+    const res = await reservationApi.getUserReservations(params.page, params.pageSize);
      // console.log('%c[DEBUG Profile.vue fetchUserBookings] Raw API Response:', 'color: cyan;', res);
     if (res && res.success && res.data) { // Added null check for res
        // Corrected data extraction from Page object
@@ -1075,12 +1062,6 @@ const fetchUserBookings = async () => {
     bookingsLoading.value = false;
     // console.log('%c[DEBUG Profile.vue fetchUserBookings] END', 'color: cyan; font-weight: bold;');
   }
-}
-
-// 状态过滤器改变时重新获取数据
-const filterAndFetchBookings = () => {
-    bookingPagination.current = 1; // 重置到第一页
-    fetchUserBookings();
 }
 
 // 处理预订分页大小改变
