@@ -126,17 +126,26 @@
         class="booking-table"
       >
         <el-table-column prop="bookingNo" label="预订号" width="120" />
-        <el-table-column prop="customerName" label="客户姓名" />
-        <el-table-column prop="phone" label="手机号" />
-        <el-table-column prop="roomType" label="房间类型" />
-        <el-table-column prop="roomNumber" label="房间号" />
+        <el-table-column prop="guestName" label="客户姓名" />
+        <el-table-column prop="guestPhone" label="手机号" />
+        <el-table-column prop="roomTypeName" label="房间类型" />
+        <el-table-column label="房间号">
+          <template #default="{ row }">
+            <span v-if="['pending', 'confirmed'].includes(row.status?.toLowerCase())">
+              未分配
+            </span>
+            <span v-else>
+              {{ row.roomNumber }}
+            </span>
+          </template>
+        </el-table-column>
         <el-table-column prop="roomPrice" label="房价" width="100">
           <template #default="{ row }">
             <span>¥{{ row.roomPrice || '580' }}/晚</span>
           </template>
         </el-table-column>
-        <el-table-column prop="checkInDate" label="入住日期" />
-        <el-table-column prop="checkOutDate" label="离店日期" />
+        <el-table-column prop="checkInTime" label="入住日期" />
+        <el-table-column prop="checkOutTime" label="离店日期" />
         <el-table-column label="支付状态" width="120">
           <template #default="{ row }">
             <el-tag :type="getPaymentStatusType(row.paymentStatus || 'unpaid')" effect="light">
@@ -683,8 +692,8 @@ const getStatusType = (status) => {
     'checked-in': 'success',
     cancelled: 'info',
     completed: ''
-  }
-  return statusMap[status]
+  };
+  return statusMap[status?.toLowerCase()];
 }
 
 const getStatusText = (status) => {
@@ -694,53 +703,47 @@ const getStatusText = (status) => {
     'checked-in': '已入住',
     cancelled: '已取消',
     completed: '已完成'
-  }
-  return statusMap[status]
+  };
+  return statusMap[status?.toLowerCase()];
 }
 
 // 支付状态处理函数
 const getPaymentStatusType = (status) => {
   const statusMap = {
-    unpaid: 'danger',
-    deposit: 'warning',
-    paid: 'success'
-  }
-  return statusMap[status]
+    '未支付': 'danger',
+    'deposit': 'warning',
+    'paid': 'success'
+  };
+  return statusMap[status];
 }
 
 const getPaymentStatusText = (status) => {
   const statusMap = {
-    unpaid: '未支付',
-    deposit: '已付定金',
-    paid: '已付全款'
-  }
-  return statusMap[status]
+    '未支付': '未支付',
+    'deposit': '已付定金',
+    'paid': '已付全款'
+  };
+  return statusMap[status];
 }
 
 // ADD fetchData function and related logic
 const fetchData = async () => {
   loading.value = true;
   try {
-    // Fetch bookings
-    const bookingParams = {
-      page: currentPage.value,
-      pageSize: pageSize.value,
+    // Correct page index to be 0-based and use 'size' parameter
+    const response = await fetchBookings({
+      page: currentPage.value - 1, // 0-based index for Spring Pageable
+      size: pageSize.value,       // Use 'size' instead of 'pageSize'
       status: searchForm.status || undefined,
-      // roomType: searchForm.roomType || undefined, // Assuming search form might have roomType filter later
       guestName: searchForm.customerName || undefined,
-      phone: searchForm.phone || undefined,
+      guestPhone: searchForm.phone || undefined,
       bookingNo: searchForm.bookingNo || undefined,
-      // Handle date range - convert to backend expected format if needed (e.g., ISO string)
       startDate: searchForm.dateRange ? searchForm.dateRange[0] : undefined,
       endDate: searchForm.dateRange ? searchForm.dateRange[1] : undefined,
-    };
-    // Remove undefined params
-    Object.keys(bookingParams).forEach(key => bookingParams[key] === undefined && delete bookingParams[key]);
-    
-    const bookingRes = await fetchBookings(bookingParams);
-    // Adjust based on actual API response structure
-    bookingList.value = bookingRes.data?.data?.list || []; 
-    total.value = bookingRes.data?.data?.total || 0;
+    });
+    // Adjust based on actual API response structure from Spring Page object
+    bookingList.value = response.data?.data?.content || []; 
+    total.value = response.data?.data?.totalElements || 0;
 
     // Fetch statistics in parallel
     const [statsRes, todayCheckinRes, pendingCountRes] = await Promise.all([

@@ -13,7 +13,7 @@ const apiClient = axios.create({
 apiClient.interceptors.request.use(
   (config) => {
     // Attempt to get the token from localStorage (or adjust storage as needed)
-    const token = localStorage.getItem('auth-token');
+    const token = localStorage.getItem('adminToken');
     // console.log('Interceptor Token:', token); // Remove this log
     if (token) {
       // Add the Authorization header

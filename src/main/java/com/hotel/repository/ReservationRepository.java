@@ -65,30 +65,13 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
                    "LEFT JOIN FETCH r.user u " +
                    "LEFT JOIN FETCH r.room rm " +
                    "LEFT JOIN FETCH rm.roomType rt " +
-                   "WHERE (:status IS NULL OR r.status = :status) " +
-                   "AND (:guestName IS NULL OR r.guestName LIKE %:guestName%) " +
-                   "AND (:guestPhone IS NULL OR r.guestPhone LIKE %:guestPhone%) " +
-                   "AND (:startDate IS NULL OR r.checkInTime >= :startDate) " +
-                   "AND (:endDate IS NULL OR r.checkOutTime <= :endDate) " +
-                   "AND (:bookingNo IS NULL OR CAST(r.id AS string) LIKE %:bookingNo%)",
+                   "WHERE (:status IS NULL OR r.status = :status) "
+                   ,
            countQuery = "SELECT count(r) FROM Reservation r " +
-                      // Add JOINs only if needed for WHERE clause filtering, omit FETCH
-                      // In this case, WHERE clauses filter on Reservation fields directly, 
-                      // so no extra JOINs are strictly needed for the count query.
-                      "WHERE (:status IS NULL OR r.status = :status) " +
-                      "AND (:guestName IS NULL OR r.guestName LIKE %:guestName%) " +
-                      "AND (:guestPhone IS NULL OR r.guestPhone LIKE %:guestPhone%) " +
-                      "AND (:startDate IS NULL OR r.checkInTime >= :startDate) " +
-                      "AND (:endDate IS NULL OR r.checkOutTime <= :endDate) " +
-                      "AND (:bookingNo IS NULL OR CAST(r.id AS string) LIKE %:bookingNo%)"
+                      "WHERE (:status IS NULL OR r.status = :status) "
           )
-    Page<Reservation> findWithFilters(
+    Page<Reservation> findAllWithFilters(
             Pageable pageable,
-            @Param("status") Reservation.ReservationStatus status,
-            @Param("guestName") String guestName,
-            @Param("guestPhone") String guestPhone,
-            @Param("startDate") LocalDateTime startDate,
-            @Param("endDate") LocalDateTime endDate,
-            @Param("bookingNo") String bookingNo
+            @Param("status") Reservation.ReservationStatus status
     );
 }

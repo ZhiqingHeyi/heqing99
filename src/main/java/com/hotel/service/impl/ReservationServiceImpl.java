@@ -498,50 +498,71 @@ public class ReservationServiceImpl implements ReservationService {
             }
         }
 
-        Page<Reservation> reservationPage = reservationRepository.findWithFilters(
+        // Restore original call - modified to match simplified repository signature
+        Page<Reservation> reservationPage = reservationRepository.findAllWithFilters(
             pageable,
-            status,
-            StringUtils.hasText(guestName) ? guestName : null,
-            StringUtils.hasText(guestPhone) ? guestPhone : null,
-            startDate,
-            endDate,
-            StringUtils.hasText(bookingNo) ? bookingNo : null
+            status // Pass only status, as other params are removed from repo method
+            // StringUtils.hasText(guestName) ? guestName : null,
+            // StringUtils.hasText(guestPhone) ? guestPhone : null,
+            // startDate,
+            // endDate,
+            // StringUtils.hasText(bookingNo) ? bookingNo : null
         );
+
+        log.debug("Repository returned Page: PageNumber={}, Size={}, TotalElements={}, TotalPages={}",
+                  reservationPage.getNumber(),      // 0-based index
+                  reservationPage.getSize(),        // Size of the current page
+                  reservationPage.getTotalElements(), // Total elements across all pages
+                  reservationPage.getTotalPages());   // Total number of pages
 
         return reservationPage.map(this::convertToSummaryDTO);
     }
 
     private ReservationSummaryDTO convertToSummaryDTO(Reservation reservation) {
         if (reservation == null) {
+            log.warn("convertToSummaryDTO called with null reservation");
             return null;
         }
+        log.debug("Converting Reservation ID: {}", reservation.getId());
         ReservationSummaryDTO dto = new ReservationSummaryDTO();
-        dto.setId(reservation.getId());
-        dto.setBookingNo(String.valueOf(reservation.getId())); // Use ID as booking number
-        dto.setGuestName(reservation.getGuestName());
-        dto.setGuestPhone(reservation.getGuestPhone());
-        dto.setCheckInTime(reservation.getCheckInTime());
-        dto.setCheckOutTime(reservation.getCheckOutTime());
-        dto.setStatus(reservation.getStatus() != null ? reservation.getStatus().name() : null);
-        dto.setPaymentStatus("未支付"); // Hardcoded for now
+        try {
+            dto.setId(reservation.getId());
+            dto.setBookingNo(String.valueOf(reservation.getId())); // Use ID as booking number
+            dto.setGuestName(reservation.getGuestName());
+            dto.setGuestPhone(reservation.getGuestPhone());
+            dto.setCheckInTime(reservation.getCheckInTime());
+            dto.setCheckOutTime(reservation.getCheckOutTime());
+            dto.setStatus(reservation.getStatus() != null ? reservation.getStatus().name() : null);
+            dto.setPaymentStatus("未支付"); // Hardcoded for now
 
-        Room room = reservation.getRoom();
-        if (room != null) {
-            dto.setRoomNumber(room.getRoomNumber());
-            RoomType roomType = room.getRoomType();
-            if (roomType != null) {
-                dto.setRoomTypeName(roomType.getName());
-                dto.setRoomPrice(roomType.getBasePrice()); // Get price from RoomType
+            Room room = reservation.getRoom();
+            log.debug("  Room object is null? {}", room == null);
+            if (room != null) {
+                dto.setRoomNumber(room.getRoomNumber());
+                RoomType roomType = room.getRoomType();
+                log.debug("    RoomType object is null? {}", roomType == null);
+                if (roomType != null) {
+                    log.debug("      Setting RoomTypeName: {}", roomType.getName());
+                    dto.setRoomTypeName(roomType.getName());
+                    log.debug("      Setting RoomPrice: {}", roomType.getBasePrice());
+                    dto.setRoomPrice(roomType.getBasePrice()); // Get price from RoomType
+                } else {
+                     log.warn("    RoomType is null for Room ID: {}", room.getId());
+                     dto.setRoomTypeName("未知房型"); // Fallback
+                     dto.setRoomPrice(BigDecimal.ZERO); // Fallback
+                }
+            } else {
+                log.warn("  Room is null for Reservation ID: {}", reservation.getId());
+                dto.setRoomNumber("N/A");
+                dto.setRoomTypeName("未知房型");
+                dto.setRoomPrice(BigDecimal.ZERO);
             }
+            log.debug("Successfully converted Reservation ID: {}", reservation.getId());
+            return dto;
+        } catch (Exception e) {
+            log.error("Error converting Reservation ID: {} to DTO", reservation.getId(), e);
+            return null; // Return null if conversion fails for this specific reservation
         }
-        
-        // Optionally include user name if needed, checking user object first
-        // User user = reservation.getUser();
-        // if (user != null) {
-        //     dto.setCustomerName(user.getName()); // Or some other field if guestName is preferred
-        // }
-
-        return dto;
     }
 
     @Override

@@ -229,14 +229,19 @@ public class ReservationController {
             @RequestParam(required = false) String bookingNo) {
         
         try {
-            log.info("Fetching reservations with filters - Page: {}, Size: {}, Status: {}, GuestName: {}, GuestPhone: {}, StartDate: {}, EndDate: {}, BookingNo: {}",
-                    pageable.getPageNumber(), pageable.getPageSize(), status, guestName, guestPhone, startDate, endDate, bookingNo);
+            // Log the actual Pageable parameters received
+            log.info("Received request for reservations - Page Index: {}, Page Size: {}, Status: {}, GuestName: {}, GuestPhone: {}, StartDate: {}, EndDate: {}, BookingNo: {}",
+                     pageable.getPageNumber(), // Log 0-based index
+                     pageable.getPageSize(),      // Log actual size used
+                     status, guestName, guestPhone, startDate, endDate, bookingNo);
 
-            Page<ReservationSummaryDTO> reservationPage = reservationService.getAllReservations(
-                pageable, status, guestName, guestPhone, startDate, endDate, bookingNo
-            );
+            // Verify Pageable parameters before calling service
+            log.debug("Pageable details before service call: PageNumber={}, PageSize={}", pageable.getPageNumber(), pageable.getPageSize());
+
+            // Delegate to service
+            Page<ReservationSummaryDTO> reservations = reservationService.getAllReservations(pageable, status, guestName, guestPhone, startDate, endDate, bookingNo);
             
-            return ResponseEntity.ok(ApiResponse.success(reservationPage));
+            return ResponseEntity.ok(ApiResponse.success(reservations));
 
         } catch (Exception e) {
             log.error("Error fetching reservations", e);
