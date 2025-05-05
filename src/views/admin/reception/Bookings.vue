@@ -144,12 +144,20 @@
             <span>¥{{ row.roomPrice || '580' }}/晚</span>
           </template>
         </el-table-column>
-        <el-table-column prop="checkInTime" label="入住日期" />
-        <el-table-column prop="checkOutTime" label="离店日期" />
+        <el-table-column prop="checkInTime" label="入住日期">
+          <template #default="{ row }">
+            {{ formatDateToYMD(row.checkInTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="checkOutTime" label="离店日期">
+          <template #default="{ row }">
+            {{ formatDateToYMD(row.checkOutTime) }}
+          </template>
+        </el-table-column>
         <el-table-column label="支付状态" width="120">
           <template #default="{ row }">
-            <el-tag :type="getPaymentStatusType(row.paymentStatus || 'unpaid')" effect="light">
-              {{ getPaymentStatusText(row.paymentStatus || 'unpaid') }}
+            <el-tag :type="getPaymentStatusType(row.paymentStatus)" effect="light">
+              {{ getPaymentStatusText(row.paymentStatus) }}
             </el-tag>
           </template>
         </el-table-column>
@@ -254,9 +262,12 @@
           <el-col :span="12">
             <el-form-item label="房间类型" prop="roomType">
               <el-select v-model="bookingForm.roomType" placeholder="请选择房间类型" style="width: 100%">
-                <el-option label="标准双人间" value="标准双人间" />
-                <el-option label="豪华大床房" value="豪华大床房" />
-                <el-option label="行政套房" value="行政套房" />
+                <el-option
+                  v-for="roomType in roomTypeList"
+                  :key="roomType.id"
+                  :label="`${roomType.name} (¥${roomType.price}/晚)`" 
+                  :value="roomType.id">
+                </el-option>
               </el-select>
             </el-form-item>
           </el-col>
@@ -547,8 +558,10 @@ import {
   fetchTodayCheckinStats,
   fetchRooms,
   fetchDashboardStats,
-  fetchPendingBookingCount
+  fetchPendingBookingCount,
+  fetchRoomTypes // 引入新的 API 函数
 } from '@/api/reception';
+import { useAuthStore } from '@/store/auth'; // 引入 auth store
 
 // 搜索表单
 const searchForm = reactive({
@@ -575,14 +588,8 @@ const todayTasks = [
   { id: 5, type: 'cleaning', content: '安排508房紧急清洁', status: 'completed' }
 ]
 
-// 房型数据
-const roomTypes = [
-  { id: 1, name: '标准单人间', totalCount: 30, availableCount: 8, price: 480 },
-  { id: 2, name: '标准双人间', totalCount: 40, availableCount: 12, price: 580 },
-  { id: 3, name: '豪华大床房', totalCount: 25, availableCount: 5, price: 880 },
-  { id: 4, name: '行政套房', totalCount: 15, availableCount: 3, price: 1280 },
-  { id: 5, name: '总统套房', totalCount: 5, availableCount: 1, price: 3280 }
-]
+// 房型数据 (修改为从 API 获取)
+const roomTypeList = ref([]) // 用于存储从 API 获取的房型列表 {id, name, price}
 
 // 预订列表数据 - Initialize as empty
 const loading = ref(false)
@@ -710,20 +717,20 @@ const getStatusText = (status) => {
 // 支付状态处理函数
 const getPaymentStatusType = (status) => {
   const statusMap = {
-    '未支付': 'danger',
-    'deposit': 'warning',
-    'paid': 'success'
+    'UNPAID': 'danger',
+    'DEPOSIT_PAID': 'warning',
+    'PAID_FULL': 'success'
   };
-  return statusMap[status];
+  return statusMap[status?.toUpperCase()] || 'info';
 }
 
 const getPaymentStatusText = (status) => {
   const statusMap = {
-    '未支付': '未支付',
-    'deposit': '已付定金',
-    'paid': '已付全款'
+    'UNPAID': '未支付',
+    'DEPOSIT_PAID': '已付定金',
+    'PAID_FULL': '已付全款'
   };
-  return statusMap[status];
+  return statusMap[status?.toUpperCase()] || '未知状态';
 }
 
 // ADD fetchData function and related logic
@@ -782,9 +789,33 @@ const fetchData = async () => {
   }
 };
 
+// 获取房间类型列表的函数 (重命名)
+const loadRoomTypes = async () => {
+  try {
+    // 修改为调用新的 API
+    const response = await fetchRoomTypes(); 
+    // 调整路径以匹配新 API 返回结构 (假设直接返回 data 数组)
+    const types = response.data?.data || []; 
+    // 直接使用返回的 DTO 数据
+    roomTypeList.value = types.map(type => ({
+      id: type.id,
+      name: type.name, 
+      price: type.basePrice ?? 'N/A' // 读取 basePrice
+    }));
+     if (!roomTypeList.value.length) {
+        console.warn("未能成功获取房型列表数据。");
+     }
+  } catch (error) {
+    console.error("获取房型列表失败:", error);
+    ElMessage.error('获取房型列表失败');
+    roomTypeList.value = []; // 出错时清空
+  }
+};
+
 // Initial data fetch
 onMounted(() => {
   fetchData();
+  loadRoomTypes(); // 在 onMounted 中调用获取房型列表 (使用新名称)
 });
 
 // UPDATE Search and Pagination handlers to call fetchData
@@ -871,43 +902,91 @@ const handleEdit = async (row) => {
   }
 };
 
+const authStore = useAuthStore(); // 获取 auth store 实例
+
 const handleSubmit = async () => {
   if (!bookingFormRef.value) return;
   await bookingFormRef.value.validate(async (valid) => {
     if (valid) {
-      loading.value = true;
+      // 1.a: 增加日期范围校验
+      if (!bookingForm.dateRange || bookingForm.dateRange.length !== 2 || !bookingForm.dateRange[0] || !bookingForm.dateRange[1]) {
+        ElMessage.error('请选择有效的入住和离店日期');
+        return;
+      }
       try {
-        // Prepare data for API - adjust field names/types
+        // 确保日期是 Date 对象 (某些情况下可能不是)
+        const checkInDate = new Date(bookingForm.dateRange[0]);
+        const checkOutDate = new Date(bookingForm.dateRange[1]);
+        if (isNaN(checkInDate.getTime()) || isNaN(checkOutDate.getTime())) {
+           ElMessage.error('无效的日期对象，请重新选择日期');
+           return;
+        }
+        if (checkOutDate <= checkInDate) {
+            ElMessage.error('离店日期必须晚于入住日期');
+            return;
+        }
+
+        // 1.d.v: 实现总金额计算
+        const selectedRoomTypeData = roomTypeList.value.find(rt => rt.id === bookingForm.roomType);
+        if (!selectedRoomTypeData) {
+            ElMessage.error('无法找到所选房型的价格信息');
+            return;
+        }
+        // ---- START: 添加价格验证 ----
+        if (selectedRoomTypeData.price === 'N/A') {
+            ElMessage.error('所选房型价格无效，无法创建预订');
+            return; 
+        }
+        // ---- END: 添加价格验证 ----
+        const pricePerNight = selectedRoomTypeData.price; // 此时 price 必然是有效数字
+        const nights = Math.ceil((checkOutDate - checkInDate) / (1000 * 60 * 60 * 24)); // 计算天数
+        const calculatedTotalAmount = pricePerNight * nights * bookingForm.roomCount;
+
+        // 1.d.vi: 获取动态用户 ID (需要确认 authStore 和 user 结构)
+        const currentUserId = authStore.userId; // 修改这里
+        if (!currentUserId) { // 修改这里的检查
+            ElMessage.error('无法获取当前用户信息，请重新登录');
+            return;
+        }
+
+        loading.value = true;
+        // 1.d: 构建精简且正确的 apiData
         const apiData = {
-          ...bookingForm,
-          userId: 1, // TODO: Get current logged-in user ID
-          // Map roomType name to ID if backend expects ID
-          // roomTypeId: getRoomTypeIdFromName(bookingForm.roomType),
-          checkIn: bookingForm.dateRange ? bookingForm.dateRange[0].toISOString() : null,
-          checkOut: bookingForm.dateRange ? bookingForm.dateRange[1].toISOString() : null,
-          // Calculate totalAmount for creation
-          totalAmount: dialogType.value === 'add' ? calculateTotalAmount(bookingForm) : undefined,
+          userId: currentUserId,
+          roomType: bookingForm.roomType, // 已经是 ID 了
+          checkIn: checkInDate.toISOString(), // 1.d.vii: 使用验证过的日期
+          checkOut: checkOutDate.toISOString(), // 1.d.vii: 使用验证过的日期
+          roomCount: bookingForm.roomCount,
+          contactName: bookingForm.customerName, // 1.d.iii: 字段映射
+          phone: bookingForm.phone,
+          remarks: bookingForm.specialRequests, // 1.d.iv: 字段映射
+          totalAmount: calculatedTotalAmount // 1.d.v: 使用计算出的金额
+          // 1.d.ix: 只包含需要的字段
         };
-        delete apiData.dateRange; // Remove original dateRange
-        // Delete other fields not expected by backend
+        
+        console.log("Prepared apiData for create:", apiData); // Debug log
 
         if (dialogType.value === 'add') {
           await createBooking(apiData);
           ElMessage.success('新增预订成功');
         } else {
-          // Assuming updateBooking requires ID in the path and data in body
-          await updateBooking(bookingForm.id, apiData);
+          // 更新逻辑可能也需要调整，确保发送正确的字段和 ID
+          // 假设 updateBooking 需要 ID
+          apiData.id = bookingForm.id; // 需要确保编辑时 bookingForm 有 id
+          await updateBooking(bookingForm.id, apiData); 
           ElMessage.success('更新预订成功');
         }
         dialogVisible.value = false;
         fetchData(); // Refresh data
       } catch (error) {
         console.error("Error saving booking:", error);
-        ElMessage.error(error.response?.data?.message || '保存预订失败');
+        // 尝试解析后端返回的更详细错误信息
+        const backendError = error.response?.data?.message || error.message || '保存预订失败';
+        ElMessage.error(backendError); 
       } finally {
         loading.value = false;
       }
-    }
+    } // 缺少的大括号
   });
 };
 
@@ -1100,6 +1179,24 @@ const formatDate = (dateString) => {
   } catch (e) {
     console.error("Error formatting date:", dateString, e);
     return dateString; // Return original if parsing fails
+  }
+};
+
+// 新增：将日期时间格式化为 YYYY-MM-DD
+const formatDateToYMD = (dateString) => {
+  if (!dateString) return '-'; // 处理空或无效输入
+  try {
+    const date = new Date(dateString);
+    if (isNaN(date.getTime())) {
+      return dateString; // 如果解析失败，返回原始字符串
+    }
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0'); // 月份从0开始，需要+1并补零
+    const day = date.getDate().toString().padStart(2, '0'); // 日期补零
+    return `${year}-${month}-${day}`;
+  } catch (e) {
+    console.error("Error formatting date to YYYY-MM-DD:", dateString, e);
+    return dateString; // 出错时返回原始字符串
   }
 };
 

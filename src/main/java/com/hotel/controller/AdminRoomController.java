@@ -37,6 +37,43 @@ public class AdminRoomController {
     private com.hotel.repository.RoomTypeRepository roomTypeRepository;
 
     /**
+     * 新增：管理员获取所有房间类型列表
+     */
+    @GetMapping("/types")
+    public ResponseEntity<?> getAllRoomTypes() {
+        try {
+            List<RoomType> roomTypes = roomTypeRepository.findAll();
+            // 可以选择直接返回实体列表，或转换为更简单的DTO
+            List<Map<String, Object>> roomTypeDTOs = roomTypes.stream()
+                .map(rt -> {
+                    Map<String, Object> dto = new HashMap<>();
+                    dto.put("id", rt.getId());
+                    dto.put("name", rt.getName());
+                    dto.put("price", rt.getBasePrice()); // 假设价格字段是 basePrice
+                    // 可以添加其他需要的字段，例如 description
+                    dto.put("description", rt.getDescription()); 
+                    return dto;
+                })
+                .collect(Collectors.toList());
+
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", roomTypeDTOs); // 返回 DTO 列表
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "获取房间类型列表失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
      * 管理员获取所有房间列表
      * 支持分页、筛选和搜索功能
      */

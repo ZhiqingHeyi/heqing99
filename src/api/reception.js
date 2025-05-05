@@ -115,6 +115,13 @@ export const fetchRooms = (params) => {
     return apiClient.get('/admin/rooms', { params });
 };
 
+/**
+ * 新增：获取所有房间类型列表
+ */
+export const fetchRoomTypes = () => {
+    return apiClient.get('/rooms/types');
+};
+
 
 // --- Dashboard APIs (AdminDashboardController) ---
 

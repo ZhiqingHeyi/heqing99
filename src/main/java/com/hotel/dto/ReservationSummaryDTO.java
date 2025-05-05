@@ -20,5 +20,5 @@ public class ReservationSummaryDTO {
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;
     private String status;
-    private String paymentStatus = "未支付"; // Placeholder
+    private String paymentStatus;
 } 
