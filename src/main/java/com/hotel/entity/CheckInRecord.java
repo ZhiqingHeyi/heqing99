@@ -9,6 +9,8 @@ import javax.persistence.*;
 import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
+import java.time.ZonedDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -24,10 +26,6 @@ public class CheckInRecord {
     // 入住单号
     @Column(name = "check_in_number", unique = true)
     private String checkInNumber;
-    
-    // 预订ID (可选)
-    @Column(name = "booking_id")
-    private Long bookingId;
     
     // 房间ID
     @Column(name = "room_id", nullable = false)
@@ -122,6 +120,16 @@ public class CheckInRecord {
     // 额外消费记录
     @OneToMany(mappedBy = "checkInRecord", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<AdditionalCharge> additionalCharges = new ArrayList<>();
+    
+    // --- 恢复 bookingId 字段，移除 Reservation 对象关联 ---
+    @Column(name = "booking_id", nullable = false) // 明确映射到非空列
+    private Long bookingId;
+    // --- 恢复结束 ---
+    
+    // --- 添加 Transient 字段接收前端的 expectedCheckOutTime ---
+    @Transient // 表示此字段不映射到数据库列
+    private String expectedCheckOutTime;
+    // --- 添加结束 ---
     
     // 入住状态枚举
     public enum CheckInStatus {

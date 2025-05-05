@@ -16,6 +16,7 @@ public class ReservationSummaryDTO {
     private String guestPhone;
     private String roomNumber;
     private String roomTypeName;
+    private Long roomTypeId;
     private BigDecimal roomPrice;
     private LocalDateTime checkInTime;
     private LocalDateTime checkOutTime;

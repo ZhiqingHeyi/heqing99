@@ -528,50 +528,41 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     private ReservationSummaryDTO convertToSummaryDTO(Reservation reservation) {
-        if (reservation == null) {
-            log.warn("convertToSummaryDTO called with null reservation");
-            return null;
-        }
-        log.debug("Converting Reservation ID: {}", reservation.getId());
         ReservationSummaryDTO dto = new ReservationSummaryDTO();
-        try {
-            dto.setId(reservation.getId());
-            dto.setBookingNo(String.valueOf(reservation.getId())); // Use ID as booking number
-            dto.setGuestName(reservation.getGuestName());
-            dto.setGuestPhone(reservation.getGuestPhone());
-            dto.setCheckInTime(reservation.getCheckInTime());
-            dto.setCheckOutTime(reservation.getCheckOutTime());
-            dto.setStatus(reservation.getStatus() != null ? reservation.getStatus().name() : null);
-            dto.setPaymentStatus(reservation.getPaymentStatus());
-
-            Room room = reservation.getRoom();
-            log.debug("  Room object is null? {}", room == null);
-            if (room != null) {
-                dto.setRoomNumber(room.getRoomNumber());
-                RoomType roomType = room.getRoomType();
-                log.debug("    RoomType object is null? {}", roomType == null);
-                if (roomType != null) {
-                    log.debug("      Setting RoomTypeName: {}", roomType.getName());
-                    dto.setRoomTypeName(roomType.getName());
-                    log.debug("      Setting RoomPrice: {}", roomType.getBasePrice());
-                    dto.setRoomPrice(roomType.getBasePrice()); // Get price from RoomType
-                } else {
-                     log.warn("    RoomType is null for Room ID: {}", room.getId());
-                     dto.setRoomTypeName("未知房型"); // Fallback
-                     dto.setRoomPrice(BigDecimal.ZERO); // Fallback
-                }
+        dto.setId(reservation.getId());
+        // 简单的将ID转为字符串作为预订号，或使用更复杂的生成逻辑
+        dto.setBookingNo(String.valueOf(reservation.getId())); 
+        dto.setGuestName(reservation.getGuestName());
+        dto.setGuestPhone(reservation.getGuestPhone());
+        
+        // 安全地获取房间和房型信息
+        if (reservation.getRoom() != null) {
+            dto.setRoomNumber(reservation.getRoom().getRoomNumber());
+            if (reservation.getRoom().getRoomType() != null) {
+                dto.setRoomTypeName(reservation.getRoom().getRoomType().getName());
+                dto.setRoomTypeId(reservation.getRoom().getRoomType().getId()); // 添加 roomTypeId
+                // 尝试获取房间价格，如果房间或房型价格为空，则使用默认值或标记
+                BigDecimal price = reservation.getRoom().getRoomType().getBasePrice();
+                dto.setRoomPrice(price != null ? price : BigDecimal.ZERO); // 如果价格为空，则设置为0
             } else {
-                log.warn("  Room is null for Reservation ID: {}", reservation.getId());
-                dto.setRoomNumber("N/A");
                 dto.setRoomTypeName("未知房型");
-                dto.setRoomPrice(BigDecimal.ZERO);
+                dto.setRoomTypeId(null); // 房型未知时 roomTypeId 为 null
+                dto.setRoomPrice(BigDecimal.ZERO); // 房型未知时价格为0
             }
-            log.debug("Successfully converted Reservation ID: {}", reservation.getId());
-            return dto;
-        } catch (Exception e) {
-            log.error("Error converting Reservation ID: {} to DTO", reservation.getId(), e);
-            return null; // Return null if conversion fails for this specific reservation
+        } else {
+            dto.setRoomNumber("未分配");
+            dto.setRoomTypeName("未知房型");
+            dto.setRoomTypeId(null);
+            dto.setRoomPrice(BigDecimal.ZERO);
         }
+        
+        // 设置时间、状态和支付状态
+        dto.setCheckInTime(reservation.getCheckInTime());
+        dto.setCheckOutTime(reservation.getCheckOutTime());
+        dto.setStatus(reservation.getStatus() != null ? reservation.getStatus().name() : null);
+        dto.setPaymentStatus(reservation.getPaymentStatus()); // 直接使用 String 类型的支付状态
+        
+        return dto;
     }
 
     @Override

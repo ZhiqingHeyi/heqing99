@@ -412,12 +412,19 @@
       >
         <el-form-item label="房间号" prop="roomNumber">
           <el-select v-model="checkInForm.roomNumber" placeholder="请选择房间号" style="width: 100%">
+            <template v-if="availableRooms && availableRooms.length > 0">
+              <el-option
+                v-for="(room, index) in availableRooms"
+                :key="room.id || room.number || index"
+                :label="room.number + (room.type ? ` (${room.type})` : '')"
+                :value="room.number"
+              />
+            </template>
             <el-option
-              v-for="room in availableRooms"
-              :key="room.id || room.number"
-              :label="formatRoomOption(room)"
-              :value="room.number || room.roomNumber"
-              v-if="room.number || room.roomNumber"
+              v-else
+              disabled
+              value=""
+              label="没有可用房间"
             />
           </el-select>
           <div class="room-count-info" v-if="availableRooms.length > 0">
@@ -1223,6 +1230,11 @@ const handleCancel = async (row) => {
 const currentBookingForCheckin = ref(null); // Store the booking being checked in
 
 const handleCheckIn = async (row) => {
+  if (!row || !row.id) {
+    ElMessage.error('无效的预订记录');
+    return;
+  }
+
   currentBookingForCheckin.value = row; // Store the booking context
   // Reset check-in form
   Object.assign(checkInForm, {
@@ -1230,96 +1242,129 @@ const handleCheckIn = async (row) => {
     deposit: 500,
     remarks: ''
   });
+  
+  // 先显示对话框，即使数据加载失败也允许用户看到界面
   checkInVisible.value = true;
-  availableRooms.value = []; // Clear previous list
+  
   if (checkInFormRef.value) {
     checkInFormRef.value.clearValidate();
   }
   
+  // 清空房间列表并显示加载状态
+  availableRooms.value = [];
   loading.value = true;
   
   try {
     console.log("获取可用房间数据...");
+    console.log("预订信息:", JSON.stringify(row, null, 2));
     
-    // 尝试获取房间数据 - 首先尝试直接从数据库获取
-    let roomsData = await loadAvailableRoomsFromDB();
+    // 尝试使用API直接获取房间数据，添加大的pageSize参数
+    const params = { 
+      status: 'AVAILABLE',
+      pageSize: 200, // 确保获取足够多的记录
+      page: 0,       // 从第一页开始
+    };
     
-    // 如果直接获取失败，则使用API方式获取
-    if (!roomsData || roomsData.length === 0) {
-      console.log("直接获取房间数据失败，尝试使用API...");
-      
-      // 默认获取所有可用房间
-      const params = { status: 'AVAILABLE' };
-      
-      // 如果能确定房型ID，则按房型筛选
-      if (row.roomTypeId) {
-        params.roomTypeId = row.roomTypeId;
-      }
-      
-      try {
-        const res = await fetchRooms(params);
-        console.log("API获取房间响应:", res);
-        
-        // 处理返回的房间数据
-        let roomList = [];
-        
-        if (res.data?.data?.list && res.data.data.list.length > 0) {
-          roomList = res.data.data.list;
-        } else if (res.data?.data && Array.isArray(res.data.data)) {
-          roomList = res.data.data;
-        } else if (Array.isArray(res.data)) {
-          roomList = res.data;
-        } else if (res.data?.list && Array.isArray(res.data.list)) {
-          roomList = res.data.list;
-        }
-        
-        console.log("API获取的房间列表:", roomList);
-        
-        if (roomList && roomList.length > 0) {
-          roomsData = roomList;
-        }
-      } catch (error) {
-        console.error("API获取房间失败:", error);
-      }
+    // --- 恢复按房型筛选 --- 
+    // 检查预订信息中是否有 roomTypeId
+    const bookingRoomTypeId = row.roomTypeId || (typeof row.roomType === 'object' ? row.roomType?.id : null);
+    if (bookingRoomTypeId) {
+      params.roomTypeId = bookingRoomTypeId;
+      console.log("按预订的房型筛选，roomTypeId:", bookingRoomTypeId);
+    } else {
+      console.log("未在预订信息中找到 roomTypeId，将获取所有可用房型");
+    }
+    // --- 恢复结束 --- 
+    
+    console.log("发送获取房间请求参数:", params);
+    const res = await fetchRooms(params);
+    // 打印实际的响应结构，非常重要！
+    console.log("API获取房间响应(res):", res);
+    console.log("API获取房间响应(res.data):", JSON.stringify(res.data, null, 2)); 
+
+    // 处理返回的房间数据
+    let roomList = [];
+
+    // --- 修正解析逻辑 --- 
+    // 直接从 fetchRooms 返回的结构中提取列表
+    // fetchRooms 返回 { data: { content: [...], list: [...] } }
+    if (res && res.data && res.data.content && Array.isArray(res.data.content)) {
+        roomList = res.data.content; // 优先使用 content
+        console.log("从 res.data.content 获取到房间数据，数量:", roomList.length);
+    } else if (res && res.data && res.data.list && Array.isArray(res.data.list)) {
+        roomList = res.data.list; // 备用 list
+        console.log("从 res.data.list 获取到房间数据，数量:", roomList.length);
+    } else {
+        console.warn("未能从API响应中解析出房间列表，检查 fetchRooms 返回结构和此处的解析逻辑", res);
+    }
+
+    console.log("解析得到的房间列表(原始)数量:", roomList.length);
+    if (roomList.length > 0) {
+      console.log("房间数据示例 (原始前3条):", JSON.stringify(roomList.slice(0, 3), null, 2));
     }
     
-    // 过滤和处理房间数据
-    if (roomsData && roomsData.length > 0) {
-      // 过滤掉没有房间号的数据
-      availableRooms.value = roomsData
-        .filter(room => {
-          const roomNumber = room.roomNumber || room.number || room.room_number;
-          if (!roomNumber) {
-            console.log("过滤掉无效房间:", room);
-            return false;
-          }
-          return true;
-        })
-        .map(room => ({
-          id: room.id,
-          number: room.roomNumber || room.number || room.room_number,
-          type: room.roomTypeName || room.type || (
-            typeof room.roomType === 'object' ? 
-            room.roomType?.name : room.roomType
-          ) || '标准房',
+    // 如果获取到有效的房间数据
+    if (roomList && roomList.length > 0) {
+      // --- 再次尝试移除这里的 filter 步骤 --- 
+      // const filteredRooms = roomList
+      //   .filter(room => {
+      //     if (!room) {
+      //       return false;
+      //     }
+      //     const hasRoomNumber = !!(room.roomNumber || room.number || room.room_number);
+      //     return hasRoomNumber;
+      //   });
+      // console.log("过滤无效对象和无房号之后，房间数量:", filteredRooms.length);
+      const dataToMap = roomList; // 直接使用 roomList 进行映射
+      console.log("准备映射 (map) 的房间数据 (总数):", dataToMap.length);
+
+      console.log("准备映射 (map) 的房间数据 (前5条):", JSON.stringify(dataToMap.slice(0, 5), null, 2));
+
+      // 格式化房间数据，用于下拉列表显示
+      const mappedRooms = dataToMap.map((room, index) => { // 使用 dataToMap
+        const formattedRoom = {
+          id: room.id || `room-${Math.random().toString(36).substring(2, 10)}`, // 保留ID生成以防万一
+          number: room.roomNumber || room.number || room.room_number || '',
+          roomNumber: room.roomNumber || room.number || room.room_number || '',
+          type: (typeof room.roomType === 'object' && room.roomType !== null ? room.roomType?.name : room.roomType) || room.roomTypeName || room.type || '未知房型', // 修正房型获取
+          roomTypeName: (typeof room.roomType === 'object' && room.roomType !== null ? room.roomType?.name : room.roomType) || room.roomTypeName || room.type || '未知房型', 
           floor: room.floor || ''
-        }));
+        };
+        if (index < 5) { 
+          console.log(`格式化房间 (index ${index}):`, JSON.stringify(formattedRoom, null, 2));
+        }
+        return formattedRoom;
+      });
       
-      console.log("最终处理后的有效房间数据:", availableRooms.value);
+      console.log("映射 (map) 完成后的房间数据 (前5条):", JSON.stringify(mappedRooms.slice(0, 5), null, 2));
+      console.log("映射 (map) 完成后的总房间数量:", mappedRooms.length);
+
+      availableRooms.value = mappedRooms;
+
+      console.log("最终赋值给 availableRooms.value 的数据 (前5条):", JSON.stringify(availableRooms.value.slice(0, 5), null, 2));
+      console.log("最终赋值给 availableRooms.value 的总数量:", availableRooms.value.length);
       
       if (availableRooms.value.length === 0) {
-        ElMessage.warning('无法获取有效的房间数据');
+        ElMessage.warning('处理后无可用房间数据显示'); 
+      } else {
+        // 可选提示
       }
     } else {
-      console.log("未获取到任何房间数据");
-      ElMessage.warning('未找到可用房间，请联系系统管理员');
+      console.log("未获取到任何房间数据或解析失败");
+      availableRooms.value = [];
+      ElMessage.warning('未能从服务器获取可用房间列表');
     }
-  } catch (error) {
-    console.error("办理入住过程中发生错误:", error);
-    ElMessage.error('获取房间数据失败: ' + (error.message || '未知错误'));
-  } finally {
+  } catch (error) { // 确保 catch 块存在
+    console.error("获取房间数据失败:", error);
+    if (error.response) {
+      console.error('错误响应状态:', error.response.status);
+      console.error('错误响应数据:', error.response.data);
+    }
+    ElMessage.error('获取可用房间列表时出错');
+    availableRooms.value = [];
+  } finally { // 确保 finally 块存在
     loading.value = false;
-  }
+  } // 确保函数括号闭合
 };
 
 // TODO: Implement or fetch room type ID mapping
@@ -1668,10 +1713,15 @@ const handleQuickPayment = async (row) => {
 };
 
 const formatRoomOption = (room) => {
+  // 检查房间对象是否存在
+  if (!room) {
+    return '无效房间';
+  }
+  
   // 确保房间号存在
   const roomNumber = room.roomNumber || room.number || '';
   if (!roomNumber) {
-    return null; // 如果没有房间号，返回null，不应该显示此选项
+    return '未知房间号';
   }
   
   // 尝试获取房间类型，优先使用roomTypeName
@@ -1694,65 +1744,88 @@ const formatRoomOption = (room) => {
 
 const handleCheckInSubmit = async () => {
   if (!checkInFormRef.value) return;
-  await checkInFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true;
-      try {
-        // 确保预订信息完整
-        if (!currentBookingForCheckin.value) {
-          ElMessage.error('无法获取预订信息，请刷新页面重试');
-          return;
-        }
-        
-        // 确保选择了房间号
-        if (!checkInForm.roomNumber) {
-          ElMessage.error('请选择一个房间号');
-          return;
-        }
-        
-        // 在提交前打印选择的房间信息
-        console.log('选择的房间号:', checkInForm.roomNumber);
-        console.log('当前可用房间列表:', availableRooms.value);
-        
-        // 查找选择的房间详细信息
-        const selectedRoom = availableRooms.value.find(room => 
-          (room.roomNumber || room.number || room.id) == checkInForm.roomNumber
-        );
-        console.log('选择的房间详情:', selectedRoom);
-        
-        // 构建API数据
-        const apiData = {
-          reservationId: currentBookingForCheckin.value.id,
-          roomNumber: checkInForm.roomNumber,
-          roomId: selectedRoom?.id, // 添加房间ID（如果有）
-          deposit: checkInForm.deposit,
-          remarks: checkInForm.remarks,
-          // 确保必填字段有值
-          guestName: currentBookingForCheckin.value.customerName || currentBookingForCheckin.value.guestName || '客人',
-          guestPhone: currentBookingForCheckin.value.phone || currentBookingForCheckin.value.guestPhone || '无',
-          checkInTime: new Date().toISOString(),
-          expectedCheckOutTime: currentBookingForCheckin.value.checkOutDate || 
-                              currentBookingForCheckin.value.checkOutTime ||
-                              new Date(Date.now() + 24*60*60*1000).toISOString() // 默认次日
-        };
-        
-        console.log('提交入住数据:', apiData);
-        
-        // API已经内置了错误处理和模拟数据功能
-        const response = await checkInBooking(apiData);
-        console.log('入住API响应:', response);
-        
-        ElMessage.success(response.data?.message || '办理入住成功');
-        checkInVisible.value = false;
-        fetchData(); // 刷新列表数据
-      } catch (error) {
-        console.error("提交入住信息时出错:", error);
-        ElMessage.error('提交入住信息时发生错误: ' + (error.message || '未知错误'));
-      } finally {
-        loading.value = false;
-      }
+  
+  try {
+    // 手动验证表单
+    await checkInFormRef.value.validate();
+    
+    // 检查是否选择了房间号
+    if (!checkInForm.roomNumber) {
+      console.log("未选择房间号");
+      ElMessage.error('请选择一个房间号');
+      return;
     }
-  });
+    
+    loading.value = true;
+    console.log('提交入住表单:', checkInForm);
+    
+    // 确保预订信息完整
+    if (!currentBookingForCheckin.value || !currentBookingForCheckin.value.id) {
+      console.log("预订信息不完整:", currentBookingForCheckin.value);
+      ElMessage.error('无法获取预订信息，请刷新页面重试');
+      return;
+    }
+    
+    // 在提交前打印选择的房间信息
+    console.log('选择的房间号:', checkInForm.roomNumber);
+    console.log('当前可用房间列表:', availableRooms.value);
+    
+    // 查找选择的房间详细信息
+    const selectedRoom = availableRooms.value.find(room => 
+      String(room.number || room.roomNumber) === String(checkInForm.roomNumber)
+    );
+    console.log('选择的房间详情:', selectedRoom);
+    
+    if (!selectedRoom) {
+      // 即使房间详情未找到（例如使用了上次缓存的可用房间），也尝试继续，让后端处理
+      console.warn("本地未找到所选房间的详细信息，将继续尝试提交");
+    }
+    
+    // 构建API数据
+    const apiData = {
+      bookingId: currentBookingForCheckin.value.id, // 将 reservationId 修改为 bookingId
+      roomNumber: checkInForm.roomNumber,
+      roomId: selectedRoom?.id, // 传递房间ID，如果找到了
+      deposit: checkInForm.deposit,
+      remarks: checkInForm.remarks,
+      // 确保必填字段有值
+      guestName: currentBookingForCheckin.value.guestName || currentBookingForCheckin.value.contactName || '客人', // 兼容字段名
+      guestMobile: currentBookingForCheckin.value.guestPhone || currentBookingForCheckin.value.phone || '无',
+      checkInTime: new Date().toISOString(), // 入住时间为当前时间
+      // 添加预计退房时间 (从预订信息获取)
+      expectedCheckOutTime: currentBookingForCheckin.value.checkOutTime 
+                             ? new Date(currentBookingForCheckin.value.checkOutTime).toISOString() 
+                             : null // 如果预订信息中没有，则发送null
+    };
+    
+    // 增加详细日志，检查最终发送的数据
+    console.log("准备发送的入住 API 数据:", JSON.stringify(apiData, null, 2));
+    
+    // 调用API
+    await checkInBooking(apiData);
+    
+    // 成功处理
+    ElMessage.success('入住登记成功');
+    checkInVisible.value = false;
+    fetchData(); // 刷新预订列表
+    
+  } catch (error) {
+    // 错误处理移至 API 层，这里只处理 UI 反馈
+    // catch块现在由 API 调用中抛出的错误触发
+    console.error("办理入住失败 (组件层面捕获):", error);
+    
+    // 从 error 对象中获取后端返回的消息（如果 API 层没有处理）
+    let errorMessage = '入住登记失败';
+    if (error && error.response && error.response.data && error.response.data.message) {
+        errorMessage = error.response.data.message;
+    } else if (error && error.message) {
+        errorMessage = error.message;
+    }
+    ElMessage.error(errorMessage);
+    
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 添加直接从数据库获取可用房间的函数
@@ -1760,33 +1833,29 @@ const loadAvailableRoomsFromDB = async () => {
   try {
     console.log("正在直接从数据库获取可用房间...");
     
-    // 直接使用fetch请求API获取房间数据
-    const response = await fetch('/api/rooms?status=AVAILABLE');
-    
-    if (!response.ok) {
-      throw new Error(`API响应错误: ${response.status}`);
-    }
-    
-    const roomData = await response.json();
-    console.log("直接获取的可用房间数据:", roomData);
+    // 因为直接请求可能会遇到403错误，改为使用现有的fetchRooms函数
+    const response = await fetchRooms({ status: 'AVAILABLE' });
+    console.log("获取房间成功:", response);
     
     // 解析不同格式的响应数据
     let roomsList = [];
     
-    if (Array.isArray(roomData)) {
-      roomsList = roomData;
-    } else if (roomData.data && Array.isArray(roomData.data)) {
-      roomsList = roomData.data;
-    } else if (roomData.data?.list && Array.isArray(roomData.data.list)) {
-      roomsList = roomData.data.list;
-    } else if (roomData.list && Array.isArray(roomData.list)) {
-      roomsList = roomData.list;
+    if (response.data && Array.isArray(response.data)) {
+      roomsList = response.data;
+    } else if (response.data?.data && Array.isArray(response.data.data)) {
+      roomsList = response.data.data;
+    } else if (response.data?.data?.list && Array.isArray(response.data.data.list)) {
+      roomsList = response.data.data.list;
+    } else if (response.data?.list && Array.isArray(response.data.list)) {
+      roomsList = response.data.list;
     }
     
     if (roomsList.length === 0) {
       console.warn("直接获取的数据中未找到房间列表");
       return [];
     }
+    
+    console.log("获取到房间列表:", roomsList.length, "间");
     
     // 处理和规范化房间数据
     return roomsList.map(room => ({

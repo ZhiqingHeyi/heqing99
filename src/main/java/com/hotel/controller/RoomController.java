@@ -63,12 +63,39 @@ public class RoomController {
             Page<Room> roomsPage = roomService.getRoomsWithFilters(
                 filter.getFloor(), filter.getRoomTypeId(), filter.getStatus(), filter.getKeyword(), pageable);
             
+            // --- 手动转换返回数据结构 --- 
+            List<Map<String, Object>> simplifiedRooms = roomsPage.getContent().stream()
+                .map(room -> {
+                    Map<String, Object> roomData = new HashMap<>();
+                    roomData.put("id", room.getId());
+                    roomData.put("roomNumber", room.getRoomNumber());
+                    roomData.put("floor", room.getFloor());
+                    roomData.put("status", room.getStatus());
+                    // 安全地获取房型信息
+                    if (room.getRoomType() != null) {
+                        Map<String, Object> roomTypeData = new HashMap<>();
+                        roomTypeData.put("id", room.getRoomType().getId());
+                        roomTypeData.put("name", room.getRoomType().getName());
+                        // 只添加需要的房型字段
+                        roomData.put("roomType", roomTypeData);
+                    } else {
+                        // 如果 roomType 为 null，提供默认值或 null
+                        roomData.put("roomType", null);
+                        System.out.println("WARN: Room ID " + room.getId() + " has null RoomType.");
+                    }
+                    // 添加其他前端可能需要的字段，例如:
+                    // roomData.put("notes", room.getNotes());
+                    return roomData;
+                })
+                .collect(Collectors.toList());
+
             Map<String, Object> result = new HashMap<>();
-            result.put("content", roomsPage.getContent());
+            result.put("content", simplifiedRooms); // 使用转换后的列表
             result.put("totalElements", roomsPage.getTotalElements());
             result.put("totalPages", roomsPage.getTotalPages());
             result.put("size", roomsPage.getSize());
             result.put("number", roomsPage.getNumber());
+            // --- 转换结束 --- 
             
             return ResponseEntity.ok(result);
         } catch (Exception e) {

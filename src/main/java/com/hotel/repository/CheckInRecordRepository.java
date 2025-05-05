@@ -59,7 +59,7 @@ public interface CheckInRecordRepository extends JpaRepository<CheckInRecord, Lo
     @Query("SELECT MAX(c.checkInNumber) FROM CheckInRecord c WHERE c.checkInNumber LIKE :prefix%")
     String findMaxCheckInNumberWithPrefix(@Param("prefix") String prefix);
     
-    // 根据预订ID查询
+    // 根据预订ID查询 (修正方法名以匹配实体属性 bookingId)
     Optional<CheckInRecord> findByBookingId(Long bookingId);
     
     // 查询当前仍在住宿中的记录

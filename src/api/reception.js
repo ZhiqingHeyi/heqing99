@@ -103,56 +103,25 @@ export const processPayment = (id, paymentType) => {
  */
 export const checkInBooking = (checkInData) => {
   console.log('发送入住请求:', checkInData);
-  
-  // 定义多个可能的路径
-  const possiblePaths = [
-    `/reservations/${checkInData.reservationId}/check-in`,
-    `/admin/reservations/${checkInData.reservationId}/check-in`,
-    `/api/reservations/${checkInData.reservationId}/check-in`,
-    `/api/admin/reservations/${checkInData.reservationId}/check-in`
-  ];
-  
-  // 创建一个尝试多个路径的函数
-  const tryPath = async (pathIndex) => {
-    if (pathIndex >= possiblePaths.length) {
-      // 所有路径都尝试完了，返回模拟响应
-      console.warn('所有API路径尝试失败，返回模拟数据');
-      
-      // 返回模拟的成功响应
-      return Promise.resolve({
-        data: {
-          success: true,
-          message: '入住成功(模拟)',
-          data: {
-            id: new Date().getTime(),
-            roomNumber: checkInData.roomNumber,
-            guestName: checkInData.guestName,
-            checkInTime: checkInData.checkInTime,
-            expectedCheckOutTime: checkInData.expectedCheckOutTime,
-            status: 'CHECKED_IN'
-          }
-        }
-      });
-    }
-    
-    // 尝试当前路径
-    const path = possiblePaths[pathIndex];
-    console.log(`尝试入住API路径(${pathIndex+1}/${possiblePaths.length}): ${path}`);
-    
-    return apiClient.post(path, checkInData)
-      .then(response => {
-        console.log(`入住API路径 ${path} 成功, 响应:`, response);
-        return response;
-      })
-      .catch(error => {
-        console.error(`入住API路径 ${path} 失败:`, error);
-        // 尝试下一个路径
-        return tryPath(pathIndex + 1);
-      });
-  };
-  
-  // 开始尝试第一个路径
-  return tryPath(0);
+
+  // 直接调用正确的 API 端点 (移除重复的 /api)
+  return apiClient.post('/admin/checkin', checkInData)
+    .then(response => {
+      // 添加日志记录成功的响应
+      console.log('入住API调用成功, 响应:', response);
+      return response; // 返回原始响应
+    })
+    .catch(error => {
+      // 添加日志记录失败的响应
+      console.error('入住API调用失败:', error);
+      // 检查是否有 response 对象，输出更详细错误
+      if (error.response) {
+          console.error('入住失败 - 状态码:', error.response.status);
+          console.error('入住失败 - 响应数据:', error.response.data);
+      }
+      // 重新抛出错误，让前端组件处理 UI 提示
+      throw error; 
+    });
 };
 
 /**
@@ -171,51 +140,67 @@ export const fetchTodayCheckinStats = () => {
  */
 export const fetchRooms = (params) => {
   console.log('获取房间列表参数:', params);
-  
-  // 由于前端接口和后端不一定匹配，确保参数名正确
+
+  // 确保请求包含分页参数，设置较大的pageSize以获取所有房间
   const apiParams = {
     ...params,
-    // 添加可能的参数别名映射
+    // 添加分页参数，确保获取足够多的记录
+    size: params.pageSize || 200, // 使用 size，符合Spring Pageable 默认参数名
+    page: params.page || 0, // 从第0页开始
+    // 添加可能的参数别名映射 (保留，可能有其他地方用到)
     roomTypeId: params.roomTypeId || params.roomType || params.typeId,
     status: params.status || 'AVAILABLE' // 默认查询可用房间
   };
-  
-  // 直接使用/rooms路径访问数据库
-  return apiClient.get('/rooms', { params: apiParams })
+
+  console.log('发送到后端的房间请求参数:', apiParams);
+
+  // 修改 URL 为 /rooms/filter
+  return apiClient.get('/rooms/filter', { params: apiParams })
     .then(response => {
-      console.log('获取房间成功:', response);
-      
-      // 确保返回数据是数组
+      console.log('获取房间API原始响应:', response);
+      console.log('响应状态:', response.status);
+
+      // 简化响应处理：假设数据在 response.data.content 或 response.data.data.content
+      let roomsList = [];
+      let totalCount = 0;
+
       if (response && response.data) {
-        if (Array.isArray(response.data)) {
-          // 已经是数组，直接返回
-          console.log('获取到房间数组:', response.data.length, '间');
-          return response;
-        } 
-        else if (response.data.data && Array.isArray(response.data.data)) {
-          // 数据包装在data字段中
-          console.log('获取到房间数组(data):', response.data.data.length, '间');
-          return response;
+        if (response.data.content && Array.isArray(response.data.content)) {
+            roomsList = response.data.content;
+            totalCount = response.data.totalElements || roomsList.length;
+            console.log('从 response.data.content 获取房间列表, 数量:', roomsList.length);
+        } else if (response.data.data && response.data.data.content && Array.isArray(response.data.data.content)) {
+            roomsList = response.data.data.content;
+            totalCount = response.data.data.totalElements || roomsList.length;
+            console.log('从 response.data.data.content 获取房间列表, 数量:', roomsList.length);
+        } else if (Array.isArray(response.data)) {
+            console.warn('API直接返回了数组，建议后端统一返回分页结构');
+            roomsList = response.data;
+            totalCount = roomsList.length;
+        } else {
+            console.warn('未识别的房间列表响应结构:', response.data);
         }
-        else if (response.data.list && Array.isArray(response.data.list)) {
-          // 数据包装在list字段中
-          console.log('获取到房间数组(list):', response.data.list.length, '间');
-          return response;
-        }
-        else if (response.data.data?.list && Array.isArray(response.data.data.list)) {
-          // 数据包装在data.list字段中
-          console.log('获取到房间数组(data.list):', response.data.data.list.length, '间');
-          return response;
-        }
+      } else {
+        console.warn('未收到有效的响应数据');
       }
+
+      const dataToReturn = roomsList; // 直接使用从后端解析出的数据
+      console.log('直接返回给调用者的房间列表, 数量:', dataToReturn.length);
       
-      // 如果响应格式不符合预期
-      console.warn('房间API返回格式不符合预期:', response);
-      return response;
+      // 返回符合 Bookings.vue 中 handleCheckIn 解析逻辑的结构
+      return {
+        data: { 
+          content: dataToReturn, 
+          list: dataToReturn,    
+          totalElements: totalCount 
+        } 
+      };
+
     })
     .catch(error => {
-      console.error('获取房间失败:', error);
-      return Promise.reject(error);
+      console.error('获取房间API失败:', error);
+      // 抛出错误，让调用者处理
+      throw error;
     });
 };
 

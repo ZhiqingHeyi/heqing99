@@ -7,6 +7,9 @@ import com.hotel.service.RoomService;
 import com.hotel.service.ReservationService;
 import com.hotel.service.VisitorRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
@@ -47,12 +50,20 @@ public class ReceptionController {
     }
 
     /**
-     * 获取所有房间列表
+     * 获取房间列表（支持按状态过滤和分页）
+     * Example: /api/reception/rooms?status=AVAILABLE&page=0&size=10
      */
     @GetMapping("/rooms")
-    public ResponseEntity<List<Room>> getAllRooms() {
-        List<Room> rooms = roomService.getAllRooms();
-        return ResponseEntity.ok(rooms);
+    public ResponseEntity<Page<Room>> getRoomsFilteredAndPaged(
+            @RequestParam(required = false) String status,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "200") int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Room> roomPage = roomService.getRoomsWithFilters(null, null, status, null, pageable);
+
+        return ResponseEntity.ok(roomPage);
     }
 
     /**
