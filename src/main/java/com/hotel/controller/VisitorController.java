@@ -6,6 +6,10 @@ import com.hotel.entity.VisitorRecord;
 import com.hotel.service.UserService;
 import com.hotel.service.VisitorRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort;
 import org.springframework.format.annotation.DateTimeFormat;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -177,6 +181,30 @@ public class VisitorController {
         return ResponseEntity.ok(visitorRecordService.getAllVisitorRecords());
     }
 
+    /**
+     * 获取所有访客记录 (修改为分页和过滤)
+     */
+    @GetMapping("/all")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTION')")
+    public ResponseEntity<Page<VisitorRecord>> getAllVisitorRecordsPageable(
+            @RequestParam(required = false) String keyword,
+            @RequestParam(required = false) String status,
+            @RequestParam(required = false) String roomNumber,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime startTime,
+            @RequestParam(required = false) @DateTimeFormat(iso = DateTimeFormat.ISO.DATE_TIME) LocalDateTime endTime,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "10") int size,
+            @RequestParam(defaultValue = "visitTime,desc") String[] sort
+    ) {
+        Sort sortOrder = Sort.by(Sort.Direction.fromString(sort[1]), sort[0]);
+        Pageable pageable = PageRequest.of(page, size, sortOrder);
+
+        Page<VisitorRecord> visitorPage = visitorRecordService.searchVisitorRecordsPageable(
+                keyword, status, roomNumber, startTime, endTime, pageable
+        );
+        return ResponseEntity.ok(visitorPage);
+    }
+
     // ========== 访客信息相关接口 ==========
 
     /**
@@ -186,15 +214,6 @@ public class VisitorController {
     @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTION')")
     public ResponseEntity<Visitor> registerVisitor(@RequestBody Visitor visitor) {
         return ResponseEntity.ok(visitorRecordService.registerVisitor(visitor));
-    }
-
-    /**
-     * 获取所有访客列表
-     */
-    @GetMapping("/all")
-    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTION')")
-    public ResponseEntity<List<Visitor>> getAllVisitors() {
-        return ResponseEntity.ok(visitorRecordService.getAllVisitors());
     }
 
     /**

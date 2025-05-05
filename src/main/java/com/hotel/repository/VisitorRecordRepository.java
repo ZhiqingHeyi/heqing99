@@ -3,6 +3,7 @@ package com.hotel.repository;
 import com.hotel.entity.User;
 import com.hotel.entity.VisitorRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
+import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
 
@@ -10,7 +11,7 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Repository
-public interface VisitorRecordRepository extends JpaRepository<VisitorRecord, Long> {
+public interface VisitorRecordRepository extends JpaRepository<VisitorRecord, Long>, JpaSpecificationExecutor<VisitorRecord> {
     List<VisitorRecord> findByVisitedUser(User visitedUser);
 
     List<VisitorRecord> findByStatus(VisitorRecord.VisitStatus status);

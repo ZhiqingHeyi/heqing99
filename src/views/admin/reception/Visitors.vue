@@ -230,7 +230,7 @@
 
 <script setup>
 import { ref, reactive, onMounted, computed } from 'vue'
-import { ElMessage, ElMessageBox } from 'element-plus'
+import { ElMessage, ElMessageBox, ElLoading } from 'element-plus'
 import { 
   Search, Refresh, Plus, View, Timer, 
   UserFilled, Clock, CircleCheckFilled
@@ -268,7 +268,7 @@ const completedVisitorCount = computed(() => {
 // 分页
 const currentPage = ref(1)
 const pageSize = ref(10)
-const total = ref(visitorList.value.length)
+const total = ref(0)
 
 // 访客登记表单
 const dialogVisible = ref(false)
@@ -370,6 +370,7 @@ const fetchVisitorList = async () => {
     console.error('获取访客列表失败:', error)
     ElMessage.error('获取访客列表失败')
     loading.value = false
+    visitorList.value = []
   }
 }
 

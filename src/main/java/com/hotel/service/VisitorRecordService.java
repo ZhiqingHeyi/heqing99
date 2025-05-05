@@ -3,6 +3,8 @@ package com.hotel.service;
 import com.hotel.entity.User;
 import com.hotel.entity.VisitorRecord;
 import com.hotel.entity.Visitor;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -140,4 +142,23 @@ public interface VisitorRecordService {
      * 记录访客离开时间
      */
     Visitor recordVisitorLeave(Long id);
+
+    /**
+     * 分页查询访客记录
+     * @param keyword 关键字（访客姓名、电话等）
+     * @param status 访问状态
+     * @param roomNumber 房间号
+     * @param startTime 开始时间
+     * @param endTime 结束时间
+     * @param pageable 分页参数
+     * @return 分页结果
+     */
+    Page<VisitorRecord> searchVisitorRecordsPageable(
+            String keyword,
+            String status,
+            String roomNumber,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Pageable pageable
+    );
 }

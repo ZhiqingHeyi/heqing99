@@ -7,9 +7,14 @@ import com.hotel.repository.VisitorRepository;
 import com.hotel.repository.VisitorRecordRepository;
 import com.hotel.service.VisitorRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
+import org.springframework.data.jpa.domain.Specification;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
+import javax.persistence.criteria.Predicate;
 import java.time.LocalDateTime;
 import java.time.LocalDate;
 import java.util.ArrayList;
@@ -111,6 +116,59 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
     @Override
     public List<VisitorRecord> getAllVisitorRecords() {
         return visitorRecordRepository.findAll();
+    }
+
+    @Override
+    public Page<VisitorRecord> searchVisitorRecordsPageable(
+            String keyword,
+            String status,
+            String roomNumber,
+            LocalDateTime startTime,
+            LocalDateTime endTime,
+            Pageable pageable
+    ) {
+        // 使用 Specification 构建动态查询条件
+        Specification<VisitorRecord> spec = (root, query, cb) -> {
+            List<Predicate> predicates = new ArrayList<>();
+
+            // 关键字搜索（访客姓名或电话）
+            if (StringUtils.hasText(keyword)) {
+                predicates.add(cb.or(
+                    cb.like(root.get("visitorName"), "%" + keyword + "%"),
+                    cb.like(root.get("phone"), "%" + keyword + "%")
+                ));
+            }
+
+            // 状态过滤
+            if (StringUtils.hasText(status)) {
+                try {
+                    VisitorRecord.VisitStatus visitStatus = VisitorRecord.VisitStatus.valueOf(status.toUpperCase());
+                    predicates.add(cb.equal(root.get("status"), visitStatus));
+                } catch (IllegalArgumentException e) {
+                    // 如果状态值无效，记录警告但不添加此过滤条件
+                    System.out.println("Warning: Invalid visit status: " + status);
+                }
+            }
+
+            // 房间号过滤 - 通过访问的用户关联的房间号
+            if (StringUtils.hasText(roomNumber)) {
+                predicates.add(cb.equal(root.join("visitedUser").get("roomNumber"), roomNumber));
+            }
+
+            // 时间范围过滤
+            if (startTime != null && endTime != null) {
+                predicates.add(cb.between(root.get("visitTime"), startTime, endTime));
+            } else if (startTime != null) {
+                predicates.add(cb.greaterThanOrEqualTo(root.get("visitTime"), startTime));
+            } else if (endTime != null) {
+                predicates.add(cb.lessThanOrEqualTo(root.get("visitTime"), endTime));
+            }
+
+            return cb.and(predicates.toArray(new Predicate[0]));
+        };
+
+        // 执行分页查询
+        return visitorRecordRepository.findAll(spec, pageable);
     }
 
     // ========== Visitor 方法实现 ==========

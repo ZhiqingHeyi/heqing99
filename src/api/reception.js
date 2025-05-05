@@ -165,7 +165,7 @@ export const verifyRoom = async (roomNumber) => {
  * 获取今日访客统计
  */
 export const fetchTodayVisitorStats = () => {
-  return apiClient.get('/visitor/stats/today');
+  return apiClient.get('/visitor/count/today');
 };
 
 // --- Check-In APIs (CheckInController) ---
