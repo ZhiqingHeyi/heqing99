@@ -125,6 +125,10 @@
             range-separator="至"
             start-placeholder="开始日期"
             end-placeholder="结束日期"
+            value-format="YYYY-MM-DD"
+            format="YYYY-MM-DD"
+            clearable
+            @change="dateRangeChanged"
           />
         </el-form-item>
         <el-form-item>
@@ -955,10 +959,17 @@ const getPaymentStatusText = (status) => {
 }
 
 // ADD fetchData function and related logic
-const fetchData = async (retry = 0) => {
+const fetchData = async (retry = 0, customParams = null, exactMatch = false) => {
   loading.value = true;
   try {
     console.log("开始获取预订数据...");
+    
+    // 保存精确匹配参数，用于前端筛选
+    const frontendFilter = {
+      enabled: exactMatch,
+      checkInDate: customParams?.exactCheckInDate,
+      checkOutDate: customParams?.exactCheckOutDate
+    };
     
     // 准备API请求参数
     const params = {
@@ -970,20 +981,82 @@ const fetchData = async (retry = 0) => {
       bookingNo: searchForm.bookingNo || undefined
     };
     
-    // 处理日期范围参数
-    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
-      // 确保日期是UTC格式的字符串，只保留日期部分
-      if (searchForm.dateRange[0]) {
-        const startDate = new Date(searchForm.dateRange[0]);
-        params.startDate = startDate.toISOString().split('T')[0];
+    // 如果提供了自定义参数，优先使用自定义参数
+    if (customParams) {
+      console.log("使用自定义参数:", customParams);
+      
+      // 确保自定义参数中的status覆盖searchForm中的status
+      if (customParams.status) {
+        params.status = customParams.status;
       }
       
-      if (searchForm.dateRange[1]) {
-        const endDate = new Date(searchForm.dateRange[1]);
-        params.endDate = endDate.toISOString().split('T')[0];
+      // 精确匹配日期参数处理
+      if (exactMatch) {
+        console.log("使用精确日期匹配模式");
+        
+        // 处理入住日期精确匹配
+        if (customParams.exactCheckInDate) {
+          params.exactDate = 'checkIn'; // 表示要精确匹配入住日期
+          params.date = customParams.exactCheckInDate; // 日期值
+          console.log("设置精确入住日期匹配:", customParams.exactCheckInDate);
+        }
+        
+        // 处理离店日期精确匹配
+        if (customParams.exactCheckOutDate) {
+          params.exactDate = 'checkOut'; // 表示要精确匹配离店日期
+          params.date = customParams.exactCheckOutDate; // 日期值
+          console.log("设置精确离店日期匹配:", customParams.exactCheckOutDate);
+        }
+      } 
+      // 常规日期范围参数
+      else {
+        // 添加日期参数，确保使用正确的API参数名称
+        if (customParams.startDate || customParams.checkInTime) {
+          params.checkInTime = customParams.checkInTime || customParams.startDate; // 支持两种参数名
+          console.log("设置入住日期参数:", params.checkInTime);
+        }
+        
+        if (customParams.endDate || customParams.checkOutTime) {
+          params.checkOutTime = customParams.checkOutTime || customParams.endDate; // 支持两种参数名
+          console.log("设置离店日期参数:", params.checkOutTime);
+        }
       }
-      
-      console.log("设置日期范围参数:", params.startDate, "到", params.endDate);
+    }
+    // 否则处理表单中的日期范围参数
+    else if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+      try {
+        // 确保日期是有效的字符串或Date对象后再处理
+        if (searchForm.dateRange[0]) {
+          // 检查是否已是字符串格式 (YYYY-MM-DD)
+          if (typeof searchForm.dateRange[0] === 'string' && searchForm.dateRange[0].match(/^\d{4}-\d{2}-\d{2}$/)) {
+            params.checkInTime = searchForm.dateRange[0]; // 更新参数名
+          } else {
+            // 处理Date对象
+            const startDate = new Date(searchForm.dateRange[0]);
+            if (!isNaN(startDate.getTime())) {
+              params.checkInTime = startDate.toISOString().split('T')[0]; // 更新参数名
+            }
+          }
+        }
+        
+        if (searchForm.dateRange[1]) {
+          // 检查是否已是字符串格式 (YYYY-MM-DD)
+          if (typeof searchForm.dateRange[1] === 'string' && searchForm.dateRange[1].match(/^\d{4}-\d{2}-\d{2}$/)) {
+            params.checkOutTime = searchForm.dateRange[1]; // 更新参数名
+          } else {
+            // 处理Date对象
+            const endDate = new Date(searchForm.dateRange[1]);
+            if (!isNaN(endDate.getTime())) {
+              params.checkOutTime = endDate.toISOString().split('T')[0]; // 更新参数名
+            }
+          }
+        }
+        
+        console.log("设置日期范围参数:", params.checkInTime, "到", params.checkOutTime);
+      } catch (dateError) {
+        console.error("日期处理错误:", dateError);
+        ElMessage.warning('日期格式处理出错，将忽略日期筛选');
+      }
     }
     
     console.log("发送API请求参数:", params);
@@ -1034,6 +1107,29 @@ const fetchData = async (retry = 0) => {
       
       return booking;
     });
+    
+    // 如果需要前端精确筛选日期
+    if (frontendFilter.enabled) {
+      console.log("执行前端精确日期筛选");
+      
+      if (frontendFilter.checkInDate) {
+        console.log("筛选入住日期等于:", frontendFilter.checkInDate);
+        bookings = bookings.filter(booking => {
+          const bookingDate = booking.checkInTime ? formatDateToYMD(booking.checkInTime) : null;
+          return bookingDate === frontendFilter.checkInDate;
+        });
+        console.log("筛选后剩余预订:", bookings.length);
+      }
+      
+      if (frontendFilter.checkOutDate) {
+        console.log("筛选离店日期等于:", frontendFilter.checkOutDate);
+        bookings = bookings.filter(booking => {
+          const bookingDate = booking.checkOutTime ? formatDateToYMD(booking.checkOutTime) : null;
+          return bookingDate === frontendFilter.checkOutDate;
+        });
+        console.log("筛选后剩余预订:", bookings.length);
+      }
+    }
     
     // 更新列表数据
     bookingList.value = bookings;
@@ -1147,15 +1243,29 @@ onMounted(() => {
 // UPDATE Search and Pagination handlers to call fetchData
 const handleSearch = () => {
   currentPage.value = 1; // Reset page to 1 on new search
+  console.log("执行搜索，搜索条件:", {
+    bookingNo: searchForm.bookingNo,
+    customerName: searchForm.customerName,
+    phone: searchForm.phone,
+    status: searchForm.status,
+    dateRange: searchForm.dateRange ? searchForm.dateRange.map(d => d.toISOString().split('T')[0]) : null
+  });
   fetchData();
 };
 
 const resetSearch = () => {
-  Object.keys(searchForm).forEach(key => {
-    searchForm[key] = '';
-  });
+  // 清空搜索表单的值
+  searchForm.bookingNo = '';
+  searchForm.customerName = '';
+  searchForm.phone = '';
+  searchForm.status = '';
   searchForm.dateRange = null;
-  handleSearch(); // handleSearch will reset page and call fetchData
+  
+  console.log("重置搜索表单完成");
+  
+  // 重置页码并获取数据
+  currentPage.value = 1;
+  fetchData();
 };
 
 // 分页处理
@@ -1167,6 +1277,19 @@ const handleSizeChange = (val) => {
 const handleCurrentChange = (val) => {
   currentPage.value = val;
   fetchData();
+};
+
+// 日期范围选择器变更处理
+const dateRangeChanged = (val) => {
+  console.log("日期范围变更:", val);
+  
+  if (!val || val.length !== 2) {
+    searchForm.dateRange = null;
+    console.log("已清空日期范围");
+  } else {
+    // 日期已经通过 value-format 处理为 YYYY-MM-DD 格式
+    console.log("设置日期范围:", val);
+  }
 };
 
 // --- CRUD Operations Handlers ---
@@ -1665,29 +1788,44 @@ const showPendingBookings = () => {
 };
 const showTodayCheckins = () => {
   console.log("开始筛选今日入住预订...");
-  // 重置搜索表单
-  resetSearch();
-  // 设置今日日期范围
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  console.log("今日入住筛选日期范围:", today.toISOString(), "至", tomorrow.toISOString());
-  
-  // 设置搜索表单
-  searchForm.dateRange = [today, tomorrow];
-  searchForm.status = 'confirmed'; // 只筛选已确认的预订
-  
-  // 记录当前搜索条件
-  console.log("当前搜索条件:", {
-    dateRange: searchForm.dateRange.map(d => d.toISOString()),
-    status: searchForm.status
-  });
-  
-  // 执行搜索
-  handleSearch();
-  ElMessage.success('已筛选今日入住预订');
+  try {
+    // 重置搜索表单
+    resetSearch();
+    
+    // 获取当前日期（不依赖于服务器时间）
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    
+    // 使用YYYY-MM-DD格式的日期字符串
+    const todayStr = `${year}-${month}-${day}`;
+    console.log("今日入住筛选日期:", todayStr);
+    
+    // 设置状态为已确认，清空其他搜索条件
+    searchForm.status = 'confirmed'; 
+    searchForm.dateRange = null;
+    
+    // 设置今日入住筛选 - 使用精确的日期匹配
+    // 方式1：使用前端筛选 - 将搜索表单的dateRange设为当天
+    searchForm.dateRange = [todayStr, todayStr]; // 开始和结束日期都是今天
+    
+    // 方式2：直接使用API参数
+    // 确保只匹配今天的入住日期
+    const tempParams = {
+      status: 'confirmed',
+      exactCheckInDate: todayStr // 使用精确匹配参数
+    };
+    
+    console.log("今日入住搜索参数:", tempParams);
+    
+    // 修改fetchData调用，添加精确匹配标志
+    fetchData(0, tempParams, true); // 第三个参数表示需要精确匹配日期
+    ElMessage.success('已筛选今日入住预订');
+  } catch (error) {
+    console.error("筛选今日入住预订时出错:", error);
+    ElMessage.error('筛选失败，请稍后重试');
+  }
 };
 const showOccupancyDetails = () => {
   // 打开入住率详情弹窗
@@ -2156,6 +2294,49 @@ const currentBooking = ref(null);
 const openTodayCheckin = () => { 
   // 调用封装好的今日入住筛选函数
   showTodayCheckins(); 
+};
+
+// 添加缺失的今日离店功能
+const openTodayCheckout = () => {
+  console.log("开始筛选今日离店预订...");
+  try {
+    // 重置搜索表单
+    resetSearch();
+    
+    // 获取当前日期（不依赖于服务器时间）
+    const today = new Date();
+    const year = today.getFullYear();
+    const month = String(today.getMonth() + 1).padStart(2, '0');
+    const day = String(today.getDate()).padStart(2, '0');
+    
+    // 使用YYYY-MM-DD格式的日期字符串
+    const todayStr = `${year}-${month}-${day}`;
+    console.log("今日离店筛选日期:", todayStr);
+    
+    // 设置状态为已入住，清空其他搜索条件
+    searchForm.status = 'checked-in'; 
+    searchForm.dateRange = null;
+    
+    // 设置今日离店筛选 - 使用精确的日期匹配
+    // 方式1：使用前端筛选 - 将搜索表单的dateRange设为当天
+    searchForm.dateRange = [null, todayStr]; // 只设置结束日期为今天
+    
+    // 方式2：直接使用API参数
+    // 确保只匹配今天的离店日期
+    const tempParams = {
+      status: 'checked-in',
+      exactCheckOutDate: todayStr // 使用精确匹配参数
+    };
+    
+    console.log("今日离店搜索参数:", tempParams);
+    
+    // 修改fetchData调用，添加精确匹配标志
+    fetchData(0, tempParams, true); // 第三个参数表示需要精确匹配日期
+    ElMessage.success('已筛选今日离店预订');
+  } catch (error) {
+    console.error("筛选今日离店预订时出错:", error);
+    ElMessage.error('筛选失败，请稍后重试');
+  }
 };
 
 const filterByStatus = (status) => {
