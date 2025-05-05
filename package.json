@@ -19,7 +19,8 @@
     "pinia": "^3.0.2",
     "qrcodejs2-fix": "^0.0.1",
     "vue": "^3.3.4",
-    "vue-router": "^4.2.4"
+    "vue-router": "^4.2.4",
+    "xlsx": "^0.18.5"
   },
   "devDependencies": {
     "@vitejs/plugin-vue": "^4.2.3",

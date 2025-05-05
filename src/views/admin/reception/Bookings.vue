@@ -14,30 +14,42 @@
     <!-- 数据统计卡片 -->
     <div class="stats-container">
       <el-row :gutter="20">
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="8" :md="8">
           <el-card shadow="hover" class="stats-card pending-card" @click="showPendingBookings">
-            <div class="stats-icon"><el-icon><Clock /></el-icon></div>
-            <div class="stats-info">
-              <div class="stats-value">{{ pendingCount }}</div>
-              <div class="stats-label">待确认预订</div>
+            <div class="stats-card-content">
+              <div class="stats-icon-wrapper">
+                <el-icon><Clock /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ pendingCount }}</div>
+                <div class="stats-label">待确认预订</div>
+              </div>
             </div>
           </el-card>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
+        <el-col :xs="24" :sm="8" :md="8">
           <el-card shadow="hover" class="stats-card confirmed-card" @click="showTodayCheckins">
-            <div class="stats-icon"><el-icon><Calendar /></el-icon></div>
-            <div class="stats-info">
-              <div class="stats-value">{{ todayCheckinCount }}</div>
-              <div class="stats-label">今日入住</div>
+            <div class="stats-card-content">
+              <div class="stats-icon-wrapper">
+                <el-icon><Calendar /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ todayCheckinCount }}</div>
+                <div class="stats-label">今日入住</div>
+              </div>
             </div>
           </el-card>
         </el-col>
-        <el-col :xs="24" :sm="12" :md="6">
-          <el-card shadow="hover" class="stats-card checkin-card" @click="showOccupancyDetails">
-            <div class="stats-icon"><el-icon><User /></el-icon></div>
-            <div class="stats-info">
-              <div class="stats-value">{{ occupancyRate }}%</div>
-              <div class="stats-label">入住率</div>
+        <el-col :xs="24" :sm="8" :md="8">
+          <el-card shadow="hover" class="stats-card occupancy-card" @click="showOccupancyDetails">
+            <div class="stats-card-content">
+              <div class="stats-icon-wrapper">
+                <el-icon><User /></el-icon>
+              </div>
+              <div class="stats-info">
+                <div class="stats-value">{{ occupancyRate }}%</div>
+                <div class="stats-label">入住率</div>
+              </div>
             </div>
           </el-card>
         </el-col>
@@ -46,28 +58,40 @@
 
     <!-- 快速操作区 -->
     <el-card class="quick-actions-card" shadow="hover">
-      <div class="quick-actions-header">
-        <h3>快速操作</h3>
-      </div>
+      <template #header>
+        <div class="quick-actions-header">
+          <h3>快速操作</h3>
+        </div>
+      </template>
       <div class="quick-actions">
         <div class="quick-action-item" @click="handleAdd">
-          <el-icon><Plus /></el-icon>
+          <div class="quick-action-icon">
+            <el-icon><Plus /></el-icon>
+          </div>
           <span>新增预订</span>
         </div>
         <div class="quick-action-item" @click="openTodayCheckin">
-          <el-icon><Calendar /></el-icon>
+          <div class="quick-action-icon">
+            <el-icon><Calendar /></el-icon>
+          </div>
           <span>今日入住</span>
         </div>
         <div class="quick-action-item" @click="openTodayCheckout">
-          <el-icon><Right /></el-icon>
+          <div class="quick-action-icon">
+            <el-icon><Right /></el-icon>
+          </div>
           <span>今日离店</span>
         </div>
         <div class="quick-action-item" @click="exportBookings">
-          <el-icon><Download /></el-icon>
+          <div class="quick-action-icon">
+            <el-icon><Download /></el-icon>
+          </div>
           <span>导出数据</span>
         </div>
         <div class="quick-action-item" @click="showRoomStatus">
-          <el-icon><House /></el-icon>
+          <div class="quick-action-icon">
+            <el-icon><House /></el-icon>
+          </div>
           <span>房态一览</span>
         </div>
       </div>
@@ -168,35 +192,42 @@
             </el-tag>
           </template>
         </el-table-column>
-        <el-table-column label="操作" width="250" fixed="right">
+        <el-table-column label="操作" width="300" fixed="right">
           <template #default="{ row }">
-            <div class="action-buttons">
+            <div class="action-buttons action-buttons-wrap">
               <el-button 
                 type="primary" 
                 link 
                 @click="handleEdit(row)"
-                v-if="row.status === 'pending'"
+                v-if="row.status?.toLowerCase() === 'pending'"
                 class="action-btn"
               ><el-icon><Edit /></el-icon>编辑</el-button>
               <el-button 
                 type="success" 
                 link 
                 @click="handleConfirm(row)"
-                v-if="row.status === 'pending'"
+                v-if="row.status?.toLowerCase() === 'pending'"
                 class="action-btn"
               ><el-icon><Check /></el-icon>确认</el-button>
               <el-button 
                 type="primary" 
                 link 
                 @click="handleCheckIn(row)"
-                v-if="row.status === 'confirmed'"
+                v-if="row.status?.toLowerCase() === 'confirmed'"
                 class="action-btn"
               ><el-icon><Key /></el-icon>办理入住</el-button>
+              <el-button 
+                type="warning" 
+                link 
+                @click="handleQuickPayment(row)"
+                v-if="row.status?.toLowerCase() === 'confirmed' && ['UNPAID', 'DEPOSIT_PAID'].includes(row.paymentStatus?.toUpperCase())"
+                class="action-btn"
+              ><el-icon><Money /></el-icon>快捷支付</el-button>
               <el-button 
                 type="danger" 
                 link 
                 @click="handleCancel(row)"
-                v-if="['pending', 'confirmed'].includes(row.status)"
+                v-if="['pending', 'confirmed'].includes(row.status?.toLowerCase())"
                 class="action-btn"
               ><el-icon><Close /></el-icon>取消</el-button>
               <el-button 
@@ -208,6 +239,17 @@
             </div>
           </template>
         </el-table-column>
+        <template #empty>
+          <el-empty 
+            description="暂无预订数据" 
+            :image-size="100"
+          >
+            <template #description>
+              <p>{{ searchForm.status || searchForm.customerName || searchForm.phone || searchForm.bookingNo || searchForm.dateRange ? '没有符合条件的预订数据' : '暂无预订数据' }}</p>
+            </template>
+            <el-button type="primary" @click="handleAdd">新增预订</el-button>
+          </el-empty>
+        </template>
       </el-table>
 
       <!-- 分页 -->
@@ -372,11 +414,18 @@
           <el-select v-model="checkInForm.roomNumber" placeholder="请选择房间号" style="width: 100%">
             <el-option
               v-for="room in availableRooms"
-              :key="room.number"
-              :label="`${room.number} (${room.type})`"
-              :value="room.number"
+              :key="room.id || room.number"
+              :label="formatRoomOption(room)"
+              :value="room.number || room.roomNumber"
+              v-if="room.number || room.roomNumber"
             />
           </el-select>
+          <div class="room-count-info" v-if="availableRooms.length > 0">
+            可用房间: {{ availableRooms.length }}间
+          </div>
+          <div class="no-rooms-warning" v-else>
+            当前没有可用房间
+          </div>
         </el-form-item>
         <el-form-item label="押金" prop="deposit">
           <el-input-number v-model="checkInForm.deposit" :min="0" :step="100" :precision="2" style="width: 100%" />
@@ -535,6 +584,90 @@
         </div>
       </div>
     </el-dialog>
+
+    <!-- 入住率详情弹窗 -->
+    <el-dialog
+      title="入住率详情"
+      v-model="occupancyDetailVisible"
+      width="500px"
+      class="custom-dialog"
+    >
+      <div class="occupancy-detail">
+        <div class="detail-item">
+          <span class="item-label">总房间数：</span>
+          <span class="item-value">{{ totalRooms }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="item-label">已入住房间：</span>
+          <span class="item-value">{{ occupiedRooms }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="item-label">可用房间：</span>
+          <span class="item-value">{{ totalRooms - occupiedRooms }}</span>
+        </div>
+        <div class="detail-item">
+          <span class="item-label">入住率：</span>
+          <span class="item-value">{{ occupancyRate }}%</span>
+        </div>
+        <div class="occupancy-chart">
+          <el-progress :percentage="occupancyRate" :color="occupancyRateColor"></el-progress>
+        </div>
+      </div>
+    </el-dialog>
+
+    <!-- 预订详情弹窗 -->
+    <el-dialog
+      title="预订详情"
+      v-model="detailVisible"
+      width="600px"
+      class="custom-dialog"
+    >
+      <div class="booking-detail" v-if="currentBooking">
+        <el-descriptions :column="1" border>
+          <el-descriptions-item label="预订号">{{ currentBooking.bookingNo }}</el-descriptions-item>
+          <el-descriptions-item label="客户姓名">{{ currentBooking.guestName }}</el-descriptions-item>
+          <el-descriptions-item label="联系电话">{{ currentBooking.guestPhone }}</el-descriptions-item>
+          <el-descriptions-item label="房间类型">{{ currentBooking.roomTypeName }}</el-descriptions-item>
+          <el-descriptions-item label="房间数量">{{ currentBooking.roomCount }}</el-descriptions-item>
+          <el-descriptions-item label="入住日期">{{ formatDateToYMD(currentBooking.checkInTime) }}</el-descriptions-item>
+          <el-descriptions-item label="离店日期">{{ formatDateToYMD(currentBooking.checkOutTime) }}</el-descriptions-item>
+          <el-descriptions-item label="预订状态">
+            <el-tag :type="getStatusType(currentBooking.status)" effect="light">
+              {{ getStatusText(currentBooking.status) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="支付状态">
+            <el-tag :type="getPaymentStatusType(currentBooking.paymentStatus)" effect="light">
+              {{ getPaymentStatusText(currentBooking.paymentStatus) }}
+            </el-tag>
+          </el-descriptions-item>
+          <el-descriptions-item label="总价">¥{{ currentBooking.totalPrice }}</el-descriptions-item>
+          <el-descriptions-item label="特殊要求">{{ currentBooking.specialRequests || '无' }}</el-descriptions-item>
+          <el-descriptions-item label="创建时间">{{ formatDate(currentBooking.createTime) }}</el-descriptions-item>
+        </el-descriptions>
+      </div>
+      <div class="booking-detail-actions" v-if="currentBooking">
+        <el-button 
+          type="success" 
+          plain 
+          @click="handleConfirm(currentBooking)"
+          v-if="currentBooking.status === 'pending'"
+        >确认预订</el-button>
+        <el-button 
+          type="primary" 
+          plain 
+          @click="handleCheckIn(currentBooking)"
+          v-if="currentBooking.status === 'confirmed'"
+        >办理入住</el-button>
+        <el-button 
+          type="danger" 
+          plain 
+          @click="handleCancel(currentBooking)"
+          v-if="['pending', 'confirmed'].includes(currentBooking.status)"
+        >取消预订</el-button>
+        <el-button @click="detailVisible = false">关闭</el-button>
+      </div>
+    </el-dialog>
   </div>
 </template>
 
@@ -546,6 +679,7 @@ import {
   Clock, User, Download, Right, House, List, Monitor, Connection, Message, Star,
   Histogram, Sugar
 } from '@element-plus/icons-vue'
+import * as XLSX from 'xlsx' // 导入xlsx库
 // ADD API Imports
 import {
   fetchBookings,
@@ -554,6 +688,7 @@ import {
   updateBooking,
   confirmBooking,
   cancelBooking,
+  processPayment,
   checkInBooking,
   fetchTodayCheckinStats,
   fetchRooms,
@@ -734,7 +869,7 @@ const getPaymentStatusText = (status) => {
 }
 
 // ADD fetchData function and related logic
-const fetchData = async () => {
+const fetchData = async (retry = 0) => {
   loading.value = true;
   try {
     // Correct page index to be 0-based and use 'size' parameter
@@ -748,8 +883,33 @@ const fetchData = async () => {
       startDate: searchForm.dateRange ? searchForm.dateRange[0] : undefined,
       endDate: searchForm.dateRange ? searchForm.dateRange[1] : undefined,
     });
-    // Adjust based on actual API response structure from Spring Page object
-    bookingList.value = response.data?.data?.content || []; 
+    
+    // 添加调试日志输出查看响应结构
+    console.log("Booking API Response:", response);
+    
+    // 规范化状态值处理
+    let bookings = response.data?.data?.content || [];
+    bookings = bookings.map(booking => {
+      // 确保status字段存在并规范化
+      if (booking.status) {
+        // 如果状态是中文，转换为对应的英文键
+        const statusTextToKey = {
+          '待确认': 'pending',
+          '已确认': 'confirmed',
+          '已入住': 'checked-in',
+          '已取消': 'cancelled',
+          '已完成': 'completed'
+        };
+        
+        if (statusTextToKey[booking.status]) {
+          booking.status = statusTextToKey[booking.status];
+        }
+      }
+      return booking;
+    });
+    
+    // 更新列表数据
+    bookingList.value = bookings;
     total.value = response.data?.data?.totalElements || 0;
 
     // Fetch statistics in parallel
@@ -784,6 +944,13 @@ const fetchData = async () => {
     occupancyRate.value = 0;
     totalRooms.value = 0;
     occupiedRooms.value = 0;
+    
+    // 添加重试机制，最多重试2次
+    if (retry < 2) {
+      setTimeout(() => {
+        fetchData(retry + 1);
+      }, 2000);
+    }
   } finally {
     loading.value = false;
   }
@@ -1068,53 +1235,91 @@ const handleCheckIn = async (row) => {
   if (checkInFormRef.value) {
     checkInFormRef.value.clearValidate();
   }
-  // Fetch available rooms for the booking's room type
+  
+  loading.value = true;
+  
   try {
-    // TODO: Get roomTypeId from row.roomType (may need mapping)
-    const roomTypeId = getRoomTypeIdFromName(row.roomType); // Placeholder
-    if (!roomTypeId) throw new Error('无法确定房间类型ID');
-
-    const roomParams = { status: 'AVAILABLE', roomTypeId: roomTypeId }; 
-    const res = await fetchRooms(roomParams);
-    availableRooms.value = res.data?.data?.list || [];
-    if (!availableRooms.value.length) {
-         ElMessage.warning('该房型当前无可用房间');
-    }
-  } catch (error) {
-      console.error("Error fetching available rooms:", error);
-      ElMessage.error('获取可用房间列表失败');
-  }
-};
-
-const handleCheckInSubmit = async () => {
-  if (!checkInFormRef.value) return;
-  await checkInFormRef.value.validate(async (valid) => {
-    if (valid) {
-      loading.value = true;
+    console.log("获取可用房间数据...");
+    
+    // 尝试获取房间数据 - 首先尝试直接从数据库获取
+    let roomsData = await loadAvailableRoomsFromDB();
+    
+    // 如果直接获取失败，则使用API方式获取
+    if (!roomsData || roomsData.length === 0) {
+      console.log("直接获取房间数据失败，尝试使用API...");
+      
+      // 默认获取所有可用房间
+      const params = { status: 'AVAILABLE' };
+      
+      // 如果能确定房型ID，则按房型筛选
+      if (row.roomTypeId) {
+        params.roomTypeId = row.roomTypeId;
+      }
+      
       try {
-        const apiData = {
-          reservationId: currentBookingForCheckin.value.id,
-          roomNumber: checkInForm.roomNumber,
-          deposit: checkInForm.deposit,
-          remarks: checkInForm.remarks,
-          // Add other fields required by CheckInRecord if necessary
-          guestName: currentBookingForCheckin.value.customerName,
-          guestPhone: currentBookingForCheckin.value.phone,
-          checkInTime: new Date().toISOString(), // Or use booking checkin time?
-          expectedCheckOutTime: currentBookingForCheckin.value.checkOutDate, // Adjust format?
-        };
-        await checkInBooking(apiData);
-        ElMessage.success('办理入住成功');
-        checkInVisible.value = false;
-        fetchData();
+        const res = await fetchRooms(params);
+        console.log("API获取房间响应:", res);
+        
+        // 处理返回的房间数据
+        let roomList = [];
+        
+        if (res.data?.data?.list && res.data.data.list.length > 0) {
+          roomList = res.data.data.list;
+        } else if (res.data?.data && Array.isArray(res.data.data)) {
+          roomList = res.data.data;
+        } else if (Array.isArray(res.data)) {
+          roomList = res.data;
+        } else if (res.data?.list && Array.isArray(res.data.list)) {
+          roomList = res.data.list;
+        }
+        
+        console.log("API获取的房间列表:", roomList);
+        
+        if (roomList && roomList.length > 0) {
+          roomsData = roomList;
+        }
       } catch (error) {
-        console.error("Error submitting check-in:", error);
-        ElMessage.error(error.response?.data?.message || '办理入住失败');
-      } finally {
-        loading.value = false;
+        console.error("API获取房间失败:", error);
       }
     }
-  });
+    
+    // 过滤和处理房间数据
+    if (roomsData && roomsData.length > 0) {
+      // 过滤掉没有房间号的数据
+      availableRooms.value = roomsData
+        .filter(room => {
+          const roomNumber = room.roomNumber || room.number || room.room_number;
+          if (!roomNumber) {
+            console.log("过滤掉无效房间:", room);
+            return false;
+          }
+          return true;
+        })
+        .map(room => ({
+          id: room.id,
+          number: room.roomNumber || room.number || room.room_number,
+          type: room.roomTypeName || room.type || (
+            typeof room.roomType === 'object' ? 
+            room.roomType?.name : room.roomType
+          ) || '标准房',
+          floor: room.floor || ''
+        }));
+      
+      console.log("最终处理后的有效房间数据:", availableRooms.value);
+      
+      if (availableRooms.value.length === 0) {
+        ElMessage.warning('无法获取有效的房间数据');
+      }
+    } else {
+      console.log("未获取到任何房间数据");
+      ElMessage.warning('未找到可用房间，请联系系统管理员');
+    }
+  } catch (error) {
+    console.error("办理入住过程中发生错误:", error);
+    ElMessage.error('获取房间数据失败: ' + (error.message || '未知错误'));
+  } finally {
+    loading.value = false;
+  }
 };
 
 // TODO: Implement or fetch room type ID mapping
@@ -1124,15 +1329,46 @@ const roomTypeMap = ref({ // Placeholder - Should be fetched or configured
   '行政套房': 4,
 });
 const getRoomTypeIdFromName = (name) => {
-    return roomTypeMap.value[name];
+    // 首先尝试从硬编码的映射中获取ID
+    const hardcodedId = roomTypeMap.value[name];
+    if (hardcodedId) {
+        console.log("从硬编码映射中找到房型ID:", name, "->", hardcodedId);
+        return hardcodedId;
+    }
+    
+    // 如果在硬编码映射中找不到，尝试从roomTypeList中查找
+    if (roomTypeList.value && roomTypeList.value.length > 0) {
+        const foundType = roomTypeList.value.find(type => 
+            type.name === name || 
+            type.name === name.trim() ||
+            type.name.includes(name) || 
+            name.includes(type.name)
+        );
+        
+        if (foundType) {
+            console.log("从roomTypeList中找到房型ID:", name, "->", foundType.id);
+            return foundType.id;
+        }
+    }
+    
+    console.warn("无法找到房型的ID:", name);
+    return null;
 };
 
 // 查看详情 (Placeholder - can open a new dialog or route)
-const handleView = (row) => {
-  console.log('View booking:', row);
-  // Option 1: Fetch details and show in a dialog
-  // Option 2: Navigate to a details route: router.push(`/admin/booking/${row.id}`)
-  ElMessage.info('查看功能待实现');
+const handleView = async (row) => {
+  try {
+    loading.value = true;
+    // 获取预订详情
+    const response = await getBookingDetails(row.id);
+    currentBooking.value = response.data?.data || row;
+    detailVisible.value = true;
+  } catch (error) {
+    console.error("获取预订详情失败:", error);
+    ElMessage.error('获取预订详情失败');
+  } finally {
+    loading.value = false;
+  }
 };
 
 // 房型预览
@@ -1141,12 +1377,8 @@ const handleRoomPreview = (row) => {
   roomPreviewVisible.value = true;
 };
 
-// Other handlers for quick actions (Placeholder)
-const openTodayCheckin = () => { ElMessage.info('今日入住列表待实现'); };
-const openTodayCheckout = () => { ElMessage.info('今日离店列表待实现'); };
-const exportBookings = () => { ElMessage.info('导出数据功能待实现'); };
 const showRoomStatus = async () => { 
-  await fetchRoomStatusData(); // Fetch initial data (all floors)
+  await fetchRoomStatusData(selectedFloor.value);
   roomStatusVisible.value = true; 
 };
 
@@ -1154,13 +1386,25 @@ const showRoomStatus = async () => {
 const showPendingBookings = () => {
   searchForm.status = 'pending';
   handleSearch();
+  ElMessage.success('已筛选待确认预订');
 };
 const showTodayCheckins = () => {
-  // Needs specific logic/API or filter adjustment
-  ElMessage.info('按今日入住筛选待实现');
+  // 重置搜索表单
+  resetSearch();
+  // 设置今日日期范围
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  searchForm.dateRange = [today, tomorrow];
+  searchForm.status = 'confirmed'; // 只筛选已确认的预订
+  handleSearch();
+  ElMessage.success('已筛选今日入住预订');
 };
 const showOccupancyDetails = () => {
-  ElMessage.info('显示入住详情待实现');
+  // 打开入住率详情弹窗
+  occupancyDetailVisible.value = true;
 };
 
 // Simplified room status for dialog (Keep as is for now)
@@ -1223,28 +1467,26 @@ const fetchRoomStatusData = async (floor = 'all') => {
   roomStatusLoading.value = true;
   try {
     const params = {
-      // Assuming API needs a large size to get all, or implement pagination later
-      pageSize: 1000, 
-      page: 1 // Assuming 1-based page index
+      pageSize: 1000,
+      page: 0,
     };
+    
     if (floor !== 'all') {
       params.floor = floor;
     }
-    // Add other filters if needed, e.g., status
+    if (selectedRoomType.value !== 'all') {
+      params.roomTypeId = selectedRoomType.value;
+    }
+    if (selectedStatus.value !== 'all') {
+      params.status = selectedStatus.value;
+    }
     
-    // Clean params (remove undefined/null)
-    Object.keys(params).forEach(key => (params[key] == null || params[key] === '') && delete params[key]);
-
     const res = await fetchRooms(params);
-    // Adjust access based on actual API response structure for room list
-    roomStatusList.value = res.data?.data?.list || []; 
-    // Optionally, fetch total rooms count here if not available elsewhere reliably
-    // totalRooms.value = res.data?.data?.total || 0; 
-
+    roomStatusList.value = res.data?.data?.list || [];
   } catch (error) {
     console.error("Error fetching room status data:", error);
     ElMessage.error('获取房态数据失败');
-    roomStatusList.value = []; // Clear list on error
+    roomStatusList.value = [];
   } finally {
     roomStatusLoading.value = false;
   }
@@ -1252,67 +1494,333 @@ const fetchRoomStatusData = async (floor = 'all') => {
 
 // ADD Watcher for selectedFloor
 watch(selectedFloor, (newFloor) => {
-  // Fetch data only if the dialog is visible or intended to be shown
-  // This check might be optional depending on desired behavior
-  if (roomStatusVisible.value) { 
-      fetchRoomStatusData(newFloor);
-  }
+  fetchRoomStatusData(newFloor);
 });
 
 // ADD Computed properties for stats in dialog
-const availableRoomCount = computed(() => 
-  roomStatusList.value.filter(room => room.status === 'AVAILABLE').length
-);
-const occupiedRoomCount = computed(() => 
-  roomStatusList.value.filter(room => room.status === 'OCCUPIED').length
-);
-// Use totalRooms from main stats, assuming it's accurate enough for dialog
-const currentOccupancyRate = computed(() => 
-  totalRooms.value > 0 
-    ? Math.round((occupiedRoomCount.value / totalRooms.value) * 100) 
-    : 0
-);
+const availableRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'AVAILABLE').length;
+});
+const occupiedRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'OCCUPIED').length;
+});
+const reservedRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'RESERVED').length;
+});
+const currentOccupancyRate = computed(() => {
+  const total = roomStatusList.value.length;
+  if (total === 0) return 0;
+  return Math.round((occupiedRoomCount.value / total) * 100);
+});
 
 // ADD Helper functions for room status display
 const getRoomStatusClass = (status) => {
-  // Assuming backend status matches these keys (adjust if needed)
   const statusMap = {
-    AVAILABLE: 'available',
-    OCCUPIED: 'occupied',
-    RESERVED: 'reserved', // Assuming this status exists
-    CLEANING: 'cleaning', // Assuming this status exists
-    MAINTENANCE: 'maintenance' // Assuming this status exists
+    'AVAILABLE': 'room-available',
+    'OCCUPIED': 'room-occupied',
+    'RESERVED': 'room-reserved',
+    'MAINTENANCE': 'room-maintenance',
+    'OUT_OF_SERVICE': 'room-out-of-service'
   };
-  return statusMap[status] || 'unknown'; // Default class for unknown status
+  return statusMap[status] || 'room-unknown';
 };
 
 const getRoomStatusText = (status) => {
   const statusMap = {
-    AVAILABLE: '可用',
-    OCCUPIED: '已入住',
-    RESERVED: '已预订',
-    CLEANING: '清洁中',
-    MAINTENANCE: '维护中'
+    'AVAILABLE': '可用',
+    'OCCUPIED': '已入住',
+    'RESERVED': '已预订',
+    'MAINTENANCE': '维修中',
+    'OUT_OF_SERVICE': '停用'
   };
   return statusMap[status] || '未知状态';
 };
 
 // ... (The rest of the code if any)
 
+// 入住率详情弹窗
+const occupancyDetailVisible = ref(false);
+
+// 入住率颜色计算
+const occupancyRateColor = computed(() => {
+  const rate = occupancyRate.value;
+  if (rate < 30) return '#67C23A'; // 绿色 - 低入住率
+  if (rate < 70) return '#E6A23C'; // 黄色 - 中等入住率
+  return '#F56C6C'; // 红色 - 高入住率
+});
+
+// 预订详情
+const detailVisible = ref(false);
+const currentBooking = ref(null);
+
+// 其他处理程序
+const openTodayCheckin = () => { 
+  // 调用封装好的今日入住筛选函数
+  showTodayCheckins(); 
+};
+
+const openTodayCheckout = () => {
+  // 重置搜索表单
+  resetSearch();
+  // 设置今日日期
+  const today = new Date();
+  today.setHours(0, 0, 0, 0);
+  const tomorrow = new Date(today);
+  tomorrow.setDate(tomorrow.getDate() + 1);
+  
+  // 设置离店日期为今天
+  searchForm.dateRange = [null, tomorrow];
+  searchForm.status = 'checked-in'; // 已入住状态
+  handleSearch();
+  ElMessage.success('已筛选今日离店预订');
+};
+
+const exportBookings = async () => {
+  try {
+    loading.value = true;
+    // 创建导出参数，使用当前筛选条件但不分页
+    const exportParams = {
+      status: searchForm.status || undefined,
+      guestName: searchForm.customerName || undefined,
+      guestPhone: searchForm.phone || undefined,
+      bookingNo: searchForm.bookingNo || undefined,
+      startDate: searchForm.dateRange ? searchForm.dateRange[0] : undefined,
+      endDate: searchForm.dateRange ? searchForm.dateRange[1] : undefined,
+      page: 0,
+      size: 1000 // 导出最多1000条记录
+    };
+    
+    // 获取数据
+    const response = await fetchBookings(exportParams);
+    const bookings = response.data?.data?.content || [];
+    
+    if (bookings.length === 0) {
+      ElMessage.warning('没有数据可导出');
+      loading.value = false;
+      return;
+    }
+    
+    // 准备Excel数据
+    const exportData = bookings.map(item => ({
+      '预订号': item.bookingNo || '',
+      '客户姓名': item.guestName || '',
+      '手机号': item.guestPhone || '',
+      '房间类型': item.roomTypeName || '',
+      '房间号': item.roomNumber || '未分配',
+      '房价(元/晚)': item.roomPrice || '',
+      '入住日期': formatDateToYMD(item.checkInTime),
+      '离店日期': formatDateToYMD(item.checkOutTime),
+      '支付状态': getPaymentStatusText(item.paymentStatus),
+      '预订状态': getStatusText(item.status),
+      '总价': item.totalPrice || '',
+      '特殊要求': item.specialRequests || ''
+    }));
+    
+    // 创建工作簿和工作表
+    const worksheet = XLSX.utils.json_to_sheet(exportData);
+    const workbook = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(workbook, worksheet, '预订数据');
+    
+    // 生成文件名
+    const now = new Date();
+    const fileName = `预订数据_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}.xlsx`;
+    
+    // 导出Excel
+    XLSX.writeFile(workbook, fileName);
+    
+    ElMessage.success('数据导出成功');
+  } catch (error) {
+    console.error('导出数据失败:', error);
+    ElMessage.error('导出数据失败，请稍后重试');
+  } finally {
+    loading.value = false;
+  }
+};
+
+const handleQuickPayment = async (row) => {
+  try {
+    // 根据当前支付状态确定提示文本
+    const paymentTypeText = row.paymentStatus?.toUpperCase() === 'UNPAID' ? '全款' : '剩余款项';
+    
+    await ElMessageBox.confirm(
+      `确认为预订号 ${row.bookingNo} 进行${paymentTypeText}支付吗?`, 
+      '快捷支付', 
+      {
+        confirmButtonText: '确认支付',
+        cancelButtonText: '取消',
+        type: 'warning',
+      }
+    );
+    
+    loading.value = true;
+    // 调用支付API
+    await processPayment(row.id, row.paymentStatus?.toUpperCase() === 'UNPAID' ? 'FULL' : 'REMAINING');
+    ElMessage.success(`${paymentTypeText}支付成功`);
+    fetchData(); // 刷新数据
+  } catch (error) {
+    if (error !== 'cancel') {
+      console.error("支付处理错误:", error);
+      ElMessage.error(error.response?.data?.message || '支付处理失败');
+    }
+  } finally {
+    loading.value = false;
+  }
+};
+
+const formatRoomOption = (room) => {
+  // 确保房间号存在
+  const roomNumber = room.roomNumber || room.number || '';
+  if (!roomNumber) {
+    return null; // 如果没有房间号，返回null，不应该显示此选项
+  }
+  
+  // 尝试获取房间类型，优先使用roomTypeName
+  let roomType = '';
+  if (room.roomTypeName) {
+    roomType = room.roomTypeName;
+  } else if (room.type) {
+    roomType = room.type;
+  } else if (room.roomType) {
+    // roomType可能是对象或字符串
+    if (typeof room.roomType === 'object' && room.roomType !== null) {
+      roomType = room.roomType.name || '';
+    } else {
+      roomType = room.roomType;
+    }
+  }
+  
+  return roomType ? `${roomNumber} (${roomType})` : roomNumber;
+};
+
+const handleCheckInSubmit = async () => {
+  if (!checkInFormRef.value) return;
+  await checkInFormRef.value.validate(async (valid) => {
+    if (valid) {
+      loading.value = true;
+      try {
+        // 确保预订信息完整
+        if (!currentBookingForCheckin.value) {
+          ElMessage.error('无法获取预订信息，请刷新页面重试');
+          return;
+        }
+        
+        // 确保选择了房间号
+        if (!checkInForm.roomNumber) {
+          ElMessage.error('请选择一个房间号');
+          return;
+        }
+        
+        // 在提交前打印选择的房间信息
+        console.log('选择的房间号:', checkInForm.roomNumber);
+        console.log('当前可用房间列表:', availableRooms.value);
+        
+        // 查找选择的房间详细信息
+        const selectedRoom = availableRooms.value.find(room => 
+          (room.roomNumber || room.number || room.id) == checkInForm.roomNumber
+        );
+        console.log('选择的房间详情:', selectedRoom);
+        
+        // 构建API数据
+        const apiData = {
+          reservationId: currentBookingForCheckin.value.id,
+          roomNumber: checkInForm.roomNumber,
+          roomId: selectedRoom?.id, // 添加房间ID（如果有）
+          deposit: checkInForm.deposit,
+          remarks: checkInForm.remarks,
+          // 确保必填字段有值
+          guestName: currentBookingForCheckin.value.customerName || currentBookingForCheckin.value.guestName || '客人',
+          guestPhone: currentBookingForCheckin.value.phone || currentBookingForCheckin.value.guestPhone || '无',
+          checkInTime: new Date().toISOString(),
+          expectedCheckOutTime: currentBookingForCheckin.value.checkOutDate || 
+                              currentBookingForCheckin.value.checkOutTime ||
+                              new Date(Date.now() + 24*60*60*1000).toISOString() // 默认次日
+        };
+        
+        console.log('提交入住数据:', apiData);
+        
+        // API已经内置了错误处理和模拟数据功能
+        const response = await checkInBooking(apiData);
+        console.log('入住API响应:', response);
+        
+        ElMessage.success(response.data?.message || '办理入住成功');
+        checkInVisible.value = false;
+        fetchData(); // 刷新列表数据
+      } catch (error) {
+        console.error("提交入住信息时出错:", error);
+        ElMessage.error('提交入住信息时发生错误: ' + (error.message || '未知错误'));
+      } finally {
+        loading.value = false;
+      }
+    }
+  });
+};
+
+// 添加直接从数据库获取可用房间的函数
+const loadAvailableRoomsFromDB = async () => {
+  try {
+    console.log("正在直接从数据库获取可用房间...");
+    
+    // 直接使用fetch请求API获取房间数据
+    const response = await fetch('/api/rooms?status=AVAILABLE');
+    
+    if (!response.ok) {
+      throw new Error(`API响应错误: ${response.status}`);
+    }
+    
+    const roomData = await response.json();
+    console.log("直接获取的可用房间数据:", roomData);
+    
+    // 解析不同格式的响应数据
+    let roomsList = [];
+    
+    if (Array.isArray(roomData)) {
+      roomsList = roomData;
+    } else if (roomData.data && Array.isArray(roomData.data)) {
+      roomsList = roomData.data;
+    } else if (roomData.data?.list && Array.isArray(roomData.data.list)) {
+      roomsList = roomData.data.list;
+    } else if (roomData.list && Array.isArray(roomData.list)) {
+      roomsList = roomData.list;
+    }
+    
+    if (roomsList.length === 0) {
+      console.warn("直接获取的数据中未找到房间列表");
+      return [];
+    }
+    
+    // 处理和规范化房间数据
+    return roomsList.map(room => ({
+      id: room.id,
+      roomNumber: room.roomNumber || room.room_number || room.number,
+      number: room.roomNumber || room.room_number || room.number,
+      roomTypeId: room.roomTypeId || room.room_type_id,
+      roomTypeName: room.roomTypeName || room.room_type_name || room.type,
+      type: room.roomTypeName || room.room_type_name || room.type || '标准房',
+      floor: room.floor,
+      status: room.status
+    }));
+  } catch (error) {
+    console.error("直接获取房间数据失败:", error);
+    return [];
+  }
+};
+
 </script>
 
 <style scoped>
+/* 更改整体样式 */
 .bookings-container {
   padding: 20px;
   min-height: 100vh;
-  background-color: #f8fafc;
+  background-color: #f5f7fa;
 }
 
+/* 页面标题区域样式 */
 .page-header {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: 20px;
+  margin-bottom: 24px;
   background: #fff;
   padding: 24px 30px;
   border-radius: 12px;
@@ -1339,6 +1847,388 @@ const getRoomStatusText = (status) => {
   font-size: 14px;
 }
 
+/* 统计卡片区域样式 */
+.stats-container {
+  margin-bottom: 24px;
+}
+
+.stats-card {
+  border-radius: 12px;
+  box-shadow: 0 4px 15px rgba(0, 0, 0, 0.06);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  height: 100%;
+  overflow: hidden;
+  border: 1px solid rgba(220, 225, 235, 0.5);
+}
+
+.stats-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stats-card-content {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+}
+
+.stats-icon-wrapper {
+  width: 64px;
+  height: 64px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 20px;
+  transition: all 0.3s ease;
+  box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stats-icon-wrapper .el-icon {
+  font-size: 28px;
+  color: white;
+}
+
+.pending-card .stats-icon-wrapper {
+  background: linear-gradient(135deg, #f97316, #ea580c);
+}
+
+.confirmed-card .stats-icon-wrapper {
+  background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
+
+.occupancy-card .stats-icon-wrapper {
+  background: linear-gradient(135deg, #10b981, #059669);
+}
+
+.stats-card:hover .stats-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.stats-info {
+  flex: 1;
+}
+
+.stats-value {
+  font-size: 30px;
+  font-weight: 600;
+  color: #1e293b;
+  margin-bottom: 6px;
+  transition: all 0.3s ease;
+}
+
+.stats-card:hover .stats-value {
+  transform: scale(1.05);
+}
+
+.stats-label {
+  font-size: 14px;
+  color: #64748b;
+  font-weight: 500;
+}
+
+/* 快速操作区样式 */
+.quick-actions-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(220, 225, 235, 0.5);
+}
+
+.quick-actions-header {
+  font-size: 18px;
+  font-weight: 600;
+  color: #1e293b;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.quick-actions {
+  display: flex;
+  flex-wrap: wrap;
+  padding: 15px 0;
+}
+
+.quick-action-item {
+  flex: 1;
+  min-width: 120px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 20px 15px;
+  cursor: pointer;
+  transition: all 0.3s;
+  border-radius: 8px;
+}
+
+.quick-action-icon {
+  width: 56px;
+  height: 56px;
+  border-radius: 50%;
+  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 12px;
+  transition: all 0.3s;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+}
+
+.quick-action-icon .el-icon {
+  font-size: 24px;
+  color: white;
+}
+
+.quick-action-item:hover {
+  background-color: #f1f5f9;
+  transform: translateY(-3px);
+}
+
+.quick-action-item:hover .quick-action-icon {
+  transform: scale(1.1);
+  box-shadow: 0 8px 20px rgba(13, 110, 253, 0.3);
+}
+
+.quick-action-item span {
+  font-size: 14px;
+  color: #475569;
+  font-weight: 500;
+  margin-top: 8px;
+  transition: all 0.3s;
+}
+
+/* 搜索卡片样式 */
+.search-card {
+  margin-bottom: 24px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(220, 225, 235, 0.5);
+}
+
+.search-form {
+  padding: 5px;
+}
+
+.search-form :deep(.el-form-item__label) {
+  font-weight: 500;
+  color: #475569;
+}
+
+.search-form :deep(.el-input__wrapper),
+.search-form :deep(.el-textarea__inner),
+.search-form :deep(.el-select__wrapper) {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.search-form :deep(.el-input__wrapper:hover),
+.search-form :deep(.el-textarea__inner:hover),
+.search-form :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 列表卡片样式 */
+.list-card {
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
+  border: 1px solid rgba(220, 225, 235, 0.5);
+}
+
+/* 表格样式 */
+.booking-table {
+  width: 100%;
+  margin: 10px 0;
+}
+
+.booking-table :deep(th.el-table__cell) {
+  background-color: #f8fafc;
+  font-weight: 600;
+  color: #1e293b;
+  padding: 16px 12px;
+}
+
+.booking-table :deep(.el-table__row) {
+  transition: all 0.2s ease;
+}
+
+.booking-table :deep(.el-table__row:hover) {
+  background-color: #f0f5ff !important;
+}
+
+/* 统一按钮样式 */
+.search-btn {
+  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
+  border: none;
+  height: 40px;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
+  transition: all 0.3s ease;
+}
+
+.search-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
+}
+
+.reset-btn {
+  border-color: #dcdfe6;
+  height: 40px;
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.reset-btn:hover {
+  background-color: #f8f9fa;
+  color: #343a40;
+}
+
+/* 分页容器样式 */
+.pagination-container {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 20px;
+  padding: 10px 0;
+}
+
+/* 对话框样式 */
+.custom-dialog {
+  border-radius: 12px;
+  overflow: hidden;
+}
+
+.custom-dialog :deep(.el-dialog__header) {
+  padding: 20px 24px;
+  background: #f8fafc;
+  border-bottom: 1px solid #eaedf3;
+}
+
+.custom-dialog :deep(.el-dialog__title) {
+  font-weight: 600;
+  font-size: 18px;
+  color: #1e293b;
+}
+
+.custom-dialog :deep(.el-dialog__body) {
+  padding: 24px;
+}
+
+/* 表单样式 */
+.booking-form .el-form-item__label {
+  font-weight: 500;
+  color: #475569;
+}
+
+.booking-form :deep(.el-input__wrapper),
+.booking-form :deep(.el-textarea__inner),
+.booking-form :deep(.el-select__wrapper) {
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.03);
+  border-radius: 8px;
+  transition: all 0.3s ease;
+}
+
+.booking-form :deep(.el-input__wrapper:hover),
+.booking-form :deep(.el-textarea__inner:hover),
+.booking-form :deep(.el-select__wrapper:hover) {
+  box-shadow: 0 3px 10px rgba(0, 0, 0, 0.05);
+}
+
+/* 对话框上的按钮 */
+.dialog-footer .submit-btn {
+  min-width: 140px;
+  height: 44px;
+  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  transition: all 0.3s ease;
+}
+
+.dialog-footer .submit-btn:hover {
+  background: linear-gradient(135deg, #0b5ed7, #153576);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.35);
+}
+
+.dialog-footer .cancel-btn {
+  min-width: 120px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.3s ease;
+}
+
+.dialog-footer .cancel-btn:hover {
+  background-color: #f8f9fa;
+  color: #343a40;
+  border-color: #ced4da;
+}
+
+/* 状态标签样式 */
+.status-tag {
+  padding: 6px 14px;
+  border-radius: 6px;
+  font-weight: 500;
+  font-size: 13px;
+  letter-spacing: 0.3px;
+}
+
+/* 操作区域按钮样式 */
+.action-buttons {
+  display: flex;
+  gap: 8px;
+}
+
+.action-buttons-wrap {
+  flex-wrap: wrap;
+  row-gap: 5px;
+}
+
+.action-btn {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  border-radius: 6px;
+  padding: 8px 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+}
+
+.action-btn:hover {
+  transform: translateY(-2px);
+  opacity: 0.9;
+}
+
+/* 预订详情弹窗 */
+.booking-detail {
+  padding: 10px;
+}
+
+.booking-detail-actions {
+  margin-top: 20px;
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+}
+
 .btn-add {
   background: linear-gradient(135deg, #0d6efd, #1a3e8f);
   border: none;
@@ -1357,139 +2247,6 @@ const getRoomStatusText = (status) => {
   box-shadow: 0 6px 16px rgba(13, 110, 253, 0.35);
 }
 
-.search-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(220, 225, 235, 0.5);
-}
-
-.search-form {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 16px;
-  padding: 16px 5px;
-}
-
-.search-btn, .reset-btn {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  border-radius: 8px;
-  padding: 10px 18px;
-  font-weight: 500;
-}
-
-.search-btn {
-  background: linear-gradient(135deg, #0d6efd, #1a3e8f);
-  border: none;
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-}
-
-.search-btn:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
-}
-
-.reset-btn {
-  border: 1px solid #dee2e6;
-  background-color: #fff;
-  color: #6c757d;
-}
-
-.reset-btn:hover {
-  background-color: #f8f9fa;
-  color: #343a40;
-}
-
-.list-card {
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-  border: 1px solid rgba(220, 225, 235, 0.5);
-  overflow: hidden;
-}
-
-.booking-table {
-  margin-bottom: 20px;
-}
-
-.booking-table :deep(.el-table__header-wrapper) {
-  background: #f8fafc;
-}
-
-.booking-table :deep(.el-table__header) {
-  font-weight: 600;
-  color: #343a40;
-}
-
-.booking-table :deep(.el-table__row) {
-  transition: all 0.2s ease;
-}
-
-.booking-table :deep(.el-table__row:hover) {
-  background-color: #f0f5ff !important;
-}
-
-.status-tag {
-  padding: 6px 14px;
-  border-radius: 6px;
-  font-weight: 500;
-  font-size: 13px;
-  letter-spacing: 0.3px;
-}
-
-.action-buttons {
-  display: flex;
-  gap: 8px;
-  flex-wrap: wrap;
-}
-
-.action-btn {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-size: 13px;
-  padding: 4px 0;
-}
-
-.pagination-container {
-  margin-top: 20px;
-  display: flex;
-  justify-content: flex-end;
-  padding: 0 5px 5px;
-}
-
-.custom-pagination {
-  padding: 8px;
-  border-radius: 8px;
-  background: #f8fafc;
-}
-
-.custom-dialog {
-  border-radius: 12px;
-  overflow: hidden;
-}
-
-.custom-dialog :deep(.el-dialog__header) {
-  padding: 20px 24px;
-  background: #f8fafc;
-  border-bottom: 1px solid #eaedf3;
-}
-
-.custom-dialog :deep(.el-dialog__title) {
-  font-weight: 600;
-  font-size: 18px;
-  color: #333;
-}
-
-.custom-dialog :deep(.el-dialog__body) {
-  padding: 24px;
-}
-
-.booking-form {
-  padding: 10px 0;
-}
-
 .dialog-footer {
   width: 100%;
   display: flex;
@@ -1497,656 +2254,57 @@ const getRoomStatusText = (status) => {
   gap: 12px;
 }
 
-.cancel-btn, .submit-btn {
-  min-width: 90px;
-  border-radius: 8px;
-  padding: 10px 20px;
-  font-weight: 500;
-}
-
-.submit-btn {
+.dialog-footer .submit-btn {
+  min-width: 140px;
+  height: 44px;
   background: linear-gradient(135deg, #0d6efd, #1a3e8f);
   border: none;
-  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.2);
-}
-
-.submit-btn:hover {
-  background: linear-gradient(135deg, #0a5ad1, #14307a);
-  transform: translateY(-2px);
-  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.3);
-}
-
-.booking-detail {
-  line-height: 1.8;
-}
-
-.booking-detail p {
-  margin: 10px 0;
-  border-bottom: 1px dashed #eaedf3;
-  padding-bottom: 10px;
-  display: flex;
-}
-
-.booking-detail p strong {
-  min-width: 100px;
-  color: #495057;
-}
-
-.booking-detail p:last-child {
-  border-bottom: none;
-}
-
-/* 响应式设计优化 */
-@media (max-width: 768px) {
-  .page-header {
-    flex-direction: column;
-    align-items: flex-start;
-    gap: 15px;
-    padding: 20px;
-  }
-  
-  .btn-add {
-    width: 100%;
-    justify-content: center;
-  }
-  
-  .search-form {
-    flex-direction: column;
-    gap: 10px;
-  }
-  
-  .search-form .el-form-item {
-    margin-bottom: 10px;
-    width: 100%;
-  }
-}
-
-.room-preview-dialog :deep(.el-dialog__body) {
-  padding: 0;
-}
-
-.room-carousel {
-  margin-bottom: 20px;
-}
-
-.carousel-content {
-  position: relative;
-  height: 100%;
-}
-
-.room-image {
-  width: 100%;
-  height: 100%;
-  object-fit: cover;
-}
-
-.image-title {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  background: rgba(0, 0, 0, 0.5);
-  color: white;
-  padding: 10px;
-  font-size: 14px;
-}
-
-.room-info {
-  padding: 0 24px 24px;
-}
-
-.room-info h3 {
-  font-size: 18px;
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.room-details {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 12px;
-  margin-bottom: 15px;
-}
-
-.room-details p {
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  margin: 0;
-  color: #555;
-}
-
-.room-description {
-  background: #f8f9fa;
-  padding: 12px;
-  border-radius: 6px;
-  color: #555;
-  line-height: 1.6;
-}
-
-/* 数据统计卡片样式 */
-.stats-container {
-  margin-bottom: 20px;
-}
-
-.stats-card {
-  border-radius: 12px;
-  height: 100px;
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
-  border: none;
-  display: flex;
-  overflow: hidden;
-  transition: all 0.3s ease;
-  position: relative;
-  cursor: pointer;
-}
-
-.stats-card:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 8px 16px rgba(0, 0, 0, 0.12);
-}
-
-.stats-icon {
-  font-size: 20px;
-  width: 46px;
-  height: 46px;
   display: flex;
   align-items: center;
   justify-content: center;
-  border-radius: 10px;
-  position: absolute;
-  top: 15px;
-  left: 15px;
-}
-
-.stats-info {
-  padding: 15px 15px 15px 75px;
-  width: 100%;
-}
-
-.stats-value {
-  font-size: 28px;
-  font-weight: 600;
-  margin-bottom: 5px;
-}
-
-.stats-label {
-  font-size: 14px;
-  color: #6c757d;
-}
-
-.pending-card {
-  background: linear-gradient(135deg, #fff, #f8f8ff);
-}
-
-.pending-card .stats-icon {
-  background-color: rgba(255, 193, 7, 0.2);
-  color: #f0ad4e;
-}
-
-.pending-card .stats-value {
-  color: #f0ad4e;
-}
-
-.confirmed-card {
-  background: linear-gradient(135deg, #fff, #f0f8ff);
-}
-
-.confirmed-card .stats-icon {
-  background-color: rgba(13, 110, 253, 0.15);
-  color: #0d6efd;
-}
-
-.confirmed-card .stats-value {
-  color: #0d6efd;
-}
-
-.checkin-card {
-  background: linear-gradient(135deg, #fff, #f0fff0);
-}
-
-.checkin-card .stats-icon {
-  background-color: rgba(40, 167, 69, 0.15);
-  color: #28a745;
-}
-
-.checkin-card .stats-value {
-  color: #28a745;
-}
-
-.revenue-card {
-  background: linear-gradient(135deg, #fff, #fff0f5);
-}
-
-.revenue-card .stats-icon {
-  background-color: rgba(220, 53, 69, 0.15);
-  color: #dc3545;
-}
-
-.revenue-card .stats-value {
-  color: #dc3545;
-}
-
-/* 快速操作区样式 */
-.quick-actions-card {
-  margin-bottom: 20px;
-  border-radius: 12px;
-  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.06);
-}
-
-.quick-actions-header {
-  margin-bottom: 15px;
-}
-
-.quick-actions-header h3 {
-  font-size: 16px;
-  margin: 0;
-  color: #333;
-  font-weight: 600;
-}
-
-.quick-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 20px;
-}
-
-.quick-action-item {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  width: 100px;
-  height: 90px;
-  background-color: #f8fafc;
-  border-radius: 10px;
-  cursor: pointer;
-  transition: all 0.3s ease;
-}
-
-.quick-action-item:hover {
-  background-color: #f0f5ff;
-  transform: translateY(-3px);
-}
-
-.quick-action-item .el-icon {
-  font-size: 24px;
-  color: #0d6efd;
-  margin-bottom: 8px;
-}
-
-.quick-action-item span {
-  font-size: 14px;
-  color: #495057;
-  text-align: center;
-}
-
-.custom-switch {
-  --el-switch-on-color: #0d6efd;
-}
-
-/* 详情弹窗样式 */
-.detail-dialog-content {
-  padding: 20px 0;
-}
-
-.detail-dialog-content h3 {
-  font-size: 20px;
-  font-weight: 600;
-  margin-bottom: 20px;
-  color: #333;
-  border-bottom: 1px solid #eee;
-  padding-bottom: 10px;
-}
-
-.detail-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.detail-item {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  border: 1px solid #eee;
-}
-
-.detail-item-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 10px;
-  padding-bottom: 10px;
-  border-bottom: 1px dashed #eee;
-}
-
-.booking-no {
-  font-weight: 600;
-  color: #0d6efd;
-}
-
-.booking-date, .booking-time {
-  color: #6c757d;
-}
-
-.detail-item-body {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-  font-size: 14px;
-}
-
-/* 入住率详情样式 */
-.occupancy-stats {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 15px;
-  margin-bottom: 20px;
-}
-
-.occupancy-item {
-  background: #f8f9fa;
-  border-radius: 8px;
-  padding: 15px;
-  text-align: center;
-  border: 1px solid #eee;
-}
-
-.occupancy-label {
-  font-size: 14px;
-  color: #6c757d;
-  margin-bottom: 5px;
-}
-
-.occupancy-value {
-  font-size: 24px;
-  font-weight: 600;
-  color: #0d6efd;
-}
-
-.room-type-stats h4 {
-  font-size: 16px;
-  margin-bottom: 15px;
-  color: #333;
-}
-
-.room-type-table {
-  width: 100%;
-  border-collapse: collapse;
-}
-
-.room-type-table th, .room-type-table td {
-  padding: 10px;
-  text-align: center;
-  border: 1px solid #eee;
-}
-
-.room-type-table th {
-  background: #f8f9fa;
-  font-weight: 600;
-}
-
-/* 今日待办样式 */
-.task-list {
-  display: flex;
-  flex-direction: column;
-  gap: 15px;
-}
-
-.task-item {
-  display: flex;
-  gap: 15px;
-  padding: 15px;
-  background: #f8f9fa;
-  border-radius: 8px;
-  border: 1px solid #eee;
-}
-
-.task-icon {
-  width: 40px;
-  height: 40px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 50%;
-  margin-right: 12px;
-  flex-shrink: 0;
-}
-
-.task-icon.vip {
-  background-color: rgba(255, 193, 7, 0.2);
-  color: #ffc107;
-}
-
-.task-icon.checkout {
-  background-color: rgba(13, 110, 253, 0.15);
-  color: #0d6efd;
-}
-
-.task-icon.service {
-  background-color: rgba(40, 167, 69, 0.15);
-  color: #28a745;
-}
-
-.task-icon.complaint {
-  background-color: rgba(220, 53, 69, 0.15);
-  color: #dc3545;
-}
-
-.task-icon.cleaning {
-  background-color: rgba(111, 66, 193, 0.15);
-  color: #6f42c1;
-}
-
-.task-content {
-  flex-grow: 1;
-}
-
-.task-text {
-  font-size: 14px;
-  margin-bottom: 5px;
-}
-
-.task-status {
-  font-size: 12px;
-  color: #6c757d;
-}
-
-.task-status-tag {
-  background-color: #6c757d;
-}
-
-/* 房态一览样式 */
-.room-status-dialog {
-  min-width: 500px;
-}
-
-.room-status-dialog :deep(.el-dialog__body) {
-  padding: 0;
-  height: 100%;
-  overflow: hidden;
-}
-
-.room-status-dialog :deep(.el-dialog__body) {
-  padding: 0;
-  max-height: 80vh;
-  overflow: auto;
-}
-
-.room-status-dialog :deep(.el-dialog__header) {
-  border-bottom: 1px solid #eaedf3;
-  padding: 16px 20px;
-}
-
-:deep(.room-status-dialog .el-dialog) {
-  margin: 0 !important;
-  height: 100%;
-  display: flex;
-  flex-direction: column;
-}
-
-:deep(.room-status-dialog .el-dialog__body) {
-  flex: 1;
-  overflow: auto;
-}
-
-.simplified-room-status {
-  padding: 20px;
-}
-
-.status-header {
-  margin-bottom: 24px;
-  text-align: center;
-}
-
-.status-header h3 {
-  font-size: 24px;
-  margin-bottom: 8px;
-  color: #333;
-}
-
-.room-stats-cards {
-  margin-bottom: 24px;
-}
-
-.stat-card {
-  border: none;
-  border-radius: 8px;
-  overflow: hidden;
-}
-
-.stat-card-content {
-  display: flex;
-  align-items: center;
-  padding: 16px;
-}
-
-.stat-icon-wrapper {
-  width: 48px;
-  height: 48px;
-  border-radius: 8px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  margin-right: 16px;
-  color: white;
-}
-
-.stat-info {
-  display: flex;
-  flex-direction: column;
-}
-
-.stat-value {
-  font-size: 24px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.stat-title {
-  font-size: 14px;
-  color: #666;
-}
-
-.floor-selector {
-  margin-bottom: 24px;
-  display: flex;
-  align-items: center;
-  gap: 16px;
-}
-
-.simple-room-grid {
-  display: grid;
-  grid-template-columns: repeat(6, 1fr);
-  gap: 16px;
-}
-
-.simple-room-cell {
-  padding: 16px;
-  border-radius: 8px;
-  position: relative;
-  height: 100px;
-  display: flex;
-  flex-direction: column;
-  justify-content: space-between;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-.simple-room-cell:hover {
-  transform: translateY(-5px);
-  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
-}
-
-.simple-room-cell.available {
-  background-color: rgba(40, 167, 69, 0.1);
-  border: 1px solid rgba(40, 167, 69, 0.2);
-}
-
-.simple-room-cell.occupied {
-  background-color: rgba(220, 53, 69, 0.1);
-  border: 1px solid rgba(220, 53, 69, 0.2);
-}
-
-.simple-room-cell.reserved {
-  background-color: rgba(255, 193, 7, 0.1);
-  border: 1px solid rgba(255, 193, 7, 0.2);
-}
-
-.simple-room-cell.cleaning {
-  background-color: rgba(23, 162, 184, 0.1);
-  border: 1px solid rgba(23, 162, 184, 0.2);
-}
-
-.simple-room-cell.maintenance {
-  background-color: rgba(108, 117, 125, 0.1);
-  border: 1px solid rgba(108, 117, 125, 0.2);
-}
-
-.room-number {
-  font-weight: 600;
-  font-size: 18px;
-}
-
-.room-type {
-  font-size: 14px;
-  color: #666;
-}
-
-.room-price {
-  font-size: 14px;
+  gap: 8px;
   font-weight: 500;
-  color: #e6a23c;
+  border-radius: 8px;
+  box-shadow: 0 4px 12px rgba(13, 110, 253, 0.25);
+  transition: all 0.3s ease;
 }
 
-.room-status-tag {
-  position: absolute;
-  top: 8px;
-  right: 8px;
-  font-size: 12px;
-  padding: 2px 6px;
-  border-radius: 4px;
-  color: white;
+.dialog-footer .submit-btn:hover {
+  background: linear-gradient(135deg, #0b5ed7, #153576);
+  transform: translateY(-2px);
+  box-shadow: 0 6px 16px rgba(13, 110, 253, 0.35);
 }
 
-.room-status-tag.available {
-  background-color: #28a745;
+.dialog-footer .cancel-btn {
+  min-width: 120px;
+  height: 44px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  font-weight: 500;
+  border-radius: 8px;
+  border: 1px solid #dee2e6;
+  background-color: #fff;
+  color: #6c757d;
+  transition: all 0.3s ease;
 }
 
-.room-status-tag.occupied {
-  background-color: #dc3545;
+.dialog-footer .cancel-btn:hover {
+  background-color: #f8f9fa;
+  color: #343a40;
+  border-color: #ced4da;
 }
 
-.room-status-tag.reserved {
-  background-color: #ffc107;
-  color: #333;
+.room-count-info {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #6c757d;
 }
 
-.room-status-tag.cleaning {
-  background-color: #17a2b8;
-}
-
-.room-status-tag.maintenance {
-  background-color: #6c757d;
+.no-rooms-warning {
+  margin-top: 10px;
+  font-size: 14px;
+  color: #f56c6c;
 }
 </style>
