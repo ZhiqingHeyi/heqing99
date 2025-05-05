@@ -103,9 +103,12 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new RuntimeException("指定的房间类型不存在"));
 
         // 3. Find an available room of the specified type for the given time range
-        List<Room> roomsOfType = roomRepository.findByRoomTypeId(roomTypeId);
+        // Define statuses considered available for booking
+        List<Room.RoomStatus> availableStatuses = Arrays.asList(Room.RoomStatus.AVAILABLE, Room.RoomStatus.CLEANING);
+        // Fetch rooms that match the type AND are in an available status
+        List<Room> roomsOfType = roomRepository.findByRoomTypeAndStatusIn(roomType, availableStatuses);
         if (roomsOfType.isEmpty()) {
-            throw new RuntimeException("系统中没有录入该类型的房间");
+            throw new RuntimeException("系统中没有该类型或该类型当前无可用状态（AVAILABLE/CLEANING）的房间"); // Updated message for clarity
         }
 
         Room availableRoom = null;
@@ -131,19 +134,10 @@ public class ReservationServiceImpl implements ReservationService {
 
         // 4. Check if a room was found
         if (availableRoom == null) {
-             System.out.println("房型ID " + roomTypeId + " 在时间段 " + checkInTime + " - " + checkOutTime + " 内已预订满");
-            throw new RuntimeException("该房型在指定时间段内已预订满");
+             System.out.println("房型ID " + roomTypeId + " 在时间段 " + checkInTime + " - " + checkOutTime + " 内已预订满 (或无合适状态的房间)"); // Updated log
+            throw new RuntimeException("该房型在指定时间段内已预订满"); // Keep existing user-facing message
         }
         
-        // Check the status of the specific chosen room (double check)
-        if (availableRoom.getStatus() != Room.RoomStatus.AVAILABLE && availableRoom.getStatus() != Room.RoomStatus.CLEANING) {
-             System.out.println("找到的房间 " + availableRoom.getRoomNumber() + " 状态为 " + availableRoom.getStatus() + ", 不可用");
-             // This case should ideally not happen if the conflict check is correct and room status is managed properly
-             // But as a safeguard, we re-check. Consider re-running the loop or throwing a specific error.
-             // For now, let's throw an error indicating inconsistency.
-             throw new RuntimeException("找到的房间当前状态不可用，请稍后重试或联系管理员"); 
-        }
-
         // 5. Apply discount and create Reservation entity
         BigDecimal discount = userService.getDiscountByUserId(userId);
         BigDecimal originalAmount = BigDecimal.valueOf(totalAmount);
