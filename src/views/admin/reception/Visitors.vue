@@ -235,6 +235,14 @@ import {
   Search, Refresh, Plus, View, Timer, 
   UserFilled, Clock, CircleCheckFilled
 } from '@element-plus/icons-vue'
+import { 
+  fetchVisitors,
+  createVisitor,
+  endVisit,
+  getVisitorDetails,
+  verifyRoom,
+  fetchTodayVisitorStats
+} from '@/api/reception'
 
 // 搜索表单
 const searchForm = reactive({
@@ -246,35 +254,10 @@ const searchForm = reactive({
 
 // 访客列表数据
 const loading = ref(false)
-const visitorList = ref([
-  {
-    id: 1,
-    visitorName: '王小明',
-    phone: '13812345678',
-    idCard: '110101199001011234',
-    roomNumber: '301',
-    guestName: '张三',
-    visitPurpose: '商务洽谈',
-    startTime: '2024-04-03 10:30:00',
-    endTime: null,
-    status: 'visiting'
-  },
-  {
-    id: 2,
-    visitorName: '李梅',
-    phone: '13987654321',
-    idCard: '310101199203034321',
-    roomNumber: '405',
-    guestName: '李四',
-    visitPurpose: '亲友探访',
-    startTime: '2024-04-03 09:15:00',
-    endTime: '2024-04-03 11:30:00',
-    status: 'completed'
-  }
-])
+const visitorList = ref([])
 
 // 统计数据
-const todayVisitorCount = ref(8)
+const todayVisitorCount = ref(0)
 const currentVisitorCount = computed(() => {
   return visitorList.value.filter(visitor => visitor.status === 'visiting').length || 0
 })
@@ -346,24 +329,24 @@ const fetchVisitorList = async () => {
   loading.value = true
   try {
     // 构建查询参数
-    const params = new URLSearchParams()
+    const params = {
+      page: currentPage.value - 1,
+      size: pageSize.value
+    }
+
+    // 添加搜索条件
     if (searchForm.visitorName) {
-      params.append('keyword', searchForm.visitorName)
+      params.keyword = searchForm.visitorName
     }
     
-    let url = '/api/visitor/all'
-    
-    // 根据状态筛选
     if (searchForm.status) {
-      url = `/api/visitor/record/status/${searchForm.status}`
+      params.status = searchForm.status
     }
     
-    // 根据房间号筛选
     if (searchForm.roomNumber) {
-      url = `/api/visitor/room/${searchForm.roomNumber}`
+      params.roomNumber = searchForm.roomNumber
     }
     
-    // 根据日期筛选
     if (searchForm.visitDate) {
       const startTime = new Date(searchForm.visitDate)
       startTime.setHours(0, 0, 0, 0)
@@ -371,47 +354,16 @@ const fetchVisitorList = async () => {
       const endTime = new Date(searchForm.visitDate)
       endTime.setHours(23, 59, 59, 999)
       
-      url = '/api/visitor/date'
-      params.append('startTime', startTime.toISOString())
-      params.append('endTime', endTime.toISOString())
+      params.startTime = startTime.toISOString()
+      params.endTime = endTime.toISOString()
     }
     
-    // TODO: 这里是模拟数据，实际项目中应该发送请求
-    // 使用 setTimeout 模拟网络请求
-    await new Promise(resolve => setTimeout(resolve, 800))
+    // 调用API获取访客列表
+    const response = await fetchVisitors(params)
     
-    // 根据查询条件过滤数据
-    let filteredList = [...visitorList.value]
-    
-    if (searchForm.visitorName) {
-      filteredList = filteredList.filter(visitor => 
-        visitor.visitorName.includes(searchForm.visitorName)
-      )
-    }
-    
-    if (searchForm.roomNumber) {
-      filteredList = filteredList.filter(visitor => 
-        visitor.roomNumber === searchForm.roomNumber
-      )
-    }
-    
-    if (searchForm.status) {
-      filteredList = filteredList.filter(visitor => 
-        visitor.status === searchForm.status
-      )
-    }
-    
-    if (searchForm.visitDate) {
-      const searchDate = new Date(searchForm.visitDate).toISOString().split('T')[0]
-      filteredList = filteredList.filter(visitor => {
-        const visitDate = new Date(visitor.startTime).toISOString().split('T')[0]
-        return visitDate === searchDate
-      })
-    }
-    
-    // 更新结果
-    visitorList.value = filteredList
-    total.value = filteredList.length
+    // 更新列表数据和总数
+    visitorList.value = response.data.content
+    total.value = response.data.totalElements
     
     loading.value = false
   } catch (error) {
@@ -447,43 +399,76 @@ const handleVerifyRoom = async () => {
     return
   }
 
+  let loadingInstance = null;
   try {
-    const loading = ElMessage({
-      message: '正在验证房间信息...',
-      type: 'info',
-      duration: 0
-    })
+    loadingInstance = ElLoading.service({
+      text: '正在验证房间信息...',
+      background: 'rgba(0, 0, 0, 0.7)'
+    });
     
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 800))
-    loading.close()
+    // 调用API验证房间
+    const response = await verifyRoom(visitorForm.roomNumber)
     
-    // 模拟房间数据
-    const roomData = {
-      roomNumber: visitorForm.roomNumber,
-      guest: {
-        name: visitorForm.roomNumber === '301' ? '张三' : 
-              visitorForm.roomNumber === '405' ? '李四' : 
-              visitorForm.roomNumber === '501' ? '王五' : ''
-      },
-      status: 'occupied'
-    }
-    
-    if (roomData && roomData.guest && roomData.guest.name) {
-      visitorForm.guestName = roomData.guest.name
-      ElMessage({
-        message: '房间验证成功',
-        type: 'success',
-        duration: 2000
-      })
+    // 检查响应结构
+    if (response && response.data) {
+      if (response.data.success === false) {
+        throw new Error(response.data.message || '房间验证失败')
+      }
+      
+      if (response.data.guest && response.data.guest.name) {
+        visitorForm.guestName = response.data.guest.name
+        ElMessage({
+          message: '房间验证成功',
+          type: 'success',
+          duration: 2000
+        })
+      } else {
+        ElMessage({
+          message: '该房间未入住或找不到客人信息',
+          type: 'warning',
+          duration: 3000
+        })
+        visitorForm.guestName = ''
+      }
     } else {
-      ElMessage.warning('该房间未入住或找不到客人信息')
-      visitorForm.guestName = ''
+      throw new Error('无效的响应数据')
     }
   } catch (error) {
     console.error('验证房间失败:', error)
-    ElMessage.error('房间验证失败')
+    let errorMessage = '房间验证失败'
+    
+    if (error.response) {
+      // 处理HTTP错误响应
+      switch (error.response.status) {
+        case 404:
+          errorMessage = '房间号不存在'
+          break
+        case 400:
+          errorMessage = '无效的房间号'
+          break
+        case 401:
+          errorMessage = '验证失败：未授权访问'
+          break
+        case 403:
+          errorMessage = '验证失败：无权限访问'
+          break
+        default:
+          errorMessage = error.response.data?.message || '房间验证失败'
+      }
+    } else if (error.message) {
+      errorMessage = error.message
+    }
+    
+    ElMessage({
+      message: errorMessage,
+      type: 'error',
+      duration: 3000
+    })
     visitorForm.guestName = ''
+  } finally {
+    if (loadingInstance) {
+      loadingInstance.close()
+    }
   }
 }
 
@@ -502,26 +487,22 @@ const handleSubmit = async () => {
         
         // 准备访客数据
         const visitorData = {
-          id: Date.now(), // 模拟ID
           visitorName: visitorForm.visitorName,
           phone: visitorForm.phone,
           idCard: visitorForm.idCard,
           roomNumber: visitorForm.roomNumber,
           guestName: visitorForm.guestName,
           visitPurpose: visitorForm.visitPurpose,
-          startTime: new Date().toLocaleString(),
-          endTime: null,
-          status: 'visiting'
+          duration: visitorForm.duration
         }
         
-        // 模拟API调用
-        await new Promise(resolve => setTimeout(resolve, 800))
+        // 调用API创建访客记录
+        await createVisitor(visitorData)
         loading.close()
         
-        // 更新本地数据
-        visitorList.value.unshift(visitorData)
-        total.value++
-        todayVisitorCount.value++
+        // 刷新列表和统计数据
+        await fetchVisitorList()
+        await fetchTodayVisitorCount()
         
         ElMessage({
           message: '访客登记成功',
@@ -556,16 +537,12 @@ const handleEndVisit = async (row) => {
       duration: 0
     })
     
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 800))
+    // 调用API结束访问
+    await endVisit(row.id)
     loading.close()
     
-    // 更新本地数据
-    const index = visitorList.value.findIndex(item => item.id === row.id)
-    if (index !== -1) {
-      visitorList.value[index].status = 'completed'
-      visitorList.value[index].endTime = new Date().toLocaleString()
-    }
+    // 刷新列表数据
+    await fetchVisitorList()
     
     ElMessage({
       message: '访问已结束',
@@ -583,21 +560,22 @@ const handleEndVisit = async (row) => {
 // 查看详情
 const handleView = async (row) => {
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 300))
+    // 调用API获取详细信息
+    const response = await getVisitorDetails(row.id)
+    const visitorDetail = response.data
     
     // 展示详情
     ElMessageBox.alert(
       `<div class="visitor-detail">
-        <p><strong>访客姓名：</strong>${row.visitorName}</p>
-        <p><strong>联系电话：</strong>${row.phone}</p>
-        <p><strong>身份证号：</strong>${row.idCard}</p>
-        <p><strong>被访客房：</strong>${row.roomNumber}</p>
-        <p><strong>被访客人：</strong>${row.guestName}</p>
-        <p><strong>访问目的：</strong>${row.visitPurpose}</p>
-        <p><strong>到访时间：</strong>${row.startTime}</p>
-        <p><strong>离开时间：</strong>${row.endTime || '未离开'}</p>
-        <p><strong>状态：</strong>${row.status === 'visiting' ? '访问中' : '已结束'}</p>
+        <p><strong>访客姓名：</strong>${visitorDetail.visitorName}</p>
+        <p><strong>联系电话：</strong>${visitorDetail.phone}</p>
+        <p><strong>身份证号：</strong>${visitorDetail.idCard}</p>
+        <p><strong>被访客房：</strong>${visitorDetail.roomNumber}</p>
+        <p><strong>被访客人：</strong>${visitorDetail.guestName}</p>
+        <p><strong>访问目的：</strong>${visitorDetail.visitPurpose}</p>
+        <p><strong>到访时间：</strong>${visitorDetail.startTime}</p>
+        <p><strong>离开时间：</strong>${visitorDetail.endTime || '未离开'}</p>
+        <p><strong>状态：</strong>${visitorDetail.status === 'visiting' ? '访问中' : '已结束'}</p>
       </div>`,
       '访客详情',
       {
@@ -614,13 +592,11 @@ const handleView = async (row) => {
 // 获取今日访客统计
 const fetchTodayVisitorCount = async () => {
   try {
-    // 模拟API调用
-    await new Promise(resolve => setTimeout(resolve, 500))
-    
-    // 模拟数据
-    todayVisitorCount.value = 8
+    const response = await fetchTodayVisitorStats()
+    todayVisitorCount.value = response.data.todayCount
   } catch (error) {
     console.error('获取今日访客统计失败:', error)
+    todayVisitorCount.value = 0
   }
 }
 

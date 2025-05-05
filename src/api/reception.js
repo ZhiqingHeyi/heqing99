@@ -95,6 +95,79 @@ export const processPayment = (id, paymentType) => {
   return apiClient.post(`/reservations/${id}/payment`, { paymentType });
 };
 
+// --- Visitor APIs (VisitorController) ---
+
+/**
+ * 获取访客列表
+ * @param {object} params - 查询参数 { keyword, status, roomNumber, startTime, endTime, page, size }
+ */
+export const fetchVisitors = (params) => {
+  return apiClient.get('/visitor/all', { params });
+};
+
+/**
+ * 创建访客记录
+ * @param {object} visitorData - 访客数据
+ */
+export const createVisitor = (visitorData) => {
+  return apiClient.post('/visitor/record', visitorData);
+};
+
+/**
+ * 更新访客状态（结束访问）
+ * @param {number} id - 访客记录ID
+ */
+export const endVisit = (id) => {
+  return apiClient.put(`/visitor/record/${id}/end`);
+};
+
+/**
+ * 获取访客详情
+ * @param {number} id - 访客记录ID
+ */
+export const getVisitorDetails = (id) => {
+  return apiClient.get(`/visitor/record/${id}`);
+};
+
+/**
+ * 验证房间信息
+ * @param {string} roomNumber - 房间号
+ * @returns {Promise<{success: boolean, data: {guest: {name: string}}, message: string}>}
+ */
+export const verifyRoom = async (roomNumber) => {
+  try {
+    console.log('开始验证房间号:', roomNumber);
+    const response = await apiClient.get(`/rooms/${roomNumber}/verify`);
+    console.log('房间验证API响应:', response);
+
+    // 标准化响应格式
+    if (response.data) {
+      return {
+        success: true,
+        data: response.data,
+        message: '房间验证成功'
+      };
+    } else {
+      return {
+        success: false,
+        data: null,
+        message: '无效的响应数据'
+      };
+    }
+  } catch (error) {
+    console.error('房间验证API错误:', error);
+    // 重新抛出错误，保留原始错误信息
+    throw error;
+  }
+};
+
+/**
+ * 获取今日访客统计
+ */
+export const fetchTodayVisitorStats = () => {
+  return apiClient.get('/visitor/stats/today');
+};
+
 // --- Check-In APIs (CheckInController) ---
 
 /**
@@ -131,55 +204,95 @@ export const fetchTodayCheckinStats = async () => {
     try {
         console.log("开始获取今日入住统计数据...");
         
+        // 获取当前日期（不依赖于服务器时间）
+        const today = new Date();
+        const year = today.getFullYear();
+        const month = String(today.getMonth() + 1).padStart(2, '0');
+        const day = String(today.getDate()).padStart(2, '0');
+        
+        // 使用YYYY-MM-DD格式的日期字符串
+        const todayStr = `${year}-${month}-${day}`;
+        console.log("今日入住统计使用日期:", todayStr);
+        
         // 尝试获取今日入住统计，使用专用API端点
-        const response = await apiClient.get('/admin/checkin/today-stats');
-        console.log("今日入住统计API原始响应:", response);
+        let response;
+        try {
+            response = await apiClient.get('/admin/checkin/today-stats');
+            console.log("今日入住统计API原始响应:", response);
+        } catch (apiError) {
+            console.log("专用API调用失败:", apiError);
+            response = null;
+        }
         
         // 检查不同可能的响应结构并提取数据
         let todayCheckins = 0;
         
-        if (response.data?.data?.todayCheckIns !== undefined) {
-            // 标准响应路径
-            todayCheckins = response.data.data.todayCheckIns;
-            console.log("从 response.data.data.todayCheckIns 获取到计数:", todayCheckins);
-        } else if (response.data?.todayCheckIns !== undefined) {
-            // 直接在data对象上的属性
-            todayCheckins = response.data.todayCheckIns;
-            console.log("从 response.data.todayCheckIns 获取到计数:", todayCheckins);
-        } else if (response.data?.data?.count !== undefined) {
-            // 另一种可能的格式
-            todayCheckins = response.data.data.count;
-            console.log("从 response.data.data.count 获取到计数:", todayCheckins);
-        } else {
-            // 如果专用API不可用，尝试使用预订API查询今日入住的预订
-            console.log("专用API无法获取今日入住数据，尝试使用预订API...");
+        if (response && response.data) {
+            if (response.data?.data?.todayCheckIns !== undefined) {
+                // 标准响应路径
+                todayCheckins = response.data.data.todayCheckIns;
+                console.log("从 response.data.data.todayCheckIns 获取到计数:", todayCheckins);
+            } else if (response.data?.todayCheckIns !== undefined) {
+                // 直接在data对象上的属性
+                todayCheckins = response.data.todayCheckIns;
+                console.log("从 response.data.todayCheckIns 获取到计数:", todayCheckins);
+            } else if (response.data?.data?.count !== undefined) {
+                // 另一种可能的格式
+                todayCheckins = response.data.data.count;
+                console.log("从 response.data.data.count 获取到计数:", todayCheckins);
+            }
+        }
+        
+        // 如果专用API不可用或没有返回正确的计数，使用预订API的精确日期匹配
+        if (!response || todayCheckins === 0) {
+            console.log("专用API无法获取今日入住数据或返回0，尝试使用预订API精确匹配...");
             
-            // 构建今日日期范围
-            const today = new Date();
-            today.setHours(0, 0, 0, 0);
-            const tomorrow = new Date(today);
-            tomorrow.setDate(tomorrow.getDate() + 1);
-            
+            // 构建精确匹配参数
             const params = {
-                status: 'CONFIRMED',
-                checkInTime: today.toISOString().split('T')[0], // 只发送日期部分
+                status: 'confirmed',
+                exactDate: 'checkIn', // 精确匹配入住日期
+                date: todayStr,       // 今天的日期
                 page: 0,
-                size: 1 // 只需要总数
+                size: 1               // 只需要总数
             };
             
-            const bookingsResponse = await fetchBookings(params);
-            console.log("预订API获取今日入住响应:", bookingsResponse);
+            console.log("发送精确匹配今日入住的查询参数:", params);
             
-            // 尝试从预订API响应中提取总数
-            if (bookingsResponse.data?.data?.totalElements !== undefined) {
-                todayCheckins = bookingsResponse.data.data.totalElements;
-                console.log("从预订API的 totalElements 获取到今日入住计数:", todayCheckins);
-            } else if (bookingsResponse.data?.data?.total !== undefined) {
-                todayCheckins = bookingsResponse.data.data.total;
-                console.log("从预订API的 total 获取到今日入住计数:", todayCheckins);
-            } else if (bookingsResponse.data?.totalElements !== undefined) {
-                todayCheckins = bookingsResponse.data.totalElements;
-                console.log("从预订API的 data.totalElements 获取到今日入住计数:", todayCheckins);
+            try {
+                // 直接使用API客户端查询，避免可能的参数转换问题
+                const bookingsResponse = await apiClient.get('/reservations', { params });
+                console.log("预订API获取今日入住响应:", bookingsResponse);
+                
+                // 尝试从预订API响应中提取总数
+                if (bookingsResponse.data?.data?.totalElements !== undefined) {
+                    todayCheckins = bookingsResponse.data.data.totalElements;
+                } else if (bookingsResponse.data?.data?.total !== undefined) {
+                    todayCheckins = bookingsResponse.data.data.total;
+                } else if (bookingsResponse.data?.totalElements !== undefined) {
+                    todayCheckins = bookingsResponse.data.totalElements;
+                } else if (bookingsResponse.data?.total !== undefined) {
+                    todayCheckins = bookingsResponse.data.total;
+                } else if (bookingsResponse.data?.data?.content && Array.isArray(bookingsResponse.data.data.content)) {
+                    // 额外的处理：手动计算匹配当天日期的预订数量
+                    const bookings = bookingsResponse.data.data.content;
+                    todayCheckins = bookings.filter(booking => {
+                        // 提取入住日期
+                        let checkInDate = booking.checkInTime;
+                        if (typeof checkInDate === 'string') {
+                            // 如果是字符串，提取日期部分
+                            checkInDate = checkInDate.split('T')[0];
+                        } else if (checkInDate instanceof Date) {
+                            // 如果是Date对象，转换为YYYY-MM-DD格式
+                            const d = new Date(checkInDate);
+                            checkInDate = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`;
+                        }
+                        // 检查日期是否匹配
+                        return checkInDate === todayStr;
+                    }).length;
+                    console.log("通过手动过滤计算今日入住数量:", todayCheckins);
+                }
+            } catch (bookingError) {
+                console.error("使用预订API获取今日入住数据失败:", bookingError);
             }
         }
         
@@ -355,4 +468,4 @@ export const fetchPendingBookingCount = async () => {
         }
         return 0; // 返回0作为默认值
     }
-}; 
+};

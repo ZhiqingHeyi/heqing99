@@ -513,9 +513,14 @@ public class ReservationServiceImpl implements ReservationService {
             }
         }
 
-        Page<Reservation> reservationPage = reservationRepository.findAllWithFilters(
+        Page<Reservation> reservationPage = reservationRepository.findReservationsFiltered(
             pageable,
-            statusEnum // Pass the enum here
+            statusEnum,
+            guestName,
+            guestPhone,
+            startDate,
+            endDate,
+            bookingNo
         );
 
         log.debug("Repository returned Page: PageNumber={}, Size={}, TotalElements={}, TotalPages={}",

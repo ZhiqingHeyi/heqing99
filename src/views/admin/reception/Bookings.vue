@@ -110,7 +110,7 @@
           <el-input v-model="searchForm.phone" placeholder="请输入手机号" clearable />
         </el-form-item>
         <el-form-item label="预订状态">
-          <el-select v-model="searchForm.status" placeholder="请选择状态" clearable>
+          <el-select v-model="searchForm.status" placeholder="请选择状态" clearable style="min-width: 150px;">
             <el-option label="待确认" value="pending" />
             <el-option label="已确认" value="confirmed" />
             <el-option label="已入住" value="checked-in" />
@@ -974,21 +974,19 @@ const fetchData = async (retry = 0, customParams = null, exactMatch = false) => 
     // 准备API请求参数
     const params = {
       page: currentPage.value - 1, // 0-based index for Spring Pageable
-      size: pageSize.value,       // Use 'size' instead of 'pageSize'
-      status: searchForm.status || undefined,
-      guestName: searchForm.customerName || undefined,
-      guestPhone: searchForm.phone || undefined,
-      bookingNo: searchForm.bookingNo || undefined
+      size: pageSize.value       // Use 'size' instead of 'pageSize'
     };
     
     // 如果提供了自定义参数，优先使用自定义参数
     if (customParams) {
       console.log("使用自定义参数:", customParams);
       
-      // 确保自定义参数中的status覆盖searchForm中的status
-      if (customParams.status) {
-        params.status = customParams.status;
-      }
+      // 合并自定义参数到请求参数中，确保参数名一致
+      Object.keys(customParams).forEach(key => {
+        if (customParams[key] !== null && customParams[key] !== undefined && customParams[key] !== '') {
+          params[key] = customParams[key];
+        }
+      });
       
       // 精确匹配日期参数处理
       if (exactMatch) {
@@ -1007,55 +1005,50 @@ const fetchData = async (retry = 0, customParams = null, exactMatch = false) => 
           params.date = customParams.exactCheckOutDate; // 日期值
           console.log("设置精确离店日期匹配:", customParams.exactCheckOutDate);
         }
-      } 
-      // 常规日期范围参数
-      else {
-        // 添加日期参数，确保使用正确的API参数名称
-        if (customParams.startDate || customParams.checkInTime) {
-          params.checkInTime = customParams.checkInTime || customParams.startDate; // 支持两种参数名
-          console.log("设置入住日期参数:", params.checkInTime);
-        }
-        
-        if (customParams.endDate || customParams.checkOutTime) {
-          params.checkOutTime = customParams.checkOutTime || customParams.endDate; // 支持两种参数名
-          console.log("设置离店日期参数:", params.checkOutTime);
-        }
       }
-    }
-    // 否则处理表单中的日期范围参数
-    else if (searchForm.dateRange && searchForm.dateRange.length === 2) {
-      try {
-        // 确保日期是有效的字符串或Date对象后再处理
-        if (searchForm.dateRange[0]) {
-          // 检查是否已是字符串格式 (YYYY-MM-DD)
-          if (typeof searchForm.dateRange[0] === 'string' && searchForm.dateRange[0].match(/^\d{4}-\d{2}-\d{2}$/)) {
-            params.checkInTime = searchForm.dateRange[0]; // 更新参数名
-          } else {
-            // 处理Date对象
-            const startDate = new Date(searchForm.dateRange[0]);
-            if (!isNaN(startDate.getTime())) {
-              params.checkInTime = startDate.toISOString().split('T')[0]; // 更新参数名
+    } 
+    // 否则使用搜索表单中的值
+    else {
+      if (searchForm.status) params.status = searchForm.status;
+      if (searchForm.customerName?.trim()) params.guestName = searchForm.customerName.trim();
+      if (searchForm.phone?.trim()) params.guestPhone = searchForm.phone.trim();
+      if (searchForm.bookingNo?.trim()) params.bookingNo = searchForm.bookingNo.trim();
+      
+      // 处理表单中的日期范围参数
+      if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+        try {
+          // 确保日期是有效的字符串或Date对象后再处理
+          if (searchForm.dateRange[0]) {
+            // 检查是否已是字符串格式 (YYYY-MM-DD)
+            if (typeof searchForm.dateRange[0] === 'string' && searchForm.dateRange[0].match(/^\d{4}-\d{2}-\d{2}$/)) {
+              params.checkInTime = searchForm.dateRange[0];
+            } else {
+              // 处理Date对象
+              const startDate = new Date(searchForm.dateRange[0]);
+              if (!isNaN(startDate.getTime())) {
+                params.checkInTime = startDate.toISOString().split('T')[0];
+              }
             }
           }
-        }
-        
-        if (searchForm.dateRange[1]) {
-          // 检查是否已是字符串格式 (YYYY-MM-DD)
-          if (typeof searchForm.dateRange[1] === 'string' && searchForm.dateRange[1].match(/^\d{4}-\d{2}-\d{2}$/)) {
-            params.checkOutTime = searchForm.dateRange[1]; // 更新参数名
-          } else {
-            // 处理Date对象
-            const endDate = new Date(searchForm.dateRange[1]);
-            if (!isNaN(endDate.getTime())) {
-              params.checkOutTime = endDate.toISOString().split('T')[0]; // 更新参数名
+          
+          if (searchForm.dateRange[1]) {
+            // 检查是否已是字符串格式 (YYYY-MM-DD)
+            if (typeof searchForm.dateRange[1] === 'string' && searchForm.dateRange[1].match(/^\d{4}-\d{2}-\d{2}$/)) {
+              params.checkOutTime = searchForm.dateRange[1];
+            } else {
+              // 处理Date对象
+              const endDate = new Date(searchForm.dateRange[1]);
+              if (!isNaN(endDate.getTime())) {
+                params.checkOutTime = endDate.toISOString().split('T')[0];
+              }
             }
           }
+          
+          console.log("设置日期范围参数:", params.checkInTime, "到", params.checkOutTime);
+        } catch (dateError) {
+          console.error("日期处理错误:", dateError);
+          ElMessage.warning('日期格式处理出错，将忽略日期筛选');
         }
-        
-        console.log("设置日期范围参数:", params.checkInTime, "到", params.checkOutTime);
-      } catch (dateError) {
-        console.error("日期处理错误:", dateError);
-        ElMessage.warning('日期格式处理出错，将忽略日期筛选');
       }
     }
     
@@ -1153,8 +1146,26 @@ const fetchData = async (retry = 0, customParams = null, exactMatch = false) => 
     total.value = totalCount;
     console.log("设置总记录数:", total.value);
 
-    // Fetch statistics in parallel
-    console.log("开始并行获取统计数据...");
+    // 如果是精确匹配今日入住，立即更新统计数字以保持一致性
+    if (frontendFilter.enabled && frontendFilter.checkInDate) {
+      // 对于今日入住筛选，使用筛选结果的长度作为今日入住数量
+      console.log("精确筛选模式：使用筛选结果更新今日入住统计");
+      todayCheckinCount.value = bookings.length;
+      console.log("直接更新今日入住计数:", todayCheckinCount.value);
+      
+      // 添加标记，防止统计数据被后续API调用覆盖
+      window._todayCheckinManuallySet = true;
+      
+      // 将真实数量保存到localStorage中
+      if (frontendFilter.checkInDate === formatDateToYMD(new Date())) {
+        localStorage.setItem('todayCheckinCount', String(bookings.length));
+        localStorage.setItem('todayCheckinDate', frontendFilter.checkInDate);
+        localStorage.setItem('todayCheckinFiltered', 'true');
+        console.log("今日入住数量已保存到localStorage:", bookings.length);
+      }
+    } else {
+      // 其他情况下，并行获取统计数据
+      console.log("开始并行获取统计数据...");
     const [statsRes, todayCheckinRes, pendingCountRes] = await Promise.all([
       fetchDashboardStats(),
       fetchTodayCheckinStats(),
@@ -1162,25 +1173,30 @@ const fetchData = async (retry = 0, customParams = null, exactMatch = false) => 
     ]);
 
     // Update dashboard stats
-    console.log("仪表盘统计响应:", statsRes);
+      console.log("仪表盘统计响应:", statsRes);
     totalRooms.value = statsRes.data?.totalRooms || 0;
     occupiedRooms.value = statsRes.data?.occupiedRooms || 0;
-    
+      
     // Calculate occupancy rate
     occupancyRate.value = totalRooms.value > 0 
       ? Math.round((occupiedRooms.value / totalRooms.value) * 100) 
       : 0;
-    console.log(`计算入住率: ${occupiedRooms.value}/${totalRooms.value} = ${occupancyRate.value}%`);
+      console.log(`计算入住率: ${occupiedRooms.value}/${totalRooms.value} = ${occupancyRate.value}%`);
 
-    // Update today checkin stats (adjust key based on actual API response)
-    console.log("今日入住统计响应:", todayCheckinRes);
+      // 更新今日入住统计，但仅在未手动设置的情况下
+      if (!window._todayCheckinManuallySet) {
+        console.log("今日入住统计响应:", todayCheckinRes);
     todayCheckinCount.value = todayCheckinRes.data?.data?.todayCheckIns || 0; 
-    console.log("设置今日入住计数:", todayCheckinCount.value);
+        console.log("设置今日入住计数:", todayCheckinCount.value);
+      } else {
+        console.log("跳过API统计更新，保持手动设置的今日入住计数:", todayCheckinCount.value);
+      }
 
     // Update pending count
-    console.log("待确认预订计数响应:", pendingCountRes);
-    pendingCount.value = pendingCountRes; // 已在helper函数中处理
-    console.log("设置待确认预订计数:", pendingCount.value);
+      console.log("待确认预订计数响应:", pendingCountRes);
+      pendingCount.value = pendingCountRes; // 已在helper函数中处理
+      console.log("设置待确认预订计数:", pendingCount.value);
+    }
 
   } catch (error) {
     console.error("获取数据失败:", error);
@@ -1236,24 +1252,82 @@ const loadRoomTypes = async () => {
 
 // Initial data fetch
 onMounted(() => {
+  // 初始化手动设置标记
+  window._todayCheckinManuallySet = false;
+  
+  // 检查是否有保存的今日入住数量
+  const savedDate = localStorage.getItem('todayCheckinDate');
+  const currentDate = formatDateToYMD(new Date());
+  const filtered = localStorage.getItem('todayCheckinFiltered') === 'true';
+  
+  // 如果有保存的今日入住数量，并且是当天的数据，使用保存的数量
+  if (savedDate === currentDate && filtered) {
+    const savedCount = localStorage.getItem('todayCheckinCount');
+    if (savedCount !== null) {
+      todayCheckinCount.value = parseInt(savedCount, 10);
+      window._todayCheckinManuallySet = true;
+      console.log("从localStorage加载今日入住计数:", todayCheckinCount.value);
+    }
+  } else {
+    // 如果没有保存的数量或者不是当天的数据，清除标记
+    localStorage.removeItem('todayCheckinCount');
+    localStorage.removeItem('todayCheckinDate');
+    localStorage.removeItem('todayCheckinFiltered');
+  }
+  
   fetchData();
   loadRoomTypes(); // 在 onMounted 中调用获取房型列表 (使用新名称)
 });
 
 // UPDATE Search and Pagination handlers to call fetchData
 const handleSearch = () => {
+  // 重置手动设置标记，允许API更新统计数据
+  window._todayCheckinManuallySet = false;
+  
+  // 清除localStorage中保存的今日入住筛选标记
+  localStorage.removeItem('todayCheckinFiltered');
+  
   currentPage.value = 1; // Reset page to 1 on new search
-  console.log("执行搜索，搜索条件:", {
-    bookingNo: searchForm.bookingNo,
-    customerName: searchForm.customerName,
-    phone: searchForm.phone,
-    status: searchForm.status,
-    dateRange: searchForm.dateRange ? searchForm.dateRange.map(d => d.toISOString().split('T')[0]) : null
-  });
-  fetchData();
+  
+  // 创建实际有效的搜索参数对象，移除空值和undefined
+  const searchParams = {};
+  
+  if (searchForm.bookingNo?.trim()) searchParams.bookingNo = searchForm.bookingNo.trim();
+  if (searchForm.customerName?.trim()) searchParams.guestName = searchForm.customerName.trim();
+  if (searchForm.phone?.trim()) searchParams.guestPhone = searchForm.phone.trim();
+  if (searchForm.status) searchParams.status = searchForm.status;
+  
+  if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+    try {
+      if (searchForm.dateRange[0]) {
+        const startDate = new Date(searchForm.dateRange[0]);
+        if (!isNaN(startDate.getTime())) {
+          searchParams.checkInTime = startDate.toISOString().split('T')[0];
+        }
+      }
+      
+      if (searchForm.dateRange[1]) {
+        const endDate = new Date(searchForm.dateRange[1]);
+        if (!isNaN(endDate.getTime())) {
+          searchParams.checkOutTime = endDate.toISOString().split('T')[0];
+        }
+      }
+    } catch (error) {
+      console.error("日期处理错误:", error);
+    }
+  }
+  
+  console.log("执行搜索，搜索条件:", searchParams);
+  fetchData(0, searchParams);
 };
 
 const resetSearch = () => {
+  // 重置手动设置标记，允许API更新统计数据
+  window._todayCheckinManuallySet = false;
+  
+  // 清除localStorage中保存的今日入住数量
+  localStorage.removeItem('todayCheckinFiltered');
+  
   // 清空搜索表单的值
   searchForm.bookingNo = '';
   searchForm.customerName = '';
@@ -1789,11 +1863,14 @@ const showPendingBookings = () => {
 const showTodayCheckins = () => {
   console.log("开始筛选今日入住预订...");
   try {
-    // 重置搜索表单
-    resetSearch();
+  // 重置搜索表单
+  resetSearch();
+    
+    // 标记将使用筛选结果更新统计数据
+    window._todayCheckinManuallySet = true;
     
     // 获取当前日期（不依赖于服务器时间）
-    const today = new Date();
+  const today = new Date();
     const year = today.getFullYear();
     const month = String(today.getMonth() + 1).padStart(2, '0');
     const day = String(today.getDate()).padStart(2, '0');
@@ -1802,26 +1879,24 @@ const showTodayCheckins = () => {
     const todayStr = `${year}-${month}-${day}`;
     console.log("今日入住筛选日期:", todayStr);
     
-    // 设置状态为已确认，清空其他搜索条件
-    searchForm.status = 'confirmed'; 
+    // 设置状态为已确认
+    searchForm.status = 'confirmed';
     searchForm.dateRange = null;
     
-    // 设置今日入住筛选 - 使用精确的日期匹配
-    // 方式1：使用前端筛选 - 将搜索表单的dateRange设为当天
-    searchForm.dateRange = [todayStr, todayStr]; // 开始和结束日期都是今天
-    
-    // 方式2：直接使用API参数
-    // 确保只匹配今天的入住日期
+    // 只使用一种筛选方式：API参数精确匹配
     const tempParams = {
       status: 'confirmed',
-      exactCheckInDate: todayStr // 使用精确匹配参数
+      exactCheckInDate: todayStr
     };
     
     console.log("今日入住搜索参数:", tempParams);
     
-    // 修改fetchData调用，添加精确匹配标志
-    fetchData(0, tempParams, true); // 第三个参数表示需要精确匹配日期
-    ElMessage.success('已筛选今日入住预订');
+    // 在localStorage中保存今日日期，用于标识统计数据的有效期
+    localStorage.setItem('todayCheckinDate', todayStr);
+    localStorage.setItem('todayCheckinFiltered', 'true');
+    
+    fetchData(0, tempParams, true);
+  ElMessage.success('已筛选今日入住预订');
   } catch (error) {
     console.error("筛选今日入住预订时出错:", error);
     ElMessage.error('筛选失败，请稍后重试');
@@ -2313,25 +2388,18 @@ const openTodayCheckout = () => {
     const todayStr = `${year}-${month}-${day}`;
     console.log("今日离店筛选日期:", todayStr);
     
-    // 设置状态为已入住，清空其他搜索条件
+    // 设置状态为已入住
     searchForm.status = 'checked-in'; 
     searchForm.dateRange = null;
     
-    // 设置今日离店筛选 - 使用精确的日期匹配
-    // 方式1：使用前端筛选 - 将搜索表单的dateRange设为当天
-    searchForm.dateRange = [null, todayStr]; // 只设置结束日期为今天
-    
-    // 方式2：直接使用API参数
-    // 确保只匹配今天的离店日期
+    // 只使用一种筛选方式：API参数精确匹配
     const tempParams = {
       status: 'checked-in',
       exactCheckOutDate: todayStr // 使用精确匹配参数
     };
     
     console.log("今日离店搜索参数:", tempParams);
-    
-    // 修改fetchData调用，添加精确匹配标志
-    fetchData(0, tempParams, true); // 第三个参数表示需要精确匹配日期
+    fetchData(0, tempParams, true);
     ElMessage.success('已筛选今日离店预订');
   } catch (error) {
     console.error("筛选今日离店预订时出错:", error);
