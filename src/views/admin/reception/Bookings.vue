@@ -484,72 +484,125 @@
       </div>
     </el-dialog>
 
-    <!-- ADD BACK Room Status Dialog -->
+    <!-- 酒店房态一览对话框 -->
     <el-dialog
       title="酒店房态一览"
       v-model="roomStatusVisible"
       width="90%"
-      class="custom-dialog room-status-dialog"
+      class="custom-dialog room-status-dialog no-top-bar"
       destroy-on-close
     >
-      <!-- 临时使用内联简易版房态一览 -->
-      <div class="simplified-room-status" v-loading="roomStatusLoading">
+      <!-- 房态一览组件 -->
+      <div class="room-status-container" v-loading="roomStatusLoading">
         <div class="status-header">
-          <h3>房态一览</h3> 
+          <h3 class="status-title">房态一览</h3> 
+          <div class="status-filters">
+            <div class="filter-item">
+              <span class="filter-label">楼层：</span>
+              <el-select v-model="selectedFloor" @change="handleFloorChange" placeholder="选择楼层" style="min-width: 140px;">
+                <el-option label="全部楼层" value="all" />
+                <el-option v-for="floor in availableFloors" :key="floor" :label="`${floor}层`" :value="floor" />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">房型：</span>
+              <el-select v-model="selectedRoomType" @change="handleRoomTypeChange" placeholder="选择房型" style="min-width: 180px;">
+                <el-option label="全部房型" value="all" />
+                <el-option v-for="type in roomTypeList" :key="type.id" :label="type.name" :value="type.id" />
+              </el-select>
+            </div>
+            <div class="filter-item">
+              <span class="filter-label">状态：</span>
+              <el-select v-model="selectedStatus" @change="handleStatusChange" placeholder="选择状态" style="min-width: 140px;">
+                <el-option label="全部状态" value="all" />
+                <el-option label="可用" value="AVAILABLE" />
+                <el-option label="已入住" value="OCCUPIED" />
+                <el-option label="已预订" value="RESERVED" />
+                <el-option label="维修中" value="MAINTENANCE" />
+                <el-option label="清洁中" value="CLEANING" />
+              </el-select>
+            </div>
+            <el-button type="primary" @click="fetchRoomStatusData()" class="refresh-btn">
+              <el-icon><Refresh /></el-icon>刷新
+            </el-button>
+          </div>
         </div>
         
+        <!-- 房间状态统计卡片 -->
         <div class="room-stats-cards">
           <el-row :gutter="20">
-            <el-col :span="6">
-              <el-card class="stat-card" shadow="hover">
+            <el-col :span="4">
+              <el-card class="stat-card clickable-card available-card" shadow="hover" @click="filterByStatus('AVAILABLE')">
                 <div class="stat-card-content">
-                  <div class="stat-icon-wrapper" style="background-color: #28a745;">
+                  <div class="stat-icon-wrapper available-bg">
                     <el-icon class="stat-icon"><Check /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <!-- UPDATE: Calculate available rooms -->
                     <div class="stat-value">{{ availableRoomCount }}</div>
                     <div class="stat-title">可用房间</div>
                   </div>
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="6">
-              <el-card class="stat-card" shadow="hover">
+            <el-col :span="4">
+              <el-card class="stat-card clickable-card occupied-card" shadow="hover" @click="filterByStatus('OCCUPIED')">
                 <div class="stat-card-content">
-                  <div class="stat-icon-wrapper" style="background-color: #dc3545;">
+                  <div class="stat-icon-wrapper occupied-bg">
                     <el-icon class="stat-icon"><User /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <!-- UPDATE: Calculate occupied rooms -->
                     <div class="stat-value">{{ occupiedRoomCount }}</div>
                     <div class="stat-title">已入住</div>
                   </div>
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="6">
-              <el-card class="stat-card" shadow="hover">
+            <el-col :span="4">
+              <el-card class="stat-card clickable-card reserved-card" shadow="hover" @click="filterByStatus('RESERVED')">
                 <div class="stat-card-content">
-                  <div class="stat-icon-wrapper" style="background-color: #ffc107;">
+                  <div class="stat-icon-wrapper reserved-bg">
                     <el-icon class="stat-icon"><Calendar /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <!-- TODO: Need data for reserved count -->
-                    <div class="stat-value">?</div> 
+                    <div class="stat-value">{{ reservedRoomCount }}</div> 
                     <div class="stat-title">已预订</div>
                   </div>
                 </div>
               </el-card>
             </el-col>
-            <el-col :span="6">
-              <el-card class="stat-card" shadow="hover">
+            <el-col :span="4">
+              <el-card class="stat-card clickable-card cleaning-card" shadow="hover" @click="filterByStatus('CLEANING')">
                 <div class="stat-card-content">
-                  <div class="stat-icon-wrapper" style="background-color: #6f42c1;">
+                  <div class="stat-icon-wrapper cleaning-bg">
+                    <el-icon class="stat-icon"><Brush /></el-icon>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value">{{ cleaningRoomCount }}</div>
+                    <div class="stat-title">清洁中</div>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :span="4">
+              <el-card class="stat-card clickable-card maintenance-card" shadow="hover" @click="filterByStatus('MAINTENANCE')">
+                <div class="stat-card-content">
+                  <div class="stat-icon-wrapper maintenance-bg">
+                    <el-icon class="stat-icon"><Tools /></el-icon>
+                  </div>
+                  <div class="stat-info">
+                    <div class="stat-value">{{ maintenanceRoomCount }}</div>
+                    <div class="stat-title">维修中</div>
+                  </div>
+                </div>
+              </el-card>
+            </el-col>
+            <el-col :span="4">
+              <el-card class="stat-card clickable-card occupancy-card" shadow="hover" @click="showOccupancyInfo">
+                <div class="stat-card-content">
+                  <div class="stat-icon-wrapper occupancy-bg">
                     <el-icon class="stat-icon"><Histogram /></el-icon>
                   </div>
                   <div class="stat-info">
-                    <!-- UPDATE: Use computed occupancy rate -->
                     <div class="stat-value">{{ currentOccupancyRate }}%</div>
                     <div class="stat-title">入住率</div>
                   </div>
@@ -559,35 +612,58 @@
           </el-row>
         </div>
         
-        <div class="floor-selector">
-          <span>选择楼层：</span>
-          <el-radio-group v-model="selectedFloor">
-            <el-radio-button label="all">全部</el-radio-button>
-            <el-radio-button label="2">2层</el-radio-button>
-            <el-radio-button label="3">3层</el-radio-button>
-            <el-radio-button label="4">4层</el-radio-button>
-            <el-radio-button label="5">5层</el-radio-button>
-            <!-- TODO: Dynamically generate floors if needed -->
-          </el-radio-group>
+        <!-- 图例说明 -->
+        <div class="room-status-legend">
+          <div class="legend-item clickable-legend" @click="filterByStatus('AVAILABLE')">
+            <div class="legend-color room-available"></div>
+            <span>可用</span>
+          </div>
+          <div class="legend-item clickable-legend" @click="filterByStatus('OCCUPIED')">
+            <div class="legend-color room-occupied"></div>
+            <span>已入住</span>
+          </div>
+          <div class="legend-item clickable-legend" @click="filterByStatus('RESERVED')">
+            <div class="legend-color room-reserved"></div>
+            <span>已预订</span>
+          </div>
+          <div class="legend-item clickable-legend" @click="filterByStatus('CLEANING')">
+            <div class="legend-color room-cleaning"></div>
+            <span>清洁中</span>
+          </div>
+          <div class="legend-item clickable-legend" @click="filterByStatus('MAINTENANCE')">
+            <div class="legend-color room-maintenance"></div>
+            <span>维修中</span>
+          </div>
         </div>
         
-        <!-- UPDATE Room Grid Loop -->
-        <div class="simple-room-grid">
-          <div v-if="!roomStatusList.length && !roomStatusLoading">
+        <!-- 按楼层分组显示房间 -->
+        <div class="rooms-by-floor">
+          <template v-if="!roomStatusList.length && !roomStatusLoading">
               <el-empty description="暂无房间数据" />
+          </template>
+          
+          <template v-else>
+            <div v-for="floor in groupedRooms" :key="floor.floor" class="floor-section">
+              <div class="floor-header">
+                <h4>{{ floor.floor }}层</h4>
+                <div class="floor-stats">
+                  <span>共 {{ floor.rooms.length }} 间</span>
+                  <span>可用: {{ floor.rooms.filter(r => r.status === 'AVAILABLE').length }} 间</span>
+                  <span>已入住: {{ floor.rooms.filter(r => r.status === 'OCCUPIED').length }} 间</span>
           </div>
-          <div v-for="room in roomStatusList" :key="room.id" 
-               class="simple-room-cell" 
+              </div>
+              
+              <div class="floor-rooms">
+                <div v-for="room in floor.rooms" :key="room.id" 
+                    class="room-cell" 
                :class="getRoomStatusClass(room.status)"> 
             <div class="room-number">{{ room.roomNumber }}</div>
-            <!-- Adjust room.roomType.name based on actual data structure -->
-            <div class="room-type">{{ room.roomType?.name || '未知房型' }}</div> 
-             <!-- Adjust room.price or room.roomType.price based on actual data structure -->
-            <div class="room-price">¥{{ room.price || room.roomType?.basePrice || '-' }}</div>
-            <div class="room-status-tag" :class="getRoomStatusClass(room.status)">
-              {{ getRoomStatusText(room.status) }}
+                  <div class="room-type">{{ getRoomTypeName(room.roomTypeId) }}</div>
+                  <div class="room-status">{{ getRoomStatusText(room.status) }}</div>
             </div>
           </div>
+            </div>
+          </template>
         </div>
       </div>
     </el-dialog>
@@ -596,10 +672,12 @@
     <el-dialog
       title="入住率详情"
       v-model="occupancyDetailVisible"
-      width="500px"
-      class="custom-dialog"
+      width="600px"
+      class="custom-dialog occupancy-dialog"
+      destroy-on-close
     >
       <div class="occupancy-detail">
+        <div class="occupancy-stats">
         <div class="detail-item">
           <span class="item-label">总房间数：</span>
           <span class="item-value">{{ totalRooms }}</span>
@@ -617,7 +695,8 @@
           <span class="item-value">{{ occupancyRate }}%</span>
         </div>
         <div class="occupancy-chart">
-          <el-progress :percentage="occupancyRate" :color="occupancyRateColor"></el-progress>
+            <el-progress :percentage="occupancyRate" :color="occupancyRateColor" :stroke-width="20"></el-progress>
+          </div>
         </div>
       </div>
     </el-dialog>
@@ -684,7 +763,7 @@ import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   Search, Refresh, Plus, Edit, Check, Close, View, Key, Money, Picture, Calendar,
   Clock, User, Download, Right, House, List, Monitor, Connection, Message, Star,
-  Histogram, Sugar
+  Histogram, Sugar, Brush, Tools
 } from '@element-plus/icons-vue'
 import * as XLSX from 'xlsx' // 导入xlsx库
 // ADD API Imports
@@ -879,23 +958,54 @@ const getPaymentStatusText = (status) => {
 const fetchData = async (retry = 0) => {
   loading.value = true;
   try {
-    // Correct page index to be 0-based and use 'size' parameter
-    const response = await fetchBookings({
+    console.log("开始获取预订数据...");
+    
+    // 准备API请求参数
+    const params = {
       page: currentPage.value - 1, // 0-based index for Spring Pageable
       size: pageSize.value,       // Use 'size' instead of 'pageSize'
       status: searchForm.status || undefined,
       guestName: searchForm.customerName || undefined,
       guestPhone: searchForm.phone || undefined,
-      bookingNo: searchForm.bookingNo || undefined,
-      startDate: searchForm.dateRange ? searchForm.dateRange[0] : undefined,
-      endDate: searchForm.dateRange ? searchForm.dateRange[1] : undefined,
-    });
+      bookingNo: searchForm.bookingNo || undefined
+    };
+    
+    // 处理日期范围参数
+    if (searchForm.dateRange && searchForm.dateRange.length === 2) {
+      // 确保日期是UTC格式的字符串，只保留日期部分
+      if (searchForm.dateRange[0]) {
+        const startDate = new Date(searchForm.dateRange[0]);
+        params.startDate = startDate.toISOString().split('T')[0];
+      }
+      
+      if (searchForm.dateRange[1]) {
+        const endDate = new Date(searchForm.dateRange[1]);
+        params.endDate = endDate.toISOString().split('T')[0];
+      }
+      
+      console.log("设置日期范围参数:", params.startDate, "到", params.endDate);
+    }
+    
+    console.log("发送API请求参数:", params);
+    
+    // 发送请求获取预订列表
+    const response = await fetchBookings(params);
     
     // 添加调试日志输出查看响应结构
-    console.log("Booking API Response:", response);
+    console.log("预订列表API响应:", response);
     
     // 规范化状态值处理
     let bookings = response.data?.data?.content || [];
+    
+    // 如果没有获取到内容，尝试其他可能的路径
+    if (!bookings.length && response.data?.content) {
+      console.log("从 response.data.content 获取预订列表");
+      bookings = response.data.content;
+    }
+    
+    console.log("获取到的预订列表条数:", bookings.length);
+    
+    // 规范化预订数据
     bookings = bookings.map(booking => {
       // 确保status字段存在并规范化
       if (booking.status) {
@@ -912,14 +1022,43 @@ const fetchData = async (retry = 0) => {
           booking.status = statusTextToKey[booking.status];
         }
       }
+      
+      // 确保日期字段格式正确
+      if (booking.checkInTime && !(booking.checkInTime instanceof Date)) {
+        booking.checkInTime = new Date(booking.checkInTime);
+      }
+      
+      if (booking.checkOutTime && !(booking.checkOutTime instanceof Date)) {
+        booking.checkOutTime = new Date(booking.checkOutTime);
+      }
+      
       return booking;
     });
     
     // 更新列表数据
     bookingList.value = bookings;
-    total.value = response.data?.data?.totalElements || 0;
+    
+    // 获取总记录数
+    let totalCount = 0;
+    if (response.data?.data?.totalElements !== undefined) {
+      totalCount = response.data.data.totalElements;
+      console.log("从 response.data.data.totalElements 获取到总记录数:", totalCount);
+    } else if (response.data?.totalElements !== undefined) {
+      totalCount = response.data.totalElements;
+      console.log("从 response.data.totalElements 获取到总记录数:", totalCount);
+    } else if (response.data?.data?.total !== undefined) {
+      totalCount = response.data.data.total;
+      console.log("从 response.data.data.total 获取到总记录数:", totalCount);
+    } else if (response.data?.total !== undefined) {
+      totalCount = response.data.total;
+      console.log("从 response.data.total 获取到总记录数:", totalCount);
+    }
+    
+    total.value = totalCount;
+    console.log("设置总记录数:", total.value);
 
     // Fetch statistics in parallel
+    console.log("开始并行获取统计数据...");
     const [statsRes, todayCheckinRes, pendingCountRes] = await Promise.all([
       fetchDashboardStats(),
       fetchTodayCheckinStats(),
@@ -927,21 +1066,33 @@ const fetchData = async (retry = 0) => {
     ]);
 
     // Update dashboard stats
+    console.log("仪表盘统计响应:", statsRes);
     totalRooms.value = statsRes.data?.totalRooms || 0;
     occupiedRooms.value = statsRes.data?.occupiedRooms || 0;
+    
     // Calculate occupancy rate
     occupancyRate.value = totalRooms.value > 0 
       ? Math.round((occupiedRooms.value / totalRooms.value) * 100) 
       : 0;
+    console.log(`计算入住率: ${occupiedRooms.value}/${totalRooms.value} = ${occupancyRate.value}%`);
 
     // Update today checkin stats (adjust key based on actual API response)
+    console.log("今日入住统计响应:", todayCheckinRes);
     todayCheckinCount.value = todayCheckinRes.data?.data?.todayCheckIns || 0; 
+    console.log("设置今日入住计数:", todayCheckinCount.value);
 
     // Update pending count
-    pendingCount.value = pendingCountRes; // Already processed in helper
+    console.log("待确认预订计数响应:", pendingCountRes);
+    pendingCount.value = pendingCountRes; // 已在helper函数中处理
+    console.log("设置待确认预订计数:", pendingCount.value);
 
   } catch (error) {
-    console.error("Error fetching data:", error);
+    console.error("获取数据失败:", error);
+    if (error.response) {
+      console.error("错误状态码:", error.response.status);
+      console.error("错误详情:", error.response.data);
+    }
+    
     ElMessage.error('获取数据失败，请稍后重试');
     // Reset data on error?
     bookingList.value = [];
@@ -954,6 +1105,7 @@ const fetchData = async (retry = 0) => {
     
     // 添加重试机制，最多重试2次
     if (retry < 2) {
+      console.log(`第${retry + 1}次重试获取数据...`);
       setTimeout(() => {
         fetchData(retry + 1);
       }, 2000);
@@ -1423,8 +1575,86 @@ const handleRoomPreview = (row) => {
 };
 
 const showRoomStatus = async () => { 
-  await fetchRoomStatusData(selectedFloor.value);
+  // 重置过滤条件
+  selectedFloor.value = 'all';
+  selectedRoomType.value = 'all';
+  selectedStatus.value = 'all';
+  
+  // 清除调试状态标记以便重新记录状态统计
+  window._debuggedStatus = false;
+  
+  // 加载所有房间状态，确保不传任何状态筛选参数
+  try {
+    roomStatusLoading.value = true;
+    
+    // 重置房间列表
+    roomStatusList.value = [];
+    
+    console.log("开始获取所有状态的房间数据...");
+    
+    // 不指定status参数，获取所有状态的房间
+    const params = {
+      pageSize: 1000,
+      page: 0
+    };
+    
+    const res = await fetchRooms(params);
+    console.log("房态数据响应:", res);
+    
+    // 尝试从不同的响应路径获取房间列表
+    let roomsList = [];
+    
+    if (res.data?.data?.content && Array.isArray(res.data.data.content)) {
+      roomsList = res.data.data.content;
+    } else if (res.data?.content && Array.isArray(res.data.content)) {
+      roomsList = res.data.content;
+    } else if (res.data?.data?.list && Array.isArray(res.data.data.list)) {
+      roomsList = res.data.data.list;
+    } else if (Array.isArray(res.data)) {
+      roomsList = res.data;
+    }
+    
+    console.log("获取到房间总数:", roomsList.length);
+    
+    // 标准化数据结构
+    const normalizedRooms = roomsList.map(room => {
+      return {
+        id: room.id,
+        roomNumber: room.roomNumber || room.number || '',
+        roomTypeId: room.roomTypeId || (room.roomType && room.roomType.id) || null,
+        roomTypeName: room.roomTypeName || (room.roomType && room.roomType.name) || '未知房型',
+        floor: room.floor || '未知',
+        status: room.status || 'UNKNOWN',
+        price: room.price || (room.roomType && room.roomType.basePrice) || null
+      };
+    });
+    
+    // 更新房间列表
+    roomStatusList.value = normalizedRooms;
+    
+    // 收集所有楼层
+    const floors = [...new Set(normalizedRooms.map(room => room.floor))].filter(Boolean);
+    availableFloors.value = floors.sort();
+    
+    // 打印各种状态的房间数量
+    const statuses = [...new Set(normalizedRooms.map(r => r.status))];
+    console.log("房间状态统计:");
+    statuses.forEach(status => {
+      const count = normalizedRooms.filter(r => r.status === status).length;
+      console.log(`- ${status}: ${count}间`);
+    });
+  } catch (error) {
+    console.error("获取房间数据失败:", error);
+    ElMessage.error('获取房态数据失败');
+  } finally {
+    roomStatusLoading.value = false;
+  }
+  
+  // 显示对话框
   roomStatusVisible.value = true; 
+  
+  console.log("房态一览对话框已打开，总房间数:", roomStatusList.value.length);
+  console.log("入住率:", currentOccupancyRate.value + "%");
 };
 
 // Quick Actions related functions (Placeholder if functionality needed beyond buttons)
@@ -1434,6 +1664,7 @@ const showPendingBookings = () => {
   ElMessage.success('已筛选待确认预订');
 };
 const showTodayCheckins = () => {
+  console.log("开始筛选今日入住预订...");
   // 重置搜索表单
   resetSearch();
   // 设置今日日期范围
@@ -1442,8 +1673,19 @@ const showTodayCheckins = () => {
   const tomorrow = new Date(today);
   tomorrow.setDate(tomorrow.getDate() + 1);
   
+  console.log("今日入住筛选日期范围:", today.toISOString(), "至", tomorrow.toISOString());
+  
+  // 设置搜索表单
   searchForm.dateRange = [today, tomorrow];
   searchForm.status = 'confirmed'; // 只筛选已确认的预订
+  
+  // 记录当前搜索条件
+  console.log("当前搜索条件:", {
+    dateRange: searchForm.dateRange.map(d => d.toISOString()),
+    status: searchForm.status
+  });
+  
+  // 执行搜索
   handleSearch();
   ElMessage.success('已筛选今日入住预订');
 };
@@ -1510,26 +1752,100 @@ const roomStatusLoading = ref(false);
 // ADD Fetch Room Status Data function
 const fetchRoomStatusData = async (floor = 'all') => {
   roomStatusLoading.value = true;
+  roomStatusList.value = []; // 清空当前列表
+  
   try {
+    console.log("获取房态数据开始...");
     const params = {
       pageSize: 1000,
       page: 0,
+      // 删除默认的status过滤，获取所有状态的房间
     };
     
-    if (floor !== 'all') {
+    // 根据筛选条件设置API参数
+    if (floor !== 'all' && floor) {
       params.floor = floor;
-    }
-    if (selectedRoomType.value !== 'all') {
-      params.roomTypeId = selectedRoomType.value;
-    }
-    if (selectedStatus.value !== 'all') {
-      params.status = selectedStatus.value;
+      console.log("按楼层筛选:", floor);
     }
     
+    if (selectedRoomType.value !== 'all' && selectedRoomType.value) {
+      params.roomTypeId = selectedRoomType.value;
+      console.log("按房型筛选:", selectedRoomType.value);
+    }
+    
+    if (selectedStatus.value !== 'all' && selectedStatus.value) {
+      params.status = selectedStatus.value;
+      console.log("按状态筛选:", selectedStatus.value);
+    }
+    
+    console.log("房态查询参数:", params);
     const res = await fetchRooms(params);
-    roomStatusList.value = res.data?.data?.list || [];
+    console.log("房态查询响应:", res);
+    
+    // 尝试从不同的响应路径获取房间列表
+    let roomsList = [];
+    
+    if (res.data?.data?.content && Array.isArray(res.data.data.content)) {
+      roomsList = res.data.data.content;
+      console.log("从 res.data.data.content 获取房间列表, 数量:", roomsList.length);
+    } else if (res.data?.content && Array.isArray(res.data.content)) {
+      roomsList = res.data.content;
+      console.log("从 res.data.content 获取房间列表, 数量:", roomsList.length);
+    } else if (res.data?.data?.list && Array.isArray(res.data.data.list)) {
+      roomsList = res.data.data.list;
+      console.log("从 res.data.data.list 获取房间列表, 数量:", roomsList.length);
+    } else if (Array.isArray(res.data)) {
+      roomsList = res.data;
+      console.log("从 res.data 数组获取房间列表, 数量:", roomsList.length);
+    }
+    
+    // 标准化数据结构
+    const normalizedRooms = roomsList.map(room => {
+      // 提取原始状态以便调试
+      const originalStatus = room.status;
+      
+      const normalizedRoom = {
+        id: room.id,
+        roomNumber: room.roomNumber || room.number || '',
+        roomTypeId: room.roomTypeId || (room.roomType && room.roomType.id) || null,
+        roomTypeName: room.roomTypeName || (room.roomType && room.roomType.name) || '未知房型',
+        floor: room.floor || '未知',
+        status: room.status || 'UNKNOWN',
+        price: room.price || (room.roomType && room.roomType.basePrice) || null
+      };
+      
+      // 每种状态的房间各记录一个，用于调试
+      if (roomsList.length > 0 && !window._debuggedStatus) {
+        const statuses = [...new Set(roomsList.map(r => r.status))];
+        console.log("房间状态类型统计:", statuses);
+        console.log("各状态房间数量:");
+        statuses.forEach(status => {
+          const count = roomsList.filter(r => r.status === status).length;
+          console.log(`- ${status || 'undefined/null'}: ${count}间`);
+        });
+        window._debuggedStatus = true; // 防止重复记录
+      }
+      
+      return normalizedRoom;
+    });
+    
+    console.log("标准化后的房间数据, 数量:", normalizedRooms.length);
+
+    // 更新房间列表
+    roomStatusList.value = normalizedRooms;
+    
+    // 如果没有设置floorList.value的有效值，收集所有楼层
+    if (!availableFloors.value || !availableFloors.value.length) {
+      const floors = [...new Set(normalizedRooms.map(room => room.floor))].filter(Boolean);
+      availableFloors.value = floors.sort(); // 楼层排序
+      console.log("收集到的楼层列表:", availableFloors.value);
+    }
   } catch (error) {
-    console.error("Error fetching room status data:", error);
+    console.error("获取房态数据失败:", error);
+    if (error.response) {
+      console.error("错误状态码:", error.response.status);
+      console.error("错误详情:", error.response.data);
+    }
     ElMessage.error('获取房态数据失败');
     roomStatusList.value = [];
   } finally {
@@ -1537,51 +1853,70 @@ const fetchRoomStatusData = async (floor = 'all') => {
   }
 };
 
-// ADD Watcher for selectedFloor
-watch(selectedFloor, (newFloor) => {
-  fetchRoomStatusData(newFloor);
-});
-
-// ADD Computed properties for stats in dialog
-const availableRoomCount = computed(() => {
-  return roomStatusList.value.filter(room => room.status === 'AVAILABLE').length;
-});
-const occupiedRoomCount = computed(() => {
-  return roomStatusList.value.filter(room => room.status === 'OCCUPIED').length;
-});
-const reservedRoomCount = computed(() => {
-  return roomStatusList.value.filter(room => room.status === 'RESERVED').length;
-});
-const currentOccupancyRate = computed(() => {
-  const total = roomStatusList.value.length;
-  if (total === 0) return 0;
-  return Math.round((occupiedRoomCount.value / total) * 100);
-});
-
-// ADD Helper functions for room status display
-const getRoomStatusClass = (status) => {
-  const statusMap = {
-    'AVAILABLE': 'room-available',
-    'OCCUPIED': 'room-occupied',
-    'RESERVED': 'room-reserved',
-    'MAINTENANCE': 'room-maintenance',
-    'OUT_OF_SERVICE': 'room-out-of-service'
-  };
-  return statusMap[status] || 'room-unknown';
+// ADD Event Handlers for filters
+const handleFloorChange = (floor) => {
+  console.log("楼层切换:", floor);
+  fetchRoomStatusData(floor);
 };
 
-const getRoomStatusText = (status) => {
-  const statusMap = {
-    'AVAILABLE': '可用',
-    'OCCUPIED': '已入住',
-    'RESERVED': '已预订',
-    'MAINTENANCE': '维修中',
-    'OUT_OF_SERVICE': '停用'
-  };
-  return statusMap[status] || '未知状态';
+const handleRoomTypeChange = () => {
+  console.log("房型切换:", selectedRoomType.value);
+  fetchRoomStatusData(selectedFloor.value);
 };
 
-// ... (The rest of the code if any)
+const handleStatusChange = () => {
+  console.log("状态切换:", selectedStatus.value);
+  fetchRoomStatusData(selectedFloor.value);
+    };
+    
+// ADD Helper function to get room type name
+const getRoomTypeName = (typeId) => {
+  if (!typeId) return '未知房型';
+  const roomType = roomTypeList.value.find(type => type.id === typeId);
+  return roomType ? roomType.name : '未知房型';
+};
+
+// 可用楼层列表
+const availableFloors = ref([]);
+
+// ADD Computed properties for room status counts
+const cleaningRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'CLEANING').length;
+});
+
+const maintenanceRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'MAINTENANCE').length;
+});
+    
+// ADD Computed property for grouped rooms
+const groupedRooms = computed(() => {
+  // 按楼层分组
+  const floorGroups = {};
+  
+  roomStatusList.value.forEach(room => {
+    const floor = room.floor || '未知';
+    if (!floorGroups[floor]) {
+      floorGroups[floor] = {
+        floor,
+        rooms: []
+      };
+    }
+    floorGroups[floor].rooms.push(room);
+  });
+  
+  // 转换为数组并按楼层排序
+  return Object.values(floorGroups).sort((a, b) => {
+    // 如果能转成数字则按数字排序，否则按字符串
+    const floorA = parseInt(a.floor);
+    const floorB = parseInt(b.floor);
+    
+    if (!isNaN(floorA) && !isNaN(floorB)) {
+      return floorA - floorB;
+    }
+    
+    return a.floor.localeCompare(b.floor);
+  });
+});
 
 // 入住率详情弹窗
 const occupancyDetailVisible = ref(false);
@@ -1593,124 +1928,6 @@ const occupancyRateColor = computed(() => {
   if (rate < 70) return '#E6A23C'; // 黄色 - 中等入住率
   return '#F56C6C'; // 红色 - 高入住率
 });
-
-// 预订详情
-const detailVisible = ref(false);
-const currentBooking = ref(null);
-
-// 其他处理程序
-const openTodayCheckin = () => { 
-  // 调用封装好的今日入住筛选函数
-  showTodayCheckins(); 
-};
-
-const openTodayCheckout = () => {
-  // 重置搜索表单
-  resetSearch();
-  // 设置今日日期
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
-  const tomorrow = new Date(today);
-  tomorrow.setDate(tomorrow.getDate() + 1);
-  
-  // 设置离店日期为今天
-  searchForm.dateRange = [null, tomorrow];
-  searchForm.status = 'checked-in'; // 已入住状态
-  handleSearch();
-  ElMessage.success('已筛选今日离店预订');
-};
-
-const exportBookings = async () => {
-  try {
-    loading.value = true;
-    // 创建导出参数，使用当前筛选条件但不分页
-    const exportParams = {
-      status: searchForm.status || undefined,
-      guestName: searchForm.customerName || undefined,
-      guestPhone: searchForm.phone || undefined,
-      bookingNo: searchForm.bookingNo || undefined,
-      startDate: searchForm.dateRange ? searchForm.dateRange[0] : undefined,
-      endDate: searchForm.dateRange ? searchForm.dateRange[1] : undefined,
-      page: 0,
-      size: 1000 // 导出最多1000条记录
-    };
-    
-    // 获取数据
-    const response = await fetchBookings(exportParams);
-    const bookings = response.data?.data?.content || [];
-    
-    if (bookings.length === 0) {
-      ElMessage.warning('没有数据可导出');
-      loading.value = false;
-      return;
-    }
-    
-    // 准备Excel数据
-    const exportData = bookings.map(item => ({
-      '预订号': item.bookingNo || '',
-      '客户姓名': item.guestName || '',
-      '手机号': item.guestPhone || '',
-      '房间类型': item.roomTypeName || '',
-      '房间号': item.roomNumber || '未分配',
-      '房价(元/晚)': item.roomPrice || '',
-      '入住日期': formatDateToYMD(item.checkInTime),
-      '离店日期': formatDateToYMD(item.checkOutTime),
-      '支付状态': getPaymentStatusText(item.paymentStatus),
-      '预订状态': getStatusText(item.status),
-      '总价': item.totalPrice || '',
-      '特殊要求': item.specialRequests || ''
-    }));
-    
-    // 创建工作簿和工作表
-    const worksheet = XLSX.utils.json_to_sheet(exportData);
-    const workbook = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(workbook, worksheet, '预订数据');
-    
-    // 生成文件名
-    const now = new Date();
-    const fileName = `预订数据_${now.getFullYear()}${(now.getMonth()+1).toString().padStart(2, '0')}${now.getDate().toString().padStart(2, '0')}.xlsx`;
-    
-    // 导出Excel
-    XLSX.writeFile(workbook, fileName);
-    
-    ElMessage.success('数据导出成功');
-  } catch (error) {
-    console.error('导出数据失败:', error);
-    ElMessage.error('导出数据失败，请稍后重试');
-  } finally {
-    loading.value = false;
-  }
-};
-
-const handleQuickPayment = async (row) => {
-  try {
-    // 根据当前支付状态确定提示文本
-    const paymentTypeText = row.paymentStatus?.toUpperCase() === 'UNPAID' ? '全款' : '剩余款项';
-    
-    await ElMessageBox.confirm(
-      `确认为预订号 ${row.bookingNo} 进行${paymentTypeText}支付吗?`, 
-      '快捷支付', 
-      {
-        confirmButtonText: '确认支付',
-        cancelButtonText: '取消',
-        type: 'warning',
-      }
-    );
-    
-    loading.value = true;
-    // 调用支付API
-    await processPayment(row.id, row.paymentStatus?.toUpperCase() === 'UNPAID' ? 'FULL' : 'REMAINING');
-    ElMessage.success(`${paymentTypeText}支付成功`);
-    fetchData(); // 刷新数据
-  } catch (error) {
-    if (error !== 'cancel') {
-      console.error("支付处理错误:", error);
-      ElMessage.error(error.response?.data?.message || '支付处理失败');
-    }
-  } finally {
-    loading.value = false;
-  }
-};
 
 const formatRoomOption = (room) => {
   // 检查房间对象是否存在
@@ -1874,6 +2091,100 @@ const loadAvailableRoomsFromDB = async () => {
   }
 };
 
+// ADD Computed properties for stats in dialog
+const availableRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'AVAILABLE').length;
+});
+
+const occupiedRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'OCCUPIED').length;
+});
+
+const reservedRoomCount = computed(() => {
+  return roomStatusList.value.filter(room => room.status === 'RESERVED').length;
+});
+
+const currentOccupancyRate = computed(() => {
+  const total = roomStatusList.value.length;
+  if (total === 0) return 0;
+  
+  // 计算已入住的房间数量
+  const occupied = roomStatusList.value.filter(room => room.status === 'OCCUPIED').length;
+  
+  // 入住率 = 已入住房间数 / 总房间数 * 100%
+  return Math.round((occupied / total) * 100);
+});
+
+// ADD Helper functions for room status display
+const getRoomStatusClass = (status) => {
+  // 标准化status为大写
+  const normalizedStatus = status?.toUpperCase() || 'UNKNOWN';
+  
+  const statusMap = {
+    'AVAILABLE': 'room-available',
+    'VACANT': 'room-available', // 兼容可能的"空闲"状态
+    'OCCUPIED': 'room-occupied',
+    'RESERVED': 'room-reserved',
+    'MAINTENANCE': 'room-maintenance',
+    'CLEANING': 'room-cleaning',
+    'OUT_OF_SERVICE': 'room-out-of-service'
+  };
+  return statusMap[normalizedStatus] || 'room-unknown';
+};
+
+const getRoomStatusText = (status) => {
+  // 标准化status为大写
+  const normalizedStatus = status?.toUpperCase() || 'UNKNOWN';
+  
+  const statusMap = {
+    'AVAILABLE': '可用',
+    'VACANT': '可用',
+    'OCCUPIED': '已入住',
+    'RESERVED': '已预订',
+    'MAINTENANCE': '维修中',
+    'CLEANING': '清洁中',
+    'OUT_OF_SERVICE': '停用'
+  };
+  return statusMap[normalizedStatus] || '未知状态';
+};
+
+// 预订详情
+const detailVisible = ref(false);
+const currentBooking = ref(null);
+
+// 其他处理程序
+const openTodayCheckin = () => { 
+  // 调用封装好的今日入住筛选函数
+  showTodayCheckins(); 
+};
+
+const filterByStatus = (status) => {
+  // 更新状态选择器的值
+  selectedStatus.value = status;
+  
+  // 触发筛选
+  console.log(`正在按状态筛选: ${status}`);
+  ElMessage.success(`已筛选${getRoomStatusText(status)}的房间`);
+  
+  // 调用fetchRoomStatusData执行实际筛选
+  fetchRoomStatusData(selectedFloor.value);
+};
+
+// 已入住房间列表（用于入住率详情弹窗）
+const occupiedRoomsList = computed(() => {
+  return roomStatusList.value.filter(room => room.status.toUpperCase() === 'OCCUPIED');
+});
+
+// 当打开入住率详情时，确保有房间数据
+const showOccupancyInfo = () => {
+  // 如果房间状态列表为空，先加载数据
+  if (roomStatusList.value.length === 0) {
+    fetchRoomStatusData();
+  }
+  // 打开入住率详情弹窗
+  occupancyDetailVisible.value = true;
+};
+
 </script>
 
 <style scoped>
@@ -1959,12 +2270,24 @@ const loadAvailableRoomsFromDB = async () => {
   color: white;
 }
 
+.pending-card {
+  background: linear-gradient(to bottom, rgba(249, 115, 22, 0.1), transparent 20%);
+}
+
 .pending-card .stats-icon-wrapper {
   background: linear-gradient(135deg, #f97316, #ea580c);
 }
 
+.confirmed-card {
+  background: linear-gradient(to bottom, rgba(14, 165, 233, 0.1), transparent 20%);
+}
+
 .confirmed-card .stats-icon-wrapper {
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
+}
+
+.occupancy-card {
+  background: linear-gradient(to bottom, rgba(16, 185, 129, 0.1), transparent 20%);
 }
 
 .occupancy-card .stats-icon-wrapper {
@@ -2375,5 +2698,676 @@ const loadAvailableRoomsFromDB = async () => {
   margin-top: 10px;
   font-size: 14px;
   color: #f56c6c;
+}
+
+/* 房态一览对话框样式 */
+.room-status-dialog {
+  max-width: 1400px;
+}
+
+/* 房态一览组件样式 */
+.room-status-container {
+  padding: 10px;
+}
+
+/* 状态过滤器样式 */
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin-top: 15px;
+  margin-bottom: 20px;
+  align-items: center;
+}
+
+/* 楼层选择器样式 */
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.filter-item span {
+  white-space: nowrap;
+  font-weight: 500;
+}
+
+.filter-item .el-select {
+  width: auto;
+  min-width: 120px;
+}
+
+/* 确保下拉选项完全显示 */
+:deep(.el-select-dropdown__item) {
+  padding-right: 20px;
+  white-space: nowrap;
+}
+
+/* 刷新按钮样式调整 */
+.refresh-btn {
+  margin-left: auto;
+  padding: 9px 16px;
+}
+
+/* 房间状态统计卡片样式 */
+.room-stats-cards {
+  margin-bottom: 20px;
+}
+
+/* 图例说明样式 */
+.room-status-legend {
+  display: flex;
+  gap: 15px;
+  margin-bottom: 20px;
+  padding: 10px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.clickable-legend {
+  cursor: pointer;
+  padding: 5px 10px;
+  border-radius: 4px;
+  transition: all 0.3s ease;
+}
+
+.clickable-legend:hover {
+  background-color: rgba(0, 0, 0, 0.05);
+  transform: translateY(-2px);
+}
+
+.clickable-legend .legend-color {
+  transition: all 0.3s ease;
+}
+
+.clickable-legend:hover .legend-color {
+  transform: scale(1.2);
+}
+
+.legend-color {
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+}
+
+/* 更大更明显的图标 */
+.stat-icon {
+  font-size: 28px !important;
+}
+
+.stat-icon-wrapper {
+  width: 64px !important;
+  height: 64px !important;
+}
+
+/* 按楼层分组显示房间样式 */
+.rooms-by-floor {
+  display: flex;
+  flex-direction: column;
+  gap: 25px;
+}
+
+/* 楼层标题样式 */
+.floor-section {
+  border: 1px solid #ebeef5;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.floor-header {
+  display: flex;
+  justify-content: space-between;
+  padding: 12px 15px;
+  background-color: #f5f7fa;
+  border-bottom: 1px solid #ebeef5;
+}
+
+.floor-header h4 {
+  margin: 0;
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 楼层统计信息样式 */
+.floor-stats {
+  display: flex;
+  gap: 15px;
+  color: #606266;
+  font-size: 14px;
+}
+
+/* 房间容器 */
+.floor-rooms {
+  padding: 15px;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+  gap: 15px;
+}
+
+/* 房间单元格样式 */
+.room-cell {
+  border-radius: 6px;
+  padding: 12px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  transition: all 0.3s ease;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+  border: 1px solid #ebeef5;
+}
+
+.room-cell:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08);
+}
+
+/* 房间号样式 */
+.room-number {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+}
+
+/* 房间类型样式 */
+.room-type {
+  font-size: 12px;
+  color: #606266;
+}
+
+/* 房间状态样式 */
+.room-status {
+  font-size: 12px;
+  margin-top: 5px;
+  padding: 2px 6px;
+  border-radius: 4px;
+  text-align: center;
+  background-color: rgba(0, 0, 0, 0.05);
+}
+
+/* 房间状态颜色类 */
+.room-available {
+  background-color: #f0f9eb;
+  border-color: #e1f3d8;
+  color: #67c23a;
+}
+
+.room-occupied {
+  background-color: #fef0f0;
+  border-color: #fde2e2;
+  color: #f56c6c;
+}
+
+.room-reserved {
+  background-color: #fdf6ec;
+  border-color: #faecd8;
+  color: #e6a23c;
+}
+
+.room-cleaning {
+  background-color: #e1f5fe;
+  border-color: #b3e5fc;
+  color: #03a9f4;
+}
+
+.room-maintenance {
+  background-color: #fff7e6;
+  border-color: #ffe7ba;
+  color: #ff9800;
+}
+
+.room-out-of-service {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #9e9e9e;
+}
+
+.room-unknown {
+  background-color: #f5f5f5;
+  border-color: #e0e0e0;
+  color: #909399;
+}
+
+.stat-card.clickable-card {
+  cursor: pointer;
+}
+
+.stat-card.clickable-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+}
+
+.stat-card.clickable-card .stat-icon-wrapper {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card:hover .stat-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.stat-card .stat-icon-wrapper {
+  transition: all 0.3s ease;
+}
+
+.stat-card .stat-icon-wrapper .stat-icon {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card .stat-icon-wrapper .stat-icon {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card:hover .stat-icon-wrapper .stat-icon {
+  transform: scale(1.1);
+}
+
+.stat-card .stat-info {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card .stat-info {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card:hover .stat-info {
+  transform: scale(1.05);
+}
+
+.stat-card .stat-value {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card .stat-value {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card:hover .stat-value {
+  transform: scale(1.05);
+}
+
+.stat-card .stat-title {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card .stat-title {
+  transition: all 0.3s ease;
+}
+
+.stat-card.clickable-card:hover .stat-title {
+  transform: scale(1.05);
+}
+
+.stat-card .stat-icon-wrapper.available-bg {
+  background: linear-gradient(135deg, #28a745, #218838);
+}
+
+.stat-card .stat-icon-wrapper.occupied-bg {
+  background: linear-gradient(135deg, #dc3545, #c52b33);
+}
+
+.stat-card .stat-icon-wrapper.reserved-bg {
+  background: linear-gradient(135deg, #ffc107, #e6a23c);
+}
+
+.stat-card .stat-icon-wrapper.cleaning-bg {
+  background: linear-gradient(135deg, #17a2b8, #157347);
+}
+
+.stat-card .stat-icon-wrapper.maintenance-bg {
+  background: linear-gradient(135deg, #ff9800, #e67e22);
+}
+
+.stat-card .stat-icon-wrapper.occupancy-bg {
+  background: linear-gradient(135deg, #6f42c1, #5a32a3);
+}
+
+/* 房间状态卡片 */
+.stat-card {
+  padding: 0 !important;
+  overflow: hidden;
+  border-radius: 10px;
+  border: none !important;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+}
+
+.stat-card-content {
+  position: relative;
+  padding-top: 10px;
+}
+
+.stat-icon-wrapper {
+  position: relative;
+  z-index: 2;
+  border-radius: 50%;
+  margin: 0 auto 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.stat-info {
+  position: relative;
+  z-index: 2;
+  text-align: center;
+  padding: 0 10px 15px;
+}
+
+.stat-value {
+  font-size: 32px !important;
+  font-weight: 700 !important;
+  margin-bottom: 5px !important;
+  color: #333 !important;
+}
+
+.stat-title {
+  font-size: 14px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 顶部彩色条 */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 6px;
+}
+
+.available-card::before {
+  background: linear-gradient(90deg, #28a745, #218838);
+}
+
+.occupied-card::before {
+  background: linear-gradient(90deg, #dc3545, #c52b33);
+}
+
+.reserved-card::before {
+  background: linear-gradient(90deg, #ffc107, #e6a23c);
+}
+
+.cleaning-card::before {
+  background: linear-gradient(90deg, #17a2b8, #157347);
+}
+
+.maintenance-card::before {
+  background: linear-gradient(90deg, #ff9800, #e67e22);
+}
+
+.occupancy-card::before {
+  background: linear-gradient(90deg, #6f42c1, #5a32a3);
+}
+
+/* 更新状态卡片样式 */
+.stat-card {
+  border-radius: 12px !important;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.08) !important;
+  border: none !important;
+  height: 100%;
+}
+
+.stat-card-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 20px 10px;
+}
+
+.stat-icon-wrapper {
+  width: 70px !important;
+  height: 70px !important;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 15px;
+  box-shadow: 0 5px 15px rgba(0, 0, 0, 0.1);
+}
+
+.stat-icon {
+  font-size: 32px !important;
+  color: white;
+}
+
+.stat-info {
+  text-align: center;
+  width: 100%;
+}
+
+.stat-value {
+  font-size: 36px !important;
+  font-weight: 700;
+  color: #333;
+  margin-bottom: 5px;
+  line-height: 1.2;
+}
+
+.stat-title {
+  font-size: 16px;
+  color: #666;
+  font-weight: 500;
+}
+
+/* 卡片顶部彩色条 */
+.stat-card::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 8px;
+  z-index: 1;
+}
+
+/* 卡片悬停效果 */
+.stat-card.clickable-card:hover {
+  transform: translateY(-8px);
+  box-shadow: 0 15px 30px rgba(0, 0, 0, 0.15) !important;
+}
+
+.stat-card.clickable-card:hover .stat-icon-wrapper {
+  transform: scale(1.1);
+}
+
+.stat-card.clickable-card:hover .stat-value {
+  transform: scale(1.05);
+}
+
+/* 入住率详情弹窗样式 */
+.occupancy-dialog .el-dialog__body {
+  padding: 20px;
+}
+
+.occupancy-detail {
+  display: flex;
+  flex-direction: column;
+  gap: 20px;
+}
+
+.occupancy-stats {
+  background-color: #f8f9fa;
+  border-radius: 10px;
+  padding: 20px;
+}
+
+.detail-item {
+  display: flex;
+  justify-content: space-between;
+  margin-bottom: 12px;
+  font-size: 16px;
+}
+
+.item-label {
+  font-weight: 500;
+  color: #555;
+}
+
+.item-value {
+  font-weight: 600;
+  color: #333;
+}
+
+.occupancy-chart {
+  margin-top: 15px;
+}
+
+.occupancy-chart .el-progress-bar__inner {
+  transition: width 0.8s ease;
+}
+
+.occupied-rooms-list h3 {
+  margin-top: 0;
+  margin-bottom: 15px;
+  font-size: 18px;
+  color: #333;
+  border-bottom: 2px solid #f0f0f0;
+  padding-bottom: 10px;
+}
+
+/* 添加新样式移除顶部彩色条 */
+.no-top-bar::before {
+  display: none !important;
+}
+
+.no-top-bar .el-dialog__header {
+  border-top: none !important;
+  background: #fff !important;
+}
+
+/* 移除其他地方可能导致顶部彩色条的样式 */
+.room-status-dialog::before,
+.room-status-container::before,
+.status-header::before {
+  display: none !important;
+}
+
+/* 移除顶部横条的样式 */
+/* 卡片顶部彩色条 - 移除 */
+.stat-card::before {
+  display: none !important;
+}
+
+/* 修改stat-card-content样式，确保没有顶部条 */
+.stat-card-content {
+  border-top: none !important;
+}
+
+/* 移除各种彩色条样式 */
+.available-card::before,
+.occupied-card::before,
+.reserved-card::before,
+.cleaning-card::before,
+.maintenance-card::before,
+.occupancy-card::before {
+  display: none !important;
+}
+
+/* 对话框顶部条移除 */
+.el-dialog::before,
+.el-dialog__header::before {
+  display: none !important;
+}
+
+/* 更新卡片样式，使用背景色代替顶部条 */
+.available-card {
+  background: linear-gradient(to bottom, rgba(40, 167, 69, 0.1), transparent 20%);
+}
+
+.occupied-card {
+  background: linear-gradient(to bottom, rgba(220, 53, 69, 0.1), transparent 20%);
+}
+
+.reserved-card {
+  background: linear-gradient(to bottom, rgba(255, 193, 7, 0.1), transparent 20%);
+}
+
+.cleaning-card {
+  background: linear-gradient(to bottom, rgba(23, 162, 184, 0.1), transparent 20%);
+}
+
+.maintenance-card {
+  background: linear-gradient(to bottom, rgba(255, 152, 0, 0.1), transparent 20%);
+}
+
+.occupancy-card {
+  background: linear-gradient(to bottom, rgba(111, 66, 193, 0.1), transparent 20%);
+}
+
+/* 调整状态标题 */
+.status-title {
+  font-size: 20px;
+  margin: 0 0 10px 0;
+  color: #333;
+  font-weight: 600;
+}
+
+/* 调整筛选框容器 */
+.status-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 20px;
+  margin: 15px 0 20px;
+  padding: 15px;
+  background-color: #f8f9fa;
+  border-radius: 8px;
+  align-items: center;
+}
+
+/* 调整筛选项 */
+.filter-item {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.filter-label {
+  white-space: nowrap;
+  font-weight: 500;
+  color: #333;
+  min-width: 50px;
+  text-align: right;
+}
+
+.filter-item .el-select {
+  width: auto;
+}
+
+/* 确保下拉选项完全显示 */
+:deep(.el-select-dropdown__item) {
+  padding: 0 30px 0 20px;
+  white-space: nowrap;
+}
+
+:deep(.el-select .el-input__wrapper) {
+  padding-left: 15px;
+  padding-right: 15px;
+}
+
+:deep(.el-input__inner) {
+  font-size: 14px;
+}
+
+/* 刷新按钮样式调整 */
+.refresh-btn {
+  margin-left: auto;
+  padding: 9px 20px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+}
+
+.refresh-btn .el-icon {
+  font-size: 16px;
 }
 </style>

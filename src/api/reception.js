@@ -127,8 +127,88 @@ export const checkInBooking = (checkInData) => {
 /**
  * 获取今日入住/退房统计 (用于获取 todayCheckinCount)
  */
-export const fetchTodayCheckinStats = () => {
-    return apiClient.get('/admin/checkin/today-stats');
+export const fetchTodayCheckinStats = async () => {
+    try {
+        console.log("开始获取今日入住统计数据...");
+        
+        // 尝试获取今日入住统计，使用专用API端点
+        const response = await apiClient.get('/admin/checkin/today-stats');
+        console.log("今日入住统计API原始响应:", response);
+        
+        // 检查不同可能的响应结构并提取数据
+        let todayCheckins = 0;
+        
+        if (response.data?.data?.todayCheckIns !== undefined) {
+            // 标准响应路径
+            todayCheckins = response.data.data.todayCheckIns;
+            console.log("从 response.data.data.todayCheckIns 获取到计数:", todayCheckins);
+        } else if (response.data?.todayCheckIns !== undefined) {
+            // 直接在data对象上的属性
+            todayCheckins = response.data.todayCheckIns;
+            console.log("从 response.data.todayCheckIns 获取到计数:", todayCheckins);
+        } else if (response.data?.data?.count !== undefined) {
+            // 另一种可能的格式
+            todayCheckins = response.data.data.count;
+            console.log("从 response.data.data.count 获取到计数:", todayCheckins);
+        } else {
+            // 如果专用API不可用，尝试使用预订API查询今日入住的预订
+            console.log("专用API无法获取今日入住数据，尝试使用预订API...");
+            
+            // 构建今日日期范围
+            const today = new Date();
+            today.setHours(0, 0, 0, 0);
+            const tomorrow = new Date(today);
+            tomorrow.setDate(tomorrow.getDate() + 1);
+            
+            const params = {
+                status: 'CONFIRMED',
+                checkInTime: today.toISOString().split('T')[0], // 只发送日期部分
+                page: 0,
+                size: 1 // 只需要总数
+            };
+            
+            const bookingsResponse = await fetchBookings(params);
+            console.log("预订API获取今日入住响应:", bookingsResponse);
+            
+            // 尝试从预订API响应中提取总数
+            if (bookingsResponse.data?.data?.totalElements !== undefined) {
+                todayCheckins = bookingsResponse.data.data.totalElements;
+                console.log("从预订API的 totalElements 获取到今日入住计数:", todayCheckins);
+            } else if (bookingsResponse.data?.data?.total !== undefined) {
+                todayCheckins = bookingsResponse.data.data.total;
+                console.log("从预订API的 total 获取到今日入住计数:", todayCheckins);
+            } else if (bookingsResponse.data?.totalElements !== undefined) {
+                todayCheckins = bookingsResponse.data.totalElements;
+                console.log("从预订API的 data.totalElements 获取到今日入住计数:", todayCheckins);
+            }
+        }
+        
+        console.log("最终确定的今日入住数量:", todayCheckins);
+        
+        // 返回标准格式的响应
+        return {
+            data: {
+                data: {
+                    todayCheckIns: todayCheckins
+                }
+            }
+        };
+    } catch (error) {
+        console.error("获取今日入住统计失败:", error);
+        if (error.response) {
+            console.error("错误状态码:", error.response.status);
+            console.error("错误详情:", error.response.data);
+        }
+        
+        // 返回默认响应结构
+        return {
+            data: {
+                data: {
+                    todayCheckIns: 0
+                }
+            }
+        };
+    }
 };
 
 
@@ -149,7 +229,8 @@ export const fetchRooms = (params) => {
     page: params.page || 0, // 从第0页开始
     // 添加可能的参数别名映射 (保留，可能有其他地方用到)
     roomTypeId: params.roomTypeId || params.roomType || params.typeId,
-    status: params.status || 'AVAILABLE' // 默认查询可用房间
+    // 完全移除默认status值，除非明确指定了status
+    status: params.status === undefined ? undefined : params.status
   };
 
   console.log('发送到后端的房间请求参数:', apiParams);
@@ -228,11 +309,50 @@ export const fetchDashboardStats = () => {
  */
 export const fetchPendingBookingCount = async () => {
     try {
-        const response = await fetchBookings({ status: 'PENDING', pageSize: 1 });
-        // Adjust based on actual API response structure
-        return response.data?.data?.total || 0; 
+        console.log("开始获取待确认预订数量...");
+        const response = await fetchBookings({ status: 'PENDING', pageSize: 1, size: 1, page: 0 });
+        console.log("待确认预订API原始响应:", response);
+
+        // 检查不同可能的响应结构
+        let count = 0;
+        if (response.data?.data?.totalElements !== undefined) {
+            // Spring Boot分页格式
+            count = response.data.data.totalElements;
+            console.log("从 response.data.data.totalElements 获取到计数:", count);
+        } else if (response.data?.data?.total !== undefined) {
+            // 可能的自定义分页格式
+            count = response.data.data.total;
+            console.log("从 response.data.data.total 获取到计数:", count);
+        } else if (response.data?.total !== undefined) {
+            // 另一种可能的格式
+            count = response.data.total;
+            console.log("从 response.data.total 获取到计数:", count);
+        } else if (response.data?.totalElements !== undefined) {
+            // 直接是分页对象
+            count = response.data.totalElements;
+            console.log("从 response.data.totalElements 获取到计数:", count);
+        } else if (Array.isArray(response.data?.data?.content)) {
+            // 如果返回了内容列表但没有总数，查询数据库总数
+            try {
+                const countResponse = await apiClient.get('/reservations/count', { params: { status: 'PENDING' } });
+                count = countResponse.data || 0;
+                console.log("从专用计数API获取到计数:", count);
+            } catch (countError) {
+                console.warn("获取计数API失败，回退到使用内容长度");
+                // 只能使用当前页数据长度，可能不准确
+                count = response.data.data.content.length;
+                console.log("从 content 数组长度估算计数:", count);
+            }
+        }
+
+        console.log("最终确定的待确认预订数量:", count);
+        return count;
     } catch (error) {
-        console.error("Error fetching pending booking count:", error);
-        return 0; // Return 0 or handle error appropriately
+        console.error("获取待确认预订数量失败:", error);
+        if (error.response) {
+            console.error("错误状态码:", error.response.status);
+            console.error("错误详情:", error.response.data);
+        }
+        return 0; // 返回0作为默认值
     }
 }; 
