@@ -42,6 +42,78 @@ export const fetchBookings = (params) => {
 };
 
 /**
+ * 获取今日新创建的预订（今日下单）
+ * 用于显示今日下单的预订记录，不论入住日期如何
+ */
+export const fetchTodayReservations = () => {
+  // 添加日志以便追踪
+  console.log('获取今日新创建的预订列表');
+  
+  // 获取今天日期字符串 YYYY-MM-DD
+  const today = new Date();
+  const dateStr = today.toISOString().split('T')[0];
+  
+  // 构建查询参数 - 使用创建日期筛选
+  const params = {
+    createDate: dateStr, // 使用创建日期而非入住日期
+    orderDate: dateStr,  // 备用字段名，取决于后端API设计
+    page: 0,
+    size: 100 // 设置足够大以获取所有记录
+  };
+  
+  console.log('使用标准预订API，筛选今日创建的预订，参数:', params);
+  
+  // 使用标准预订列表API
+  return apiClient.get('/reservations', { params })
+    .then(response => {
+      console.log('预订API响应:', response);
+      
+      // 手动过滤 - 确保只显示今天创建的预订
+      if (response.data && response.data.content) {
+        // 提取预订记录
+        const allReservations = response.data.content;
+        
+        // 手动筛选今天创建的预订
+        const todayReservations = allReservations.filter(res => {
+          // 尝试从各种可能的日期字段中提取创建日期
+          const createDate = res.createTime || res.createDate || res.orderDate || res.createDateTime;
+          if (!createDate) return false;
+          
+          // 提取日期部分 YYYY-MM-DD
+          const dateOnly = typeof createDate === 'string' 
+            ? createDate.split('T')[0] 
+            : new Date(createDate).toISOString().split('T')[0];
+            
+          return dateOnly === dateStr;
+        });
+        
+        console.log(`筛选后的今日创建预订: ${todayReservations.length}/${allReservations.length}`);
+        
+        // 返回筛选后的结果
+        return {
+          data: {
+            content: todayReservations,
+            totalElements: todayReservations.length
+          }
+        };
+      }
+      
+      return response;
+    })
+    .catch(error => {
+      console.error('获取预订列表失败:', error);
+      
+      // 返回一个空的结果结构，避免界面错误
+      return {
+        data: {
+          content: [],
+          totalElements: 0
+        }
+      };
+    });
+};
+
+/**
  * 获取预订详情
  * @param {number} id - 预订 ID
  */
@@ -495,3 +567,25 @@ export const fetchPendingBookingCount = async () => {
         return 0; // 返回0作为默认值
     }
 };
+
+// 办理退房API - 将房间状态更新为待清洁
+export const checkoutRoom = (roomData) => {
+  // 这里假设roomData可以是一个对象，包含id和roomNumber，或者直接是一个数字ID
+  const roomNumber = roomData.roomNumber || roomData;
+  console.log('发送退房请求, 房间号:', roomNumber);
+  
+  // 使用正确的API端点: POST /api/reception/checkout/{roomNumber}
+  return apiClient.post(`/reception/checkout/${roomNumber}`)
+    .then(response => {
+      console.log('退房API调用成功, 响应:', response);
+      return response;
+    })
+    .catch(error => {
+      console.error('退房API调用失败:', error);
+      if (error.response) {
+        console.error('退房失败 - 状态码:', error.response.status);
+        console.error('退房失败 - 响应数据:', error.response.data);
+      }
+      throw error;
+    });
+}
