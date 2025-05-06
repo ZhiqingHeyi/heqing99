@@ -35,6 +35,11 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     boolean existsByRoomNumberAndStatusNot(String roomNumber, String status);
 
     /**
+     * 根据房间号查询所有任务
+     */
+    List<Task> findByRoomNumber(String roomNumber);
+
+    /**
      * 查询需要清洁的房间
      */
     @Query("SELECT new com.hotel.dto.TaskDTO(r.roomNumber, r.roomType.name) FROM Room r WHERE r.status = 'NEEDS_CLEANING' OR r.needCleaning = true")

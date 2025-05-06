@@ -964,10 +964,57 @@ export const invitationCodeApi = {
 export const cleaningApi = {
   getTasks: () => apiClient.get('/api/cleaning/tasks'),
   updateTaskStatus: (taskId, status, completionDetails) => {
-    if (completionDetails) {
-      return apiClient.post(`/api/cleaning/tasks/${taskId}/complete`, completionDetails);
+    console.log(`调用更新任务状态API: taskId=${taskId}, status=${status}`, completionDetails ? JSON.stringify(completionDetails) : "无详细数据")
+    
+    try {
+      if (status === 'completed') {
+        // 构建一个极简的请求体，只包含必要的actualDuration字段
+        const simpleTaskDTO = {};
+        
+        // 确保actualDuration字段存在
+        if (completionDetails && (completionDetails.actualDuration || completionDetails.duration)) {
+          simpleTaskDTO.actualDuration = completionDetails.actualDuration || completionDetails.duration;
+        } else {
+          simpleTaskDTO.actualDuration = 30; // 默认值
+        }
+        
+        // 如果有issues字段，也添加进去
+        if (completionDetails && completionDetails.issues) {
+          simpleTaskDTO.issues = completionDetails.issues;
+        }
+        
+        console.log('使用极简请求体调用完成API:', `/api/cleaning/tasks/${taskId}/complete`, simpleTaskDTO);
+        
+        return apiClient.post(`/api/cleaning/tasks/${taskId}/complete`, simpleTaskDTO, {
+          headers: {
+            'Content-Type': 'application/json'
+          }
+        })
+          .then(response => {
+            console.log('完成任务API响应:', response);
+            return response;
+          })
+          .catch(error => {
+            console.error('完成任务API错误:', error);
+            throw error;
+          });
+      } else if (status === 'processing') {
+        return apiClient.post(`/api/cleaning/tasks/${taskId}/start`)
+          .then(response => {
+            console.log('开始任务API响应:', response)
+            return response
+          })
+          .catch(error => {
+            console.error('开始任务API错误:', error)
+            throw error
+          })
+      } else {
+        throw new Error(`不支持的任务状态: ${status}`)
+      }
+    } catch (error) {
+      console.error('更新任务状态API错误:', error)
+      throw error
     }
-    return apiClient.post(`/api/cleaning/tasks/${taskId}/start`);
   },
   getCleaningRecords: () => apiClient.get('/api/cleaning/records'),
   getTaskStatistics: () => apiClient.get('/api/cleaning/tasks/statistics'),

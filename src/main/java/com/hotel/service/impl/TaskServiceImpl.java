@@ -61,9 +61,37 @@ public class TaskServiceImpl implements TaskService {
         if (!"processing".equals(task.getStatus())) {
             throw new BusinessException("只有进行中的任务可以标记完成");
         }
-        BeanUtils.copyProperties(completionDetails, task);
+        
+        // 避免使用BeanUtils，而是手动设置属性
+        if (completionDetails != null) {
+            // 设置实际用时
+            if (completionDetails.getActualDuration() != null) {
+                task.setActualDuration(completionDetails.getActualDuration());
+            } else {
+                task.setActualDuration(30); // 设置默认值
+            }
+            
+            // 设置问题记录
+            if (completionDetails.getIssues() != null) {
+                task.setIssues(completionDetails.getIssues());
+            }
+        }
+        
         task.setStatus("completed");
         task.setCompleteTime(LocalDateTime.now());
+        logger.info("任务完成：ID={}, 房间={}, 实际用时={}分钟", 
+                   taskId, task.getRoomNumber(), task.getActualDuration());
+        
+        // 重要：更新房间状态为不需要清洁，并设置状态为可用
+        Optional<Room> roomOptional = roomRepository.findByRoomNumber(task.getRoomNumber());
+        if (roomOptional.isPresent()) {
+            Room room = roomOptional.get();
+            room.setNeedCleaning(false);
+            room.setStatus(Room.RoomStatus.AVAILABLE);
+            roomRepository.save(room);
+            logger.info("已更新房间状态：房间号={}, 状态=AVAILABLE, 需要清洁=false", room.getRoomNumber());
+        }
+        
         return taskRepository.save(task);
     }
 
@@ -129,11 +157,32 @@ public class TaskServiceImpl implements TaskService {
         }
         
         for (Room room : roomsNeedCleaning) {
-            // 检查是否已存在该房间的待处理或进行中任务
-            boolean taskExists = taskRepository.existsByRoomNumberAndStatusNot(
-                room.getRoomNumber(), "completed");
+            // 首先检查是否已存在该房间的任何状态的任务
+            List<Task> existingTasks = taskRepository.findByRoomNumber(room.getRoomNumber());
+            
+            // 如果不存在任务，或者只存在已完成的任务但房间状态仍为"需要清洁"，则创建新任务
+            boolean shouldCreateTask = existingTasks.isEmpty();
+            
+            if (!shouldCreateTask) {
+                // 检查是否所有任务都已完成但房间状态仍为"需要清洁"
+                boolean allCompleted = true;
+                for (Task existingTask : existingTasks) {
+                    if (!"completed".equals(existingTask.getStatus())) {
+                        allCompleted = false;
+                        break;
+                    }
+                }
+                // 如果所有任务都已完成，但房间状态仍为NEEDS_CLEANING，更新房间状态而不是创建新任务
+                if (allCompleted) {
+                    room.setNeedCleaning(false);
+                    room.setStatus(Room.RoomStatus.AVAILABLE);
+                    roomRepository.save(room);
+                    logger.info("已更新房间 {} 状态为可用，跳过任务创建", room.getRoomNumber());
+                    continue;
+                }
+            }
                 
-            if (!taskExists) {
+            if (shouldCreateTask) {
                 // 创建新任务
                 Task task = new Task();
                 task.setRoomNumber(room.getRoomNumber());
@@ -148,6 +197,8 @@ public class TaskServiceImpl implements TaskService {
                 Task savedTask = taskRepository.save(task);
                 createdTasks.add(savedTask);
                 logger.info("为房间 {} 创建了清洁任务，分配给清洁员: {}", room.getRoomNumber(), defaultCleaner);
+            } else {
+                logger.info("房间 {} 已存在有效的清洁任务，跳过任务创建", room.getRoomNumber());
             }
         }
         

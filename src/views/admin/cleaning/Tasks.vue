@@ -200,7 +200,7 @@
       </template>
     </el-dialog>
 
-    <!-- 完成清洁对话框 - 增大尺寸更易于操作 -->
+    <!-- 完成清洁对话框 - 简化版 -->
     <el-dialog
       title="完成清洁"
       v-model="completeDialogVisible"
@@ -227,73 +227,18 @@
               120: '120'
             }"
             height="40px"
+            @change="validateDuration"
+            @input="validateDuration"
+            @update:model-value="validateDuration"
           />
           <div class="duration-display">{{ completeForm.actualDuration }} 分钟</div>
-        </el-form-item>
-        
-        <el-form-item label="清洁项目" prop="cleanItems" class="checkbox-item">
-          <div class="checkbox-grid">
-            <el-checkbox label="bedding" size="large" border v-model="completeForm.cleanItems">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-bed"></i>
-                <span>床品更换</span>
-              </div>
-            </el-checkbox>
-            <el-checkbox label="bathroom" size="large" border v-model="completeForm.cleanItems">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-bathroom"></i>
-                <span>浴室清洁</span>
-              </div>
-            </el-checkbox>
-            <el-checkbox label="floor" size="large" border v-model="completeForm.cleanItems">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-floor"></i>
-                <span>地面清洁</span>
-              </div>
-            </el-checkbox>
-            <el-checkbox label="furniture" size="large" border v-model="completeForm.cleanItems">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-furniture"></i>
-                <span>家具除尘</span>
-              </div>
-            </el-checkbox>
-            <el-checkbox label="garbage" size="large" border v-model="completeForm.cleanItems">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-garbage"></i>
-                <span>垃圾清理</span>
-              </div>
-            </el-checkbox>
-          </div>
-        </el-form-item>
-        
-        <el-form-item label="物品补充" prop="supplies" class="checkbox-item">
-          <div class="checkbox-grid">
-            <el-checkbox label="toiletries" size="large" border v-model="completeForm.supplies">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-toiletries"></i>
-                <span>洗漱用品</span>
-              </div>
-            </el-checkbox>
-            <el-checkbox label="towels" size="large" border v-model="completeForm.supplies">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-towels"></i>
-                <span>毛巾浴巾</span>
-              </div>
-            </el-checkbox>
-            <el-checkbox label="water" size="large" border v-model="completeForm.supplies">
-              <div class="checkbox-content">
-                <i class="checkbox-icon icon-water"></i>
-                <span>饮用水</span>
-              </div>
-            </el-checkbox>
-          </div>
         </el-form-item>
         
         <el-form-item label="特殊情况" prop="issues">
           <el-input
             v-model="completeForm.issues"
             type="textarea"
-            rows="3"
+            rows="5"
             placeholder="请记录房间内发现的问题(如有)"
           />
         </el-form-item>
@@ -398,8 +343,6 @@ const completeDialogVisible = ref(false)
 const completeFormRef = ref(null)
 const completeForm = reactive({
   actualDuration: 30,
-  cleanItems: [],
-  supplies: [],
   issues: ''
 })
 const currentTask = ref(null)
@@ -421,15 +364,30 @@ const taskFormRules = {
 }
 
 const completeFormRules = {
+  // 为实际用时添加验证规则
   actualDuration: [
-    { required: true, message: '请输入实际用时', trigger: 'blur' }
-  ],
-  cleanItems: [
-    { type: 'array', required: true, message: '请至少选择一个清洁项目', trigger: 'change' }
-  ],
-  supplies: [
-    { type: 'array', required: true, message: '请至少选择一个物品补充项目', trigger: 'change' }
+    { required: true, message: '请选择实际用时', trigger: 'change' },
+    { validator: (rule, value, callback) => {
+      if (value && value >= 5) {
+        callback()
+      } else {
+        callback(new Error('请选择实际用时'))
+      }
+    }, trigger: 'change' }
   ]
+}
+
+// 手动验证实际用时字段
+const validateDuration = (value) => {
+  console.log('validateDuration 被触发，值:', value);
+  if (completeFormRef.value) {
+    // 确保数值合法
+    if (!value || value < 5) {
+      completeForm.actualDuration = 30; // 如果无效，设置默认值
+    }
+    // 手动触发实际用时字段的验证
+    completeFormRef.value.validateField('actualDuration');
+  }
 }
 
 // 状态和优先级处理函数
@@ -562,8 +520,6 @@ const handleStart = async (row) => {
 const handleComplete = (row) => {
   currentTask.value = row
   completeForm.actualDuration = 30
-  completeForm.cleanItems = []
-  completeForm.supplies = []
   completeForm.issues = ''
   completeDialogVisible.value = true
 }
@@ -572,34 +528,78 @@ const handleComplete = (row) => {
 const handleCompleteSubmit = async () => {
   if (!completeFormRef.value || !currentTask.value) return
 
+  // 确保实际用时有值
+  if (!completeForm.actualDuration || completeForm.actualDuration < 5) {
+    completeForm.actualDuration = 30 // 设置默认值
+  }
+
   await completeFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // 调用后端API更新任务状态和完成信息
-        await cleaningApi.updateTaskStatus(currentTask.value.id, 'completed', {
-          actualDuration: completeForm.actualDuration,
-          cleanItems: completeForm.cleanItems.join(','),
-          supplies: completeForm.supplies.join(','),
-          issues: completeForm.issues
-        })
+        // 显示加载状态
+        loading.value = true
+        ElMessage.info('正在提交完成信息...')
         
-        // 更新任务状态
-        currentTask.value.status = 'completed'
-        
-        // 更新任务计数
-        const processingIndex = taskStats.findIndex(s => s.type === 'processing')
-        const completedIndex = taskStats.findIndex(s => s.type === 'completed')
-        if (processingIndex !== -1 && completedIndex !== -1) {
-          taskStats[processingIndex].count--
-          taskStats[completedIndex].count++
+        // 准备完成信息数据 - 使用actualDuration字段，符合TaskDTO的期望
+        const completionData = {
+          actualDuration: completeForm.actualDuration
         }
         
-        ElMessage.success('清洁任务已完成，房间状态已更新为可入住')
-        completeDialogVisible.value = false
+        // 只有在有值时才添加issues字段
+        if (completeForm.issues && completeForm.issues.trim()) {
+          completionData.issues = completeForm.issues.trim()
+        }
+        
+        console.log('提交完成信息数据:', JSON.stringify(completionData))
+        
+        try {
+          // 尝试提交
+          const response = await cleaningApi.updateTaskStatus(currentTask.value.id, 'completed', completionData)
+          console.log('完成任务响应:', response)
+          
+          // 更新任务状态
+          currentTask.value.status = 'completed'
+          
+          // 更新任务计数
+          const processingIndex = taskStats.findIndex(s => s.type === 'processing')
+          const completedIndex = taskStats.findIndex(s => s.type === 'completed')
+          if (processingIndex !== -1 && completedIndex !== -1) {
+            taskStats[processingIndex].count--
+            taskStats[completedIndex].count++
+          }
+          
+          ElMessage.success('清洁任务已完成，房间状态已更新为可入住')
+          completeDialogVisible.value = false
+          
+          // 刷新任务列表
+          await fetchTaskList()
+        } catch (error) {
+          console.error('任务完成提交失败:', error)
+          ElMessage.error('提交失败，请稍后重试')
+        }
       } catch (error) {
         console.error('提交完成信息失败:', error)
-        ElMessage.error('操作失败')
+        let errorMsg = '操作失败'
+        
+        // 尝试获取更详细的错误信息
+        if (error.response) {
+          console.log('错误响应详情:', error.response)
+          if (error.response.data && error.response.data.message) {
+            errorMsg = `操作失败: ${error.response.data.message}`
+          } else if (error.response.data) {
+            errorMsg = `操作失败: ${JSON.stringify(error.response.data)}`
+          } else {
+            errorMsg = `操作失败 (${error.response.status})`
+          }
+        }
+        
+        ElMessage.error(errorMsg)
+      } finally {
+        loading.value = false
       }
+    } else {
+      // 表单验证失败
+      ElMessage.warning('请正确填写实际用时')
     }
   })
 }
@@ -1053,43 +1053,6 @@ onMounted(() => {
   height: 46px;
 }
 
-.checkbox-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 10px;
-}
-
-.checkbox-content {
-  display: flex;
-  align-items: center;
-  font-size: 16px;
-}
-
-.checkbox-icon {
-  width: 24px;
-  height: 24px;
-  margin-right: 8px;
-  background-size: contain;
-  background-position: center;
-  background-repeat: no-repeat;
-}
-
-.checkbox-item :deep(.el-checkbox__input) {
-  transform: scale(1.2);
-}
-
-.checkbox-item :deep(.el-checkbox__label) {
-  font-size: 16px;
-}
-
-.checkbox-item :deep(.el-checkbox) {
-  height: 50px;
-  margin-right: 0;
-  margin-bottom: 0;
-  display: flex;
-  align-items: center;
-}
-
 .duration-display {
   text-align: center;
   font-size: 20px;
@@ -1146,10 +1109,6 @@ onMounted(() => {
   .filter-button {
     font-size: 14px;
     padding: 0 5px;
-  }
-  
-  .checkbox-grid {
-    grid-template-columns: 1fr;
   }
 }
 </style>
