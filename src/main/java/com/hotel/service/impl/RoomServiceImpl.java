@@ -1,11 +1,15 @@
 package com.hotel.service.impl;
 
 import com.hotel.dto.RoomBatchDTO;
+import com.hotel.entity.CheckInRecord;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
+import com.hotel.entity.User;
 import com.hotel.exception.BatchAddException;
+import com.hotel.repository.CheckInRecordRepository;
 import com.hotel.repository.RoomRepository;
 import com.hotel.repository.RoomTypeRepository;
+import com.hotel.repository.UserRepository;
 import com.hotel.service.RoomService;
 import com.hotel.service.ReservationService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -38,6 +42,8 @@ public class RoomServiceImpl implements RoomService {
 
     private final RoomRepository roomRepository;
     private final RoomTypeRepository roomTypeRepository;
+    private final CheckInRecordRepository checkInRecordRepository;
+    private final UserRepository userRepository;
     private final ApplicationContext applicationContext;
     
     @PersistenceContext
@@ -46,9 +52,13 @@ public class RoomServiceImpl implements RoomService {
     @Autowired
     public RoomServiceImpl(RoomRepository roomRepository, 
                           RoomTypeRepository roomTypeRepository,
+                          CheckInRecordRepository checkInRecordRepository,
+                          UserRepository userRepository,
                           ApplicationContext applicationContext) {
         this.roomRepository = roomRepository;
         this.roomTypeRepository = roomTypeRepository;
+        this.checkInRecordRepository = checkInRecordRepository;
+        this.userRepository = userRepository;
         this.applicationContext = applicationContext;
     }
     
@@ -477,5 +487,45 @@ public class RoomServiceImpl implements RoomService {
         }
         
         return roomRepository.saveAll(roomsToSave);
+    }
+
+    @Override
+    public User findGuestByOccupiedRoomNumber(String roomNumber) {
+        // 1. 查找房间
+        Optional<Room> roomOpt = roomRepository.findByRoomNumber(roomNumber);
+        if (!roomOpt.isPresent()) {
+            return null; // 房间不存在
+        }
+        
+        Room room = roomOpt.get();
+        
+        // 2. 检查房间状态是否为 OCCUPIED
+        if (room.getStatus() != Room.RoomStatus.OCCUPIED) {
+            return null; // 房间未入住
+        }
+        
+        // 3. 查找对应的当前 CheckInRecord
+        Optional<CheckInRecord> currentCheckInOpt = checkInRecordRepository
+                .findTopByRoomNumberAndStatusOrderByCheckInDateDesc(roomNumber, CheckInRecord.CheckInStatus.CHECKED_IN);
+                
+        if (currentCheckInOpt.isPresent()) {
+            // 4. 从 CheckInRecord 获取客人手机号
+            String guestMobile = currentCheckInOpt.get().getGuestMobile();
+            if (guestMobile != null && !guestMobile.isEmpty()) {
+                // 5. 使用手机号查找 User
+                return userRepository.findByPhone(guestMobile).orElse(null); // 如果找不到用户则返回 null
+            } else {
+                 System.out.println("Warning: CheckInRecord " + currentCheckInOpt.get().getId() + " for room " + roomNumber + " has no guest mobile.");
+                return null; // 缺少手机号，无法查找用户
+            }
+        } else {
+            System.out.println("Warning: Room " + roomNumber + " is OCCUPIED but no active CheckInRecord found.");
+            return null; // 找不到有效的入住记录
+        }
+    }
+
+    @Override
+    public long countByNeedCleaning(boolean needCleaning) {
+        return roomRepository.countByNeedCleaning(needCleaning);
     }
 }

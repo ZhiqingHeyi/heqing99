@@ -4,6 +4,8 @@ import com.hotel.dto.RoomBatchDTO;
 import com.hotel.dto.RoomFilterDTO;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
+import com.hotel.entity.User;
+import com.hotel.entity.CheckInRecord;
 import com.hotel.exception.BatchAddException;
 import com.hotel.service.RoomService;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -35,6 +37,16 @@ public class AdminRoomController {
     
     @Autowired
     private com.hotel.repository.RoomTypeRepository roomTypeRepository;
+
+    // --- 注入 CheckInService ---
+    @Autowired
+    private com.hotel.service.CheckInService checkInService;
+    // --- 注入结束 ---
+
+    // --- 注入 CheckInRecordRepository 用于测试 ---
+    // @Autowired
+    // private com.hotel.repository.CheckInRecordRepository checkInRecordRepository;
+    // --- 注入结束 ---
 
     /**
      * 新增：管理员获取所有房间类型列表
@@ -370,5 +382,173 @@ public class AdminRoomController {
         roomMap.put("updateTime", room.getUpdateTime());
         
         return roomMap;
+    }
+
+    /**
+     * 获取所有已入住的房间
+     */
+    @GetMapping("/occupied")
+    public ResponseEntity<?> getOccupiedRooms() {
+        try {
+            List<Room> occupiedRooms = roomService.getRoomsByStatus(Room.RoomStatus.OCCUPIED);
+            
+            List<Map<String, Object>> roomsList = occupiedRooms.stream()
+                    .map(room -> {
+                        Map<String, Object> roomData = new HashMap<>();
+                        roomData.put("roomNumber", room.getRoomNumber());
+                        roomData.put("roomType", room.getRoomType().getName());
+                        roomData.put("floor", room.getFloor());
+                        
+                        // 获取入住客人信息
+                        User guest = roomService.findGuestByOccupiedRoomNumber(room.getRoomNumber());
+                        if (guest != null) {
+                            roomData.put("guestName", guest.getName());
+                            roomData.put("guestPhone", guest.getPhone());
+                        }
+                        
+                        return roomData;
+                    })
+                    .collect(Collectors.toList());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", roomsList);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "获取已入住房间失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 获取指定房间号的当前入住客人信息
+     */
+    @GetMapping("/{roomNumber}/current-guest")
+    public ResponseEntity<?> getCurrentGuest(@PathVariable String roomNumber) {
+        try {
+            // --- 临时测试：直接调用 Repository ---
+            // if ("408".equals(roomNumber)) {
+            //     log.info("--- DEBUG: Directly calling findByRoomIdAndStatus for roomId 27 ---");
+            //     List<com.hotel.entity.CheckInRecord> records = checkInRecordRepository.findByRoomIdAndStatus(27L, com.hotel.entity.CheckInRecord.CheckInStatus.CHECKED_IN);
+            //     log.info("--- DEBUG: Found {} records directly from repository. ---", records.size());
+            //     if (!records.isEmpty()) {
+            //         com.hotel.entity.CheckInRecord guestRecord = records.get(0);
+            //         Map<String, Object> guestInfo = new HashMap<>();
+            //         guestInfo.put("guestName", guestRecord.getGuestName());
+            //         guestInfo.put("guestPhone", guestRecord.getGuestMobile());
+            //         Map<String, Object> response = new HashMap<>();
+            //         response.put("success", true);
+            //         response.put("code", 200);
+            //         response.put("message", "获取成功 (DEBUG)");
+            //         response.put("data", guestInfo);
+            //         return ResponseEntity.ok(response);
+            //     } else {
+            //         Map<String, Object> errorResponse = new HashMap<>();
+            //         errorResponse.put("success", false);
+            //         errorResponse.put("code", 404);
+            //         errorResponse.put("message", "未找到入住客人信息 (DEBUG - Repo Call)");
+            //         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            //     }
+            // }
+            // --- 临时测试结束 ---
+
+            Room room = roomService.getRoomByNumber(roomNumber);
+            if (room == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("code", 404);
+                errorResponse.put("message", "未找到入住客人信息");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            CheckInRecord checkInRecord = checkInService.getCurrentCheckInByRoomNumber(roomNumber); 
+            
+            if (checkInRecord == null) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("code", 404);
+                errorResponse.put("message", "未找到入住客人信息");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            Map<String, Object> guestInfo = new HashMap<>();
+            guestInfo.put("guestName", checkInRecord.getGuestName());
+            guestInfo.put("guestPhone", checkInRecord.getGuestMobile());
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", guestInfo);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "获取入住客人信息失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+
+    /**
+     * 获取随机一个已入住的房间（用于模拟刷卡）
+     */
+    @GetMapping("/random-occupied")
+    public ResponseEntity<?> getRandomOccupiedRoom() {
+        try {
+            List<Room> occupiedRooms = roomService.getRoomsByStatus(Room.RoomStatus.OCCUPIED);
+            
+            if (occupiedRooms.isEmpty()) {
+                Map<String, Object> errorResponse = new HashMap<>();
+                errorResponse.put("success", false);
+                errorResponse.put("code", 404);
+                errorResponse.put("message", "当前没有已入住的房间");
+                return ResponseEntity.status(HttpStatus.NOT_FOUND).body(errorResponse);
+            }
+            
+            // 随机选择一个房间
+            int randomIndex = (int) (Math.random() * occupiedRooms.size());
+            Room randomRoom = occupiedRooms.get(randomIndex);
+            
+            // 获取入住客人信息
+            User guest = roomService.findGuestByOccupiedRoomNumber(randomRoom.getRoomNumber());
+            
+            Map<String, Object> roomData = new HashMap<>();
+            roomData.put("roomNumber", randomRoom.getRoomNumber());
+            roomData.put("roomType", randomRoom.getRoomType().getName());
+            roomData.put("floor", randomRoom.getFloor());
+            
+            if (guest != null) {
+                roomData.put("guestName", guest.getName());
+                roomData.put("guestPhone", guest.getPhone());
+            } else {
+                roomData.put("guestName", "未知客人");
+                roomData.put("guestPhone", "");
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("code", 200);
+            response.put("message", "获取成功");
+            response.put("data", roomData);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("code", 500);
+            errorResponse.put("message", "获取随机入住房间失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 } 

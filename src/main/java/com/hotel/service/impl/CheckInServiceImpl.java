@@ -447,19 +447,137 @@ public class CheckInServiceImpl implements CheckInService {
     
     @Override
     public BigDecimal calculateMonthlyRevenue() {
+        LocalDate firstDayOfMonth = LocalDate.now().withDayOfMonth(1);
         LocalDate today = LocalDate.now();
-        LocalDate firstDayOfMonth = today.withDayOfMonth(1);
-        LocalDateTime startOfMonth = firstDayOfMonth.atStartOfDay();
-        LocalDateTime endOfDay = today.atTime(23, 59, 59);
         
-        // 获取本月完成的所有退房记录
-        List<CheckInRecord> records = checkInRecordRepository.findByCheckOutTimeBetweenAndStatus(
-            startOfMonth, endOfDay, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        return checkInRecordRepository.sumTotalAmountByCheckOutDateBetween(firstDayOfMonth, today);
+    }
+
+    @Override
+    public List<CheckInRecord> getCheckoutRecords(
+            String roomNumber,
+            String guestName,
+            LocalDate checkoutDate,
+            int page,
+            int pageSize) {
+
+        Pageable pageable = PageRequest.of(page, pageSize, Sort.by(Sort.Direction.DESC, "actualCheckOutTime"));
+
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+
+        // 如果前端指定了 checkoutDate，则进行精确日期匹配
+        if (checkoutDate != null) {
+            // 注意：Repository 的 findCheckoutRecords 可能需要调整以支持精确日期匹配
+            // 或者，如果 findCheckoutRecords 已经改为范围查询，这里设置 startDate 和 endDate 为同一天
+            startDate = checkoutDate;
+            endDate = checkoutDate;
+            log.info("Fetching checkout records for specific date: {}", checkoutDate);
+        } else {
+            // 如果前端没有指定日期，则默认查询本月记录
+            LocalDate today = LocalDate.now();
+            startDate = today.withDayOfMonth(1);
+            endDate = today; // 查询到今天
+            // endDate = today.withDayOfMonth(today.lengthOfMonth()); // 或者查询到月底
+            log.info("Fetching checkout records for current month: {} to {}", startDate, endDate);
+        }
+
+        // --- 调用支持日期范围的 Repository 方法 (假设存在或需要创建) ---
+        // 需要确保 Repository 有一个接受日期范围的方法，例如 findCheckoutRecordsBetweenDates
+        // 这里暂时还用旧方法名，但逻辑上期望它能处理范围
+        // Page<CheckInRecord> results = checkInRecordRepository.findCheckoutRecords( 
+        //         roomNumber, guestName, checkoutDate, pageable); // 旧调用
+
+        // 假设新的或修改后的方法签名接受 LocalDateTime 范围
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        // 对于结束日期，通常包含当天，所以结束时间设为第二天的开始
+        LocalDateTime endDateTime = (endDate != null) ? endDate.plusDays(1).atStartOfDay() : null;
+
+        Page<CheckInRecord> results = checkInRecordRepository.findCheckoutRecordsByFilterAndDateRange(
+            roomNumber, 
+            guestName, 
+            startDateTime, // 使用范围开始
+            endDateTime,   // 使用范围结束
+            pageable
+        );
+        // --- 调用结束 ---
+
+        return results.getContent();
+    }
+
+    @Override
+    public long countCheckoutRecords(String roomNumber, String guestName, LocalDate checkoutDate) {
+        // 同样，需要根据 checkoutDate 是否为 null 来决定是精确计数还是范围计数
+        LocalDate startDate = null;
+        LocalDate endDate = null;
+        if (checkoutDate != null) {
+            startDate = checkoutDate;
+            endDate = checkoutDate;
+        } else {
+            LocalDate today = LocalDate.now();
+            startDate = today.withDayOfMonth(1);
+            endDate = today;
+        }
         
-        // 计算总收入
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.plusDays(1).atStartOfDay() : null;
+
+        // --- 调用支持日期范围的 Repository 计数方法 (假设存在或需要创建) ---
+        // return checkInRecordRepository.countCheckoutRecords(roomNumber, guestName, checkoutDate); // 旧调用
+        return checkInRecordRepository.countCheckoutRecordsByFilterAndDateRange(
+            roomNumber, guestName, startDateTime, endDateTime);
+        // --- 调用结束 ---
+    }
+
+    @Override
+    public long countCheckoutsByDate(LocalDate checkoutDate) {
+        // 建议修改：如果业务逻辑统一按 actual_check_out_time 判断，这里也应该调整
+        // 但暂时保持不变，因为它可能用于其他精确日期的统计
+        return checkInRecordRepository.countByStatusAndCheckOutDate(
+                CheckInRecord.CheckInStatus.CHECKED_OUT, checkoutDate);
+    }
+
+    @Override
+    public long countCheckoutsBetweenDates(LocalDate startDate, LocalDate endDate) {
+        // --- 修改：统一使用 actual_check_out_time 进行范围统计 ---
+        // return checkInRecordRepository.countByStatusAndCheckOutDateBetween(
+        //         CheckInRecord.CheckInStatus.CHECKED_OUT, startDate, endDate); // 旧逻辑
+        
+        LocalDateTime startDateTime = (startDate != null) ? startDate.atStartOfDay() : null;
+        LocalDateTime endDateTime = (endDate != null) ? endDate.plusDays(1).atStartOfDay() : null;
+        
+        // 调用新的基于 actual_check_out_time 的计数方法
+        return checkInRecordRepository.countCheckoutRecordsByFilterAndDateRange(
+            null, // roomNumber: null 表示不按房间号过滤
+            null, // guestName: null 表示不按客人姓名过滤
+            startDateTime, 
+            endDateTime);
+        // --- 修改结束 ---
+    }
+
+    @Override
+    public CheckInRecord getCurrentCheckInByRoomNumber(String roomNumber) {
+        Room room = roomRepository.findByRoomNumber(roomNumber).orElse(null);
+        
+        if (room == null) {
+            throw new ResourceNotFoundException("房间号为 " + roomNumber + " 的房间不存在");
+        }
+        
+        if (room.getStatus() != Room.RoomStatus.OCCUPIED) {
+            return null; // 房间未被入住
+        }
+        
+        // 3. 如果房间是 OCCUPIED，根据房间 ID 和 CheckInStatus.CHECKED_IN 查找 CheckInRecord
+        List<CheckInRecord> records = checkInRecordRepository.findByRoomIdAndStatus(
+                room.getId(), CheckInRecord.CheckInStatus.CHECKED_IN);
+        
+        // --- 调试日志：打印找到的记录列表大小 ---
+        log.info("findByRoomIdAndStatus found {} records for roomId {} and status CHECKED_IN", records.size(), room.getId());
+        // --- 调试日志结束 ---
+
         return records.stream()
-            .map(CheckInRecord::getTotalAmount)
-            .reduce(BigDecimal.ZERO, BigDecimal::add);
+                .findFirst() // 取列表中的第一个（理论上一个 OCCUPIED 房间只有一个 CHECKED_IN 记录）
+                .orElse(null); // 如果找不到 CHECKED_IN 记录，返回 null
     }
 
     // 新增一个计算默认总价的方法 (简化)

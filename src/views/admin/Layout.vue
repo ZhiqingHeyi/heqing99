@@ -97,6 +97,9 @@
               <el-menu-item index="/admin/reception/checkin" class="tech-menu-item">
                 <el-icon><House /></el-icon><span>入住登记</span>
               </el-menu-item>
+              <el-menu-item index="/admin/reception/checkout" class="tech-menu-item">
+                <el-icon><Right /></el-icon><span>退房管理</span>
+              </el-menu-item>
               <el-menu-item index="/admin/reception/visitors" class="tech-menu-item">
                 <el-icon><List /></el-icon><span>访客登记</span>
               </el-menu-item>
@@ -171,7 +174,7 @@
 <script setup>
 import { ref, computed, onMounted, onBeforeUnmount } from 'vue' // Removed shallowRef, markRaw
 import { useRoute, useRouter } from 'vue-router' // Added useRoute
-import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch, Bell, HomeFilled } from '@element-plus/icons-vue'
+import { DataLine, User, UserFilled, Calendar, House, List, Document, ArrowDown, Key, Setting, Switch, Bell, HomeFilled, Right } from '@element-plus/icons-vue'
 import { useAuthStore } from '@/store/auth' // 1. Import Auth Store
 
 // --- Removed component imports, they are loaded via router ---

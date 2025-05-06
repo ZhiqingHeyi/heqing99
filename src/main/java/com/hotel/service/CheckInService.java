@@ -71,4 +71,51 @@ public interface CheckInService {
      * @return 当月收入总额
      */
     BigDecimal calculateMonthlyRevenue();
+
+    /**
+     * 获取退房记录列表
+     * @param roomNumber 房间号
+     * @param guestName 客人姓名
+     * @param checkoutDate 退房日期
+     * @param page 页码
+     * @param pageSize 每页大小
+     * @return 退房记录列表
+     */
+    List<CheckInRecord> getCheckoutRecords(
+            String roomNumber,
+            String guestName,
+            LocalDate checkoutDate,
+            int page,
+            int pageSize);
+    
+    /**
+     * 计算退房记录总数
+     * @param roomNumber 房间号
+     * @param guestName 客人姓名
+     * @param checkoutDate 退房日期
+     * @return 记录总数
+     */
+    long countCheckoutRecords(String roomNumber, String guestName, LocalDate checkoutDate);
+    
+    /**
+     * 根据退房日期统计退房数量
+     * @param checkoutDate 退房日期
+     * @return 退房数量
+     */
+    long countCheckoutsByDate(LocalDate checkoutDate);
+    
+    /**
+     * 统计日期范围内的退房数量
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @return 退房数量
+     */
+    long countCheckoutsBetweenDates(LocalDate startDate, LocalDate endDate);
+    
+    /**
+     * 根据房间号获取当前的入住记录
+     * @param roomNumber 房间号
+     * @return 入住记录
+     */
+    CheckInRecord getCurrentCheckInByRoomNumber(String roomNumber);
 } 

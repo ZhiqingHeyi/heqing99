@@ -143,6 +143,17 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.POST, "/api/admin/checkin").hasAnyRole("ADMIN", "RECEPTIONIST")
                 // --- 新增结束 --- 
                 
+                // --- 新增规则：允许 RECEPTIONIST 访问退房管理 (修正角色名) ---
+                .antMatchers(HttpMethod.GET, "/api/admin/checkout/stats", "/api/admin/checkout/records").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .antMatchers(HttpMethod.GET, "/api/admin/rooms/occupied").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .antMatchers(HttpMethod.POST, "/api/admin/checkout/confirm/**", "/api/admin/checkout/create").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .antMatchers(HttpMethod.POST, "/api/admin/checkout/card-checkout").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .antMatchers(HttpMethod.GET, "/api/admin/checkout/{id}/bill").hasAnyRole("ADMIN", "RECEPTIONIST")
+                .antMatchers(HttpMethod.GET, "/api/admin/rooms/{roomNumber}/current-guest").hasAnyRole("ADMIN", "RECEPTIONIST")
+                // 添加对 random-occupied 的授权
+                .antMatchers(HttpMethod.GET, "/api/admin/rooms/random-occupied").hasAnyRole("ADMIN", "RECEPTIONIST")
+                // --- 新增结束 ---
+
                 // 管理员相关 API 需要管理员角色 (Keep this general rule after specific ones)
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("ADMIN")

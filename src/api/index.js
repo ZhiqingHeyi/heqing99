@@ -14,7 +14,8 @@ apiClient.interceptors.request.use(
   config => {
     const url = config.url || '';
     const method = (config.method || '').toUpperCase();
-    console.log(`[Request Interceptor] URL: ${url}, Method: ${method}`);
+    // 更详细的日志
+    console.log(`[Request Interceptor] >>> URL: ${url}, Method: ${method}`);
 
     // 定义需要管理员权限的 API 路径判断逻辑 (修正版)
     const isAdminPath = 
@@ -29,36 +30,36 @@ apiClient.interceptors.request.use(
       (url.startsWith('/api/reservations/') && (url.endsWith('/confirm') || url.endsWith('/cancel') || url.endsWith('/complete'))) || // Reservation actions
       (url.startsWith('/api/reservations/') && method === 'PUT') || // updateReservationStatus
       url.startsWith('/api/rooms'); // Added: Managing rooms
-    console.log(`[Request Interceptor] Is Admin Path? ${isAdminPath}`);
+    console.log(`[Request Interceptor] Is Admin Path? ${isAdminPath} for URL: ${url}`);
 
     let token = null;
+    let tokenName = '';
 
     if (isAdminPath) {
+      tokenName = 'adminToken';
       // 如果是管理员路径，只尝试获取 adminToken
       token = localStorage.getItem('adminToken');
-      console.log(`[Request Interceptor] Retrieved adminToken: ${token ? 'Found' : 'Not Found'}`);
+      console.log(`[Request Interceptor] Trying to get ${tokenName} for admin path: ${url}`);
       if (token) {
-        console.log('[Request Interceptor] Adding Authorization header for admin path.');
+        console.log(`[Request Interceptor] Found ${tokenName}. Adding Authorization header.`);
         config.headers['Authorization'] = `Bearer ${token}`;
       } else {
-        console.warn('[Request Interceptor] adminToken not found for admin path:', url);
-        // 对于需要管理员权限的接口，如果没找到 adminToken，可能需要阻止请求或提示登录
-        // 但当前仅记录警告，允许请求继续（后端会处理权限）
+        console.warn(`[Request Interceptor] ${tokenName} not found for admin path: ${url}`);
       }
     } else {
+      tokenName = 'userToken';
       // 如果不是管理员路径，只尝试获取 userToken
       token = localStorage.getItem('userToken');
-       console.log(`[Request Interceptor] Retrieved userToken: ${token ? 'Found' : 'Not Found'}`);
+       console.log(`[Request Interceptor] Trying to get ${tokenName} for user path: ${url}`);
       if (token) {
-        // 为调试添加日志，确认是否使用了 userToken
-         console.log('[Request Interceptor] Adding Authorization header for user path.');
+        console.log(`[Request Interceptor] Found ${tokenName}. Adding Authorization header.`);
         config.headers['Authorization'] = `Bearer ${token}`;
       } else {
-         // 对于非管理员路径，没找到 userToken 是正常的（例如公共接口）
-         // console.log('[Request Interceptor] userToken not found for path:', url);
+         console.log(`[Request Interceptor] ${tokenName} not found for user path: ${url}`);
       }
     }
-    console.log('[Request Interceptor] Final Headers:', JSON.stringify(config.headers));
+    // 打印最终请求头（只打印 Authorization，避免敏感信息泄露）
+    console.log(`[Request Interceptor] <<< Final Authorization Header: ${config.headers['Authorization'] ? 'Present' : 'Absent'} for URL: ${url}`);
 
     return config;
   },

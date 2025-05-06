@@ -30,6 +30,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import java.math.BigDecimal;
 import java.time.DayOfWeek;
 import java.util.Collections;
+import com.hotel.entity.User;
 
 @RestController
 @RequestMapping("/api/rooms")
@@ -588,6 +589,52 @@ public class RoomController {
             } catch (DateTimeParseException ex) {
                 return null;
             }
+        }
+    }
+
+    /**
+     * 验证房间是否入住并获取客人姓名
+     * 用于访客登记验证
+     */
+    @GetMapping("/{roomNumber}/verify")
+    public ResponseEntity<?> verifyRoomAndGetGuest(@PathVariable String roomNumber) {
+        try {
+            // 调用 Service 层进行验证
+            User guest = roomService.findGuestByOccupiedRoomNumber(roomNumber);
+
+            Map<String, Object> response = new HashMap<>();
+            if (guest != null) {
+                // 房间已入住，返回客人信息
+                response.put("success", true);
+                Map<String, String> guestInfo = new HashMap<>();
+                guestInfo.put("name", guest.getName()); // Assuming User has getName()
+                response.put("guest", guestInfo);
+                return ResponseEntity.ok(response);
+            } else {
+                // 房间存在但未入住，或者房间不存在 (Service 层应处理房间不存在的情况)
+                // RoomService 应该抛出异常或者返回 null 来区分
+                // 这里假设 service 返回 null 代表未入住或房间不存在，前端 API 包装已处理房间不存在的 404
+                // 但更健壮的方式是 service 返回特定对象或抛出特定异常
+                
+                // 检查房间是否存在以提供更精确的消息 (可选优化)
+                 Room room = roomService.getRoomByNumber(roomNumber);
+                 if (room == null) {
+                    response.put("success", false);
+                    response.put("message", "房间不存在");
+                    return ResponseEntity.status(HttpStatus.NOT_FOUND).body(response);
+                 } else {
+                    response.put("success", false);
+                    response.put("message", "该房间当前未入住");
+                    // 返回 200 OK 但 success: false，让前端处理
+                    return ResponseEntity.ok(response);
+                 }
+            }
+        } catch (Exception e) {
+            // 处理 Service 层可能抛出的其他异常
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "验证房间时发生错误: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }
 } 

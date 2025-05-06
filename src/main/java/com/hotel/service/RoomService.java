@@ -3,6 +3,7 @@ package com.hotel.service;
 import com.hotel.dto.RoomBatchDTO;
 import com.hotel.entity.Room;
 import com.hotel.entity.RoomType;
+import com.hotel.entity.User;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 
@@ -166,4 +167,18 @@ public interface RoomService {
      * @throws com.hotel.exception.BatchAddException 如果校验失败或保存出错
      */
     List<Room> addMultipleRooms(List<RoomBatchDTO> roomDTOs);
+
+    /**
+     * 根据房间号查找已入住的客人信息
+     * @param roomNumber 房间号
+     * @return 如果房间存在且已入住，返回客人 User 对象；否则返回 null
+     */
+    User findGuestByOccupiedRoomNumber(String roomNumber);
+
+    /**
+     * 统计需要清洁的房间数量
+     * @param needCleaning 是否需要清洁
+     * @return 符合条件的房间数量
+     */
+    long countByNeedCleaning(boolean needCleaning);
 }

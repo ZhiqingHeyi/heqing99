@@ -11,6 +11,7 @@ import AdminRoomManagement from '../views/admin/RoomManagement.vue'
 import ReceptionBookings from '../views/admin/reception/Bookings.vue'
 import ReceptionCheckin from '../views/admin/reception/Checkin.vue'
 import ReceptionVisitors from '../views/admin/reception/Visitors.vue'
+import ReceptionCheckout from '../views/admin/reception/Checkout.vue'
 import CleaningTasks from '../views/admin/cleaning/Tasks.vue'
 import CleaningRecords from '../views/admin/cleaning/Records.vue'
 import { useAuthStore } from '@/store/auth'
@@ -130,6 +131,12 @@ const router = createRouter({
           name: 'reception-checkin',
           component: ReceptionCheckin,
           meta: { title: '入住登记' }
+        },
+        {
+          path: 'reception/checkout',
+          name: 'reception-checkout',
+          component: ReceptionCheckout,
+          meta: { title: '退房管理' }
         },
         {
           path: 'reception/visitors',
