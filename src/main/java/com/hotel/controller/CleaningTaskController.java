@@ -13,6 +13,8 @@ import org.springframework.data.domain.Sort;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.HashMap;
 import java.util.List;
@@ -21,6 +23,35 @@ import java.util.Map;
 @RestController
 @RequestMapping("/api/cleaning")
 public class CleaningTaskController {
+
+    private static final Logger logger = LoggerFactory.getLogger(CleaningTaskController.class);
+
+    // API响应封装类
+    public class ApiResponse {
+        private boolean success;
+        private String message;
+
+        public ApiResponse(boolean success, String message) {
+            this.success = success;
+            this.message = message;
+        }
+
+        public boolean isSuccess() {
+            return success;
+        }
+
+        public void setSuccess(boolean success) {
+            this.success = success;
+        }
+
+        public String getMessage() {
+            return message;
+        }
+
+        public void setMessage(String message) {
+            this.message = message;
+        }
+    }
 
     private final TaskService taskService;
     private final RoomService roomService;
@@ -35,22 +66,58 @@ public class CleaningTaskController {
      * 获取任务统计信息
      */
     @GetMapping("/tasks/statistics")
-    public ResponseEntity<TaskDTO> getTaskStatistics() {
-        TaskDTO statistics = taskService.getTaskStatistics();
-        return ResponseEntity.ok(statistics);
+    public ResponseEntity<?> getTaskStatistics() {
+        try {
+            TaskDTO statistics = taskService.getTaskStatistics();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", statistics);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取任务统计信息失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "获取任务统计信息失败: " + e.getMessage()));
+        }
     }
 
     /**
      * 获取任务列表
      */
     @GetMapping("/tasks")
-    public ResponseEntity<Page<Task>> getTasks(
+    public ResponseEntity<?> getTasks(
             @RequestParam(required = false) String status,
-            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "0") int page, 
             @RequestParam(defaultValue = "10") int size) {
-        Pageable pageable = PageRequest.of(page, size, Sort.by("createTime").descending());
-        Page<Task> tasks = taskService.findTasks(status, pageable);
-        return ResponseEntity.ok(tasks);
+        
+        try {
+            // 先自动生成清洁任务
+            List<Task> generatedTasks = taskService.generateCleaningTasksFromRooms();
+            int generatedCount = generatedTasks.size();
+            
+            Pageable pageable = PageRequest.of(page, size, Sort.by("createTime").descending());
+            Page<Task> tasksPage;
+            
+            if (status != null && !status.isEmpty()) {
+                tasksPage = taskService.findTasks(status, pageable);
+            } else {
+                tasksPage = taskService.findTasks(null, pageable);
+            }
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("content", tasksPage.getContent());
+            response.put("totalPages", tasksPage.getTotalPages());
+            response.put("totalElements", tasksPage.getTotalElements());
+            response.put("currentPage", tasksPage.getNumber());
+            response.put("generatedTasksCount", generatedCount);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取清洁任务失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "获取清洁任务失败: " + e.getMessage()));
+        }
     }
 
     /**
@@ -102,18 +169,40 @@ public class CleaningTaskController {
      * 获取可用于分配任务的房间列表
      */
     @GetMapping("/available-rooms")
-    public ResponseEntity<List<TaskDTO>> getAvailableRooms() {
-        List<TaskDTO> rooms = taskService.getAvailableRooms();
-        return ResponseEntity.ok(rooms);
+    public ResponseEntity<?> getAvailableRooms() {
+        try {
+            List<TaskDTO> rooms = taskService.getAvailableRooms();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", rooms);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取可用房间列表失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "获取可用房间列表失败: " + e.getMessage()));
+        }
     }
     
     /**
      * 获取可用的保洁人员列表
      */
     @GetMapping("/available-cleaners")
-    public ResponseEntity<List<TaskDTO>> getAvailableCleaners() {
-        List<TaskDTO> cleaners = taskService.getAvailableCleaners();
-        return ResponseEntity.ok(cleaners);
+    public ResponseEntity<?> getAvailableCleaners() {
+        try {
+            List<TaskDTO> cleaners = taskService.getAvailableCleaners();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("data", cleaners);
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("获取可用保洁员列表失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "获取可用保洁员列表失败: " + e.getMessage()));
+        }
     }
     
     /**
@@ -128,6 +217,27 @@ public class CleaningTaskController {
             Map<String, String> errorResponse = new HashMap<>();
             errorResponse.put("message", "任务创建失败: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(errorResponse);
+        }
+    }
+    
+    /**
+     * 手动触发生成清洁任务
+     */
+    @PostMapping("/tasks/generate")
+    public ResponseEntity<?> generateTasks() {
+        try {
+            List<Task> generatedTasks = taskService.generateCleaningTasksFromRooms();
+            
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("generatedTasksCount", generatedTasks.size());
+            response.put("message", "成功生成" + generatedTasks.size() + "个清洁任务");
+            
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            logger.error("生成清洁任务失败", e);
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                    .body(new ApiResponse(false, "生成清洁任务失败: " + e.getMessage()));
         }
     }
 } 

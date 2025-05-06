@@ -302,6 +302,78 @@
         </div>
       </template>
     </el-dialog>
+
+    <!-- 任务列表头部 -->
+    <div class="tasks-header">
+      <h3>{{ taskFilterTitle }}</h3>
+      <div class="header-actions">
+        <el-button type="primary" @click="handleCreateTask" size="small" :icon="Plus">新建任务</el-button>
+        <el-button type="success" @click="handleGenerateTasks" size="small">生成任务</el-button>
+      </div>
+    </div>
+
+    <!-- 任务列表 -->
+    <div v-loading="loading" class="tasks-container">
+      <!-- 待处理任务 -->
+      <template v-if="filteredTasks.length > 0">
+        <el-card v-for="task in filteredTasks" :key="task.id" class="task-card">
+          <div class="task-header">
+            <div class="room-info">
+              <div class="room-number">{{ task.roomNumber }}</div>
+              <div class="room-type">{{ task.roomType }}</div>
+            </div>
+            <div class="task-status" :class="task.status">
+              {{ getStatusLabel(task.status) }}
+            </div>
+          </div>
+          
+          <div class="task-priority" :class="task.priority">
+            {{ getPriorityLabel(task.priority) }}
+          </div>
+          
+          <div class="task-info">
+            <div class="info-row">
+              <span class="info-label">创建时间:</span>
+              <span class="info-value">{{ formatDateTime(task.createTime) }}</span>
+            </div>
+            <div v-if="task.cleaner" class="info-row">
+              <span class="info-label">保洁员:</span>
+              <span class="info-value">{{ task.cleaner }}</span>
+            </div>
+            <div v-if="task.notes" class="info-row notes">
+              <span class="info-label">备注:</span>
+              <span class="info-value">{{ task.notes }}</span>
+            </div>
+          </div>
+          
+          <div class="task-actions">
+            <el-button 
+              v-if="task.status === 'pending'" 
+              type="primary" 
+              @click="handleStart(task)"
+              size="small"
+            >开始处理</el-button>
+            
+            <el-button 
+              v-if="task.status === 'processing'" 
+              type="success" 
+              @click="handleComplete(task)"
+              size="small"
+            >完成任务</el-button>
+            
+            <el-button 
+              v-if="task.status === 'completed'" 
+              type="info" 
+              @click="handleInspect(task)"
+              size="small"
+            >查看详情</el-button>
+          </div>
+        </el-card>
+      </template>
+      
+      <!-- 空状态 -->
+      <el-empty v-else :description="`暂无${taskFilterTitle}`" />
+    </div>
   </div>
 </template>
 
@@ -309,6 +381,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { Clock, Loading, Check, Warning, Plus } from '@element-plus/icons-vue'
+import { cleaningApi } from '@/api/index'
 
 // 获取用户角色
 const userRole = ref(localStorage.getItem('userRole') || 'cleaner')
@@ -332,25 +405,25 @@ onMounted(() => {
 const taskStats = reactive([
   {
     title: '待处理任务',
-    count: 8,
+    count: 0,
     type: 'pending',
     icon: Clock
   },
   {
     title: '进行中任务',
-    count: 3,
+    count: 0,
     type: 'processing',
     icon: Loading
   },
   {
     title: '已完成任务',
-    count: 25,
+    count: 0,
     type: 'completed',
     icon: Check
   },
   {
     title: '高优先级',
-    count: 2,
+    count: 0,
     type: 'high-priority',
     icon: Warning
   }
@@ -359,77 +432,13 @@ const taskStats = reactive([
 // 任务列表数据
 const loading = ref(false)
 const taskFilter = ref('all')
-const taskList = ref([
-  {
-    roomNumber: '301',
-    roomType: '标准双人间',
-    priority: 'high',
-    cleaner: '李阿姨',
-    status: 'pending',
-    expectedTime: '10:30',
-    notes: '客人即将入住，请优先处理'
-  },
-  {
-    roomNumber: '302',
-    roomType: '标准双人间',
-    priority: 'medium',
-    cleaner: '张阿姨',
-    status: 'processing',
-    expectedTime: '11:00',
-    notes: '请更换浴室毛巾'
-  },
-  {
-    roomNumber: '401',
-    roomType: '豪华套房',
-    priority: 'high',
-    cleaner: '王阿姨',
-    status: 'pending',
-    expectedTime: '10:45',
-    notes: 'VIP客人，请注意细节清洁'
-  },
-  {
-    roomNumber: '201',
-    roomType: '标准单人间',
-    priority: 'low',
-    cleaner: '李阿姨',
-    status: 'completed',
-    expectedTime: '09:30',
-    notes: '已完成'
-  },
-  {
-    roomNumber: '202',
-    roomType: '标准单人间',
-    priority: 'medium',
-    cleaner: '张阿姨',
-    status: 'completed',
-    expectedTime: '09:45',
-    notes: '已完成'
-  },
-  {
-    roomNumber: '303',
-    roomType: '标准双人间',
-    priority: 'low',
-    cleaner: '王阿姨',
-    status: 'processing',
-    expectedTime: '11:15',
-    notes: '一般清洁'
-  }
-])
+const taskList = ref([])
 
 // 可用房间列表
-const availableRooms = ref([
-  { number: '201', type: '标准单人间' },
-  { number: '202', type: '标准单人间' },
-  { number: '301', type: '标准双人间' },
-  { number: '302', type: '标准双人间' }
-])
+const availableRooms = ref([])
 
 // 保洁员列表
-const cleaners = ref([
-  { id: 1, name: '张阿姨' },
-  { id: 2, name: '李阿姨' },
-  { id: 3, name: '王阿姨' }
-])
+const cleaners = ref([])
 
 // 过滤后的任务列表
 const filteredTasks = computed(() => {
@@ -529,6 +538,25 @@ const getPriorityLabel = (priority) => {
   return priorityMap[priority]
 }
 
+// 格式化日期时间
+const formatDateTime = (dateTimeStr) => {
+  if (!dateTimeStr) return '暂无'
+  
+  try {
+    const date = new Date(dateTimeStr)
+    const year = date.getFullYear()
+    const month = (date.getMonth() + 1).toString().padStart(2, '0')
+    const day = date.getDate().toString().padStart(2, '0')
+    const hours = date.getHours().toString().padStart(2, '0')
+    const minutes = date.getMinutes().toString().padStart(2, '0')
+    
+    return `${year}-${month}-${day} ${hours}:${minutes}`
+  } catch (e) {
+    console.error('日期格式化错误:', e)
+    return dateTimeStr || '暂无'
+  }
+}
+
 // 分配任务
 const handleAdd = () => {
   Object.keys(taskForm).forEach(key => {
@@ -536,6 +564,10 @@ const handleAdd = () => {
   })
   taskForm.expectedTime = null
   dialogVisible.value = true
+  
+  // 获取可用房间和保洁员列表
+  fetchAvailableRooms()
+  fetchAvailableCleaners()
 }
 
 // 提交任务分配
@@ -545,15 +577,19 @@ const handleSubmit = async () => {
   await taskFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端API保存任务信息
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        loading.value = true
+        // 调用后端API保存任务信息
+        await cleaningApi.createTask(taskForm)
+        
         ElMessage.success('任务分配成功')
         dialogVisible.value = false
         // 刷新任务列表
-        fetchTaskList()
+        await fetchTaskList()
       } catch (error) {
         console.error('任务分配失败:', error)
         ElMessage.error('任务分配失败')
+      } finally {
+        loading.value = false
       }
     }
   })
@@ -568,9 +604,20 @@ const handleStart = async (row) => {
       type: 'info'
     })
     
-    // TODO: 调用后端API更新任务状态
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用后端API更新任务状态
+    await cleaningApi.updateTaskStatus(row.id, 'processing')
+    
+    // 更新本地状态
     row.status = 'processing'
+    
+    // 更新任务统计数据
+    const pendingIndex = taskStats.findIndex(s => s.type === 'pending')
+    const processingIndex = taskStats.findIndex(s => s.type === 'processing')
+    if (pendingIndex !== -1 && processingIndex !== -1) {
+      taskStats[pendingIndex].count--
+      taskStats[processingIndex].count++
+    }
+    
     ElMessage.success('已开始处理任务')
   } catch (error) {
     if (error !== 'cancel') {
@@ -597,22 +644,24 @@ const handleCompleteSubmit = async () => {
   await completeFormRef.value.validate(async (valid) => {
     if (valid) {
       try {
-        // TODO: 调用后端API更新任务状态和完成信息
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // 调用后端API更新任务状态和完成信息
+        await cleaningApi.updateTaskStatus(currentTask.value.id, 'completed', {
+          actualDuration: completeForm.actualDuration,
+          cleanItems: completeForm.cleanItems.join(','),
+          supplies: completeForm.supplies.join(','),
+          issues: completeForm.issues
+        })
         
         // 更新任务状态
         currentTask.value.status = 'completed'
         
         // 更新任务计数
-        const processingIndex = taskStats.findIndex(s => s.type === 'processing');
-        const completedIndex = taskStats.findIndex(s => s.type === 'completed');
+        const processingIndex = taskStats.findIndex(s => s.type === 'processing')
+        const completedIndex = taskStats.findIndex(s => s.type === 'completed')
         if (processingIndex !== -1 && completedIndex !== -1) {
-          taskStats[processingIndex].count--;
-          taskStats[completedIndex].count++;
+          taskStats[processingIndex].count--
+          taskStats[completedIndex].count++
         }
-        
-        // 更新房间状态为可入住（这里只是模拟，实际应该调用API）
-        updateRoomStatus(currentTask.value.roomNumber, 'available');
         
         ElMessage.success('清洁任务已完成，房间状态已更新为可入住')
         completeDialogVisible.value = false
@@ -624,56 +673,95 @@ const handleCompleteSubmit = async () => {
   })
 }
 
-// 更新房间状态
-const updateRoomStatus = (roomNumber, status) => {
-  // 这里模拟房间状态更新，实际项目中应该调用后端API
-  console.log(`房间${roomNumber}状态已更新为${status}`);
-  
-  // 如果有房间管理相关的状态，也可以在此更新
-  const room = availableRooms.value.find(r => r.number === roomNumber);
-  if (room) {
-    room.status = status;
-  }
-}
-
 // 查看检查
 const handleInspect = (row) => {
-  // TODO: 实现查看检查功能
-  console.log('查看任务检查详情:', row)
+  // 跳转到查看详情页面或显示详情对话框
+  ElMessage.info(`查看任务详情: ${row.roomNumber}`)
 }
 
 // 获取任务列表
 const fetchTaskList = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端API获取任务列表
-    await new Promise(resolve => setTimeout(resolve, 1000))
+    // 调用后端API获取任务列表
+    const response = await cleaningApi.getTasks()
     
-    // 更新任务统计数据
-    updateTaskStats();
+    // 更新任务列表
+    if (response) {
+      if (response.content) {
+        // 后端直接返回的分页数据
+        taskList.value = response.content
+      } else {
+        // 如果是包装的响应
+        if (response.data && response.data.content) {
+          taskList.value = response.data.content
+        } else {
+          // 直接使用响应数据
+          taskList.value = response
+        }
+      }
+      
+      console.log('获取到任务列表:', taskList.value)
+    }
+    
+    // 获取任务统计数据
+    await fetchTaskStatistics()
     
     // 更新任务筛选标题
-    updateTaskFilterTitle();
-    
-    loading.value = false
+    updateTaskFilterTitle()
   } catch (error) {
     console.error('获取任务列表失败:', error)
     ElMessage.error('获取任务列表失败')
+  } finally {
     loading.value = false
   }
 }
 
-// 更新任务统计数据
-const updateTaskStats = () => {
-  const pendingCount = taskList.value.filter(task => task.status === 'pending').length;
-  const processingCount = taskList.value.filter(task => task.status === 'processing').length;
-  const completedCount = taskList.value.filter(task => task.status === 'completed').length;
-  const highPriorityCount = taskList.value.filter(task => task.priority === 'high').length;
-  
-  taskStats[0].count = pendingCount;
-  taskStats[1].count = processingCount;
-  taskStats[2].count = completedCount;
-  taskStats[3].count = highPriorityCount;
+// 获取任务统计数据
+const fetchTaskStatistics = async () => {
+  try {
+    const response = await cleaningApi.getTaskStatistics()
+    if (response && response.data) {
+      taskStats[0].count = response.data.pendingCount || 0
+      taskStats[1].count = response.data.processingCount || 0
+      taskStats[2].count = response.data.completedCount || 0
+      taskStats[3].count = response.data.highPriorityCount || 0
+    }
+  } catch (error) {
+    console.error('获取任务统计信息失败:', error)
+  }
+}
+
+// 获取可用房间列表
+const fetchAvailableRooms = async () => {
+  try {
+    const response = await cleaningApi.getAvailableRooms()
+    if (response && response.data) {
+      availableRooms.value = response.data.map(room => ({
+        number: room.roomNumber,
+        type: room.roomType
+      }))
+    }
+  } catch (error) {
+    console.error('获取可用房间列表失败:', error)
+    ElMessage.error('获取可用房间列表失败')
+  }
+}
+
+// 获取可用保洁员列表
+const fetchAvailableCleaners = async () => {
+  try {
+    const response = await cleaningApi.getAvailableCleaners()
+    if (response && response.data) {
+      cleaners.value = response.data.map(cleaner => ({
+        id: cleaner.id,
+        name: cleaner.name
+      }))
+    }
+  } catch (error) {
+    console.error('获取可用保洁员列表失败:', error)
+    ElMessage.error('获取可用保洁员列表失败')
+  }
 }
 
 // 处理卡片点击筛选
@@ -712,8 +800,34 @@ const updateTaskFilterTitle = () => {
 // 任务筛选标题
 const taskFilterTitle = ref('任务列表')
 
+// 手动生成清洁任务
+const handleGenerateTasks = async () => {
+  ElMessageBox.confirm('确定要从需要清洁的房间自动生成任务吗?', '生成任务', {
+    confirmButtonText: '确定',
+    cancelButtonText: '取消',
+    type: 'info'
+  }).then(async () => {
+    loading.value = true
+    try {
+      const response = await cleaningApi.generateTasks()
+      if (response && response.data) {
+        ElMessage.success(`成功生成 ${response.data.generatedTasksCount} 个清洁任务`)
+        // 刷新任务列表
+        await fetchTaskList()
+      }
+    } catch (error) {
+      console.error('生成任务失败:', error)
+      ElMessage.error('生成任务失败: ' + (error.message || '未知错误'))
+    } finally {
+      loading.value = false
+    }
+  }).catch(() => {})
+}
+
 // 初始化
-fetchTaskList()
+onMounted(() => {
+  fetchTaskList()
+})
 </script>
 
 <style scoped>
@@ -1103,5 +1217,25 @@ fetchTaskList()
   .checkbox-grid {
     grid-template-columns: 1fr;
   }
+}
+
+/* 添加新样式 */
+.tasks-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 0 15px;
+  margin-bottom: 15px;
+}
+
+.tasks-header h3 {
+  margin: 0;
+  font-size: 18px;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 8px;
 }
 </style>

@@ -2,11 +2,13 @@ package com.hotel.repository;
 
 import com.hotel.entity.Task;
 import com.hotel.dto.TaskDTO;
+import com.hotel.entity.Room;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.stereotype.Repository;
+import org.springframework.data.repository.query.Param;
 
 import java.util.List;
 
@@ -28,14 +30,19 @@ public interface TaskRepository extends JpaRepository<Task, Long> {
     long countByPriority(String priority);
 
     /**
-     * 查询可分配的房间
+     * 检查指定房间是否已存在非指定状态的任务
      */
-    @Query("SELECT new com.hotel.dto.TaskDTO(r.roomNumber, r.roomType.name) FROM Room r WHERE r.status = 'AVAILABLE'")
+    boolean existsByRoomNumberAndStatusNot(String roomNumber, String status);
+
+    /**
+     * 查询需要清洁的房间
+     */
+    @Query("SELECT new com.hotel.dto.TaskDTO(r.roomNumber, r.roomType.name) FROM Room r WHERE r.status = 'NEEDS_CLEANING' OR r.needCleaning = true")
     List<TaskDTO> findAvailableRooms();
 
     /**
-     * 查询可用的保洁员
+     * 查询可用的清洁员
      */
-    @Query("SELECT new com.hotel.dto.TaskDTO(u.id, u.name) FROM User u WHERE u.role = 'STAFF'")
+    @Query("SELECT new com.hotel.dto.TaskDTO(u.id, u.name) FROM User u WHERE u.role = 'CLEANER' AND u.status = 'ACTIVE'")
     List<TaskDTO> findAvailableCleaners();
 }

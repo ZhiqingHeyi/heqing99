@@ -39,7 +39,7 @@ public interface TaskService {
     Task getTaskById(Long taskId);
 
     /**
-     * 获取可分配的房间列表
+     * 获取需要清洁的房间列表
      */
     List<TaskDTO> getAvailableRooms();
 
@@ -47,4 +47,10 @@ public interface TaskService {
      * 获取可用保洁员列表
      */
     List<TaskDTO> getAvailableCleaners();
+    
+    /**
+     * 为需要清洁的房间自动生成清洁任务
+     * 此方法检查所有需要清洁的房间，如果没有相应的任务则创建
+     */
+    List<Task> generateCleaningTasksFromRooms();
 }

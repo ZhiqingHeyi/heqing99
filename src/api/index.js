@@ -963,8 +963,18 @@ export const invitationCodeApi = {
 // 清洁任务相关API
 export const cleaningApi = {
   getTasks: () => apiClient.get('/api/cleaning/tasks'),
-  updateTaskStatus: (taskId, status) => apiClient.put(`/api/cleaning/tasks/${taskId}/status`, { status }),
+  updateTaskStatus: (taskId, status, completionDetails) => {
+    if (completionDetails) {
+      return apiClient.post(`/api/cleaning/tasks/${taskId}/complete`, completionDetails);
+    }
+    return apiClient.post(`/api/cleaning/tasks/${taskId}/start`);
+  },
   getCleaningRecords: () => apiClient.get('/api/cleaning/records'),
+  getTaskStatistics: () => apiClient.get('/api/cleaning/tasks/statistics'),
+  getAvailableRooms: () => apiClient.get('/api/cleaning/available-rooms'),
+  getAvailableCleaners: () => apiClient.get('/api/cleaning/available-cleaners'),
+  createTask: (taskData) => apiClient.post('/api/cleaning/tasks', taskData),
+  generateTasks: () => apiClient.post('/api/cleaning/tasks/generate')
 };
 
 // 添加 adminApi 用于管理端特定的接口
