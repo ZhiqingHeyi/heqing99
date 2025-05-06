@@ -110,7 +110,20 @@ export const fetchVisitors = (params) => {
  * @param {object} visitorData - 访客数据
  */
 export const createVisitor = (visitorData) => {
-  return apiClient.post('/visitor/record', visitorData);
+  console.log('创建访客记录，请求数据:', visitorData);
+  return apiClient.post('/visitor/record', visitorData)
+    .then(response => {
+      console.log('创建访客记录成功，响应:', response);
+      return response;
+    })
+    .catch(error => {
+      console.error('创建访客记录失败:', error);
+      if (error.response) {
+        console.error('创建访客记录失败 - 状态码:', error.response.status);
+        console.error('创建访客记录失败 - 响应数据:', error.response.data);
+      }
+      throw error;
+    });
 };
 
 /**
@@ -118,7 +131,20 @@ export const createVisitor = (visitorData) => {
  * @param {number} id - 访客记录ID
  */
 export const endVisit = (id) => {
-  return apiClient.put(`/visitor/record/${id}/end`);
+  console.log('结束访问，访客ID:', id);
+  return apiClient.put(`/visitor/record/${id}/end`)
+    .then(response => {
+      console.log('结束访问成功，响应:', response);
+      return response;
+    })
+    .catch(error => {
+      console.error('结束访问失败:', error);
+      if (error.response) {
+        console.error('结束访问失败 - 状态码:', error.response.status);
+        console.error('结束访问失败 - 响应数据:', error.response.data);
+      }
+      throw error;
+    });
 };
 
 /**

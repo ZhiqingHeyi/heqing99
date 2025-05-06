@@ -14,9 +14,9 @@ import java.util.List;
  */
 public interface VisitorRecordService {
     /**
-     * 创建访客记录
+     * 创建访客记录，关联被访用户
      */
-    VisitorRecord createVisitorRecord(VisitorRecord visitorRecord);
+    VisitorRecord createVisitorRecord(VisitorRecord visitorRecord, Long visitedUserId);
 
     /**
      * 更新访客记录

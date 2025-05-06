@@ -606,8 +606,9 @@ public class RoomController {
             if (guest != null) {
                 // 房间已入住，返回客人信息
                 response.put("success", true);
-                Map<String, String> guestInfo = new HashMap<>();
-                guestInfo.put("name", guest.getName()); // Assuming User has getName()
+                Map<String, Object> guestInfo = new HashMap<>();
+                guestInfo.put("name", guest.getName());
+                guestInfo.put("id", guest.getId());
                 response.put("guest", guestInfo);
                 return ResponseEntity.ok(response);
             } else {

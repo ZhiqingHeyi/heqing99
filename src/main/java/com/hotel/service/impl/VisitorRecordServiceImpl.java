@@ -3,8 +3,10 @@ package com.hotel.service.impl;
 import com.hotel.entity.User;
 import com.hotel.entity.Visitor;
 import com.hotel.entity.VisitorRecord;
+import com.hotel.repository.UserRepository;
 import com.hotel.repository.VisitorRepository;
 import com.hotel.repository.VisitorRecordRepository;
+import com.hotel.service.UserService;
 import com.hotel.service.VisitorRecordService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
@@ -30,12 +32,23 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
     
     @Autowired
     private VisitorRecordRepository visitorRecordRepository;
+    
+    @Autowired
+    private UserService userService;
+    
+    @Autowired
+    private UserRepository userRepository;
 
     // ========== VisitorRecord 方法实现 ==========
     
     @Override
-    public VisitorRecord createVisitorRecord(VisitorRecord visitorRecord) {
-        // 设置默认状态和访问时间
+    public VisitorRecord createVisitorRecord(VisitorRecord visitorRecord, Long visitedUserId) {
+        User visitedUser = userService.getUserById(visitedUserId);
+        if (visitedUser == null) {
+            throw new RuntimeException("Visited user not found with ID: " + visitedUserId);
+        }
+        visitorRecord.setVisitedUser(visitedUser);
+        
         visitorRecord.setStatus(VisitorRecord.VisitStatus.VISITING);
         visitorRecord.setVisitTime(LocalDateTime.now());
         return visitorRecordRepository.save(visitorRecord);
@@ -43,8 +56,8 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
 
     @Override
     public VisitorRecord updateVisitorRecord(VisitorRecord visitorRecord) {
-        // 确保记录存在
-        getVisitorRecordById(visitorRecord.getId());
+        VisitorRecord existingRecord = getVisitorRecordById(visitorRecord.getId());
+        visitorRecord.setVisitedUser(existingRecord.getVisitedUser());
         return visitorRecordRepository.save(visitorRecord);
     }
 
@@ -127,11 +140,9 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
             LocalDateTime endTime,
             Pageable pageable
     ) {
-        // 使用 Specification 构建动态查询条件
         Specification<VisitorRecord> spec = (root, query, cb) -> {
             List<Predicate> predicates = new ArrayList<>();
 
-            // 关键字搜索（访客姓名或电话）
             if (StringUtils.hasText(keyword)) {
                 predicates.add(cb.or(
                     cb.like(root.get("visitorName"), "%" + keyword + "%"),
@@ -139,23 +150,19 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
                 ));
             }
 
-            // 状态过滤
             if (StringUtils.hasText(status)) {
                 try {
                     VisitorRecord.VisitStatus visitStatus = VisitorRecord.VisitStatus.valueOf(status.toUpperCase());
                     predicates.add(cb.equal(root.get("status"), visitStatus));
                 } catch (IllegalArgumentException e) {
-                    // 如果状态值无效，记录警告但不添加此过滤条件
                     System.out.println("Warning: Invalid visit status: " + status);
                 }
             }
 
-            // 房间号过滤 - 通过访问的用户关联的房间号
             if (StringUtils.hasText(roomNumber)) {
                 predicates.add(cb.equal(root.join("visitedUser").get("roomNumber"), roomNumber));
             }
 
-            // 时间范围过滤
             if (startTime != null && endTime != null) {
                 predicates.add(cb.between(root.get("visitTime"), startTime, endTime));
             } else if (startTime != null) {
@@ -167,7 +174,6 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
             return cb.and(predicates.toArray(new Predicate[0]));
         };
 
-        // 执行分页查询
         return visitorRecordRepository.findAll(spec, pageable);
     }
 
@@ -175,7 +181,6 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
 
     @Override
     public Visitor registerVisitor(Visitor visitor) {
-        // 设置访问时间
         visitor.setVisitTime(LocalDateTime.now());
         return visitorRepository.save(visitor);
     }
@@ -188,7 +193,7 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
     @Override
     public Visitor getVisitorById(Long id) {
         return visitorRepository.findById(id)
-                .orElseThrow(() -> new RuntimeException("访客记录不存在"));
+                .orElseThrow(() -> new RuntimeException("访客不存在"));
     }
 
     @Override
@@ -208,7 +213,6 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
         LocalDateTime startOfDay = today.atStartOfDay();
         LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
         
-        // 由于Repository不支持按访问时间查询，手动过滤结果
         List<Visitor> allVisitors = visitorRepository.findAll();
         List<Visitor> todayVisitors = new ArrayList<>();
         
@@ -225,7 +229,6 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
 
     @Override
     public List<Visitor> getVisitorsByDate(LocalDateTime startTime, LocalDateTime endTime) {
-        // 由于Repository不支持按访问时间查询，手动过滤结果
         List<Visitor> allVisitors = visitorRepository.findAll();
         List<Visitor> filteredVisitors = new ArrayList<>();
         
@@ -242,7 +245,6 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
 
     @Override
     public List<Visitor> getVisitorsByRoom(String roomNumber) {
-        // 由于Repository不支持按房间号查询，手动过滤结果
         List<Visitor> allVisitors = visitorRepository.findAll();
         List<Visitor> filteredVisitors = new ArrayList<>();
         
@@ -257,26 +259,21 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
 
     @Override
     public Visitor updateVisitor(Visitor visitor) {
-        // 确保访客记录存在
         getVisitorById(visitor.getId());
         return visitorRepository.save(visitor);
     }
 
     @Override
     public void deleteVisitor(Long id) {
-        // 确保访客记录存在
         getVisitorById(id);
         visitorRepository.deleteById(id);
     }
 
     @Override
     public long countTodayVisitors() {
-        LocalDate today = LocalDate.now();
-        LocalDateTime startOfDay = today.atStartOfDay();
-        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
-        
-        // 由于Repository不支持按访问时间计数，手动计算
-        return getTodayVisitors().size();
+        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
+        LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59, 999_999_999);
+        return visitorRecordRepository.countByVisitTimeBetween(startOfDay, endOfDay);
     }
 
     @Override

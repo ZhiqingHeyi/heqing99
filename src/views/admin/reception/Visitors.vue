@@ -100,15 +100,26 @@
         <el-table-column prop="visitorName" label="访客姓名" />
         <el-table-column prop="phone" label="联系电话" />
         <el-table-column prop="idCard" label="身份证号" width="180" />
-        <el-table-column prop="roomNumber" label="被访客房" />
-        <el-table-column prop="guestName" label="被访客人" />
-        <el-table-column prop="visitPurpose" label="访问目的" />
-        <el-table-column prop="startTime" label="到访时间" width="180" />
-        <el-table-column prop="endTime" label="离开时间" width="180" />
+        <el-table-column label="被访客人">
+          <template #default="{ row }">
+            {{ row.guestName || row.visitedUser?.name || 'N/A' }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="purpose" label="访问目的" />
+        <el-table-column prop="visitTime" label="到访时间" width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.visitTime) }}
+          </template>
+        </el-table-column>
+        <el-table-column prop="leaveTime" label="离开时间" width="180">
+          <template #default="{ row }">
+            {{ formatDateTime(row.leaveTime) }}
+          </template>
+        </el-table-column>
         <el-table-column prop="status" label="状态">
           <template #default="{ row }">
-            <el-tag :type="row.status === 'visiting' ? 'success' : 'info'" effect="light" class="status-tag">
-              {{ row.status === 'visiting' ? '访问中' : '已结束' }}
+            <el-tag :type="row.status === 'VISITING' ? 'success' : 'info'" effect="light" class="status-tag">
+              {{ row.status === 'VISITING' ? '访问中' : (row.status === 'COMPLETED' ? '已结束' : '已取消') }}
             </el-tag>
           </template>
         </el-table-column>
@@ -119,7 +130,7 @@
                 type="primary" 
                 link 
                 @click="handleEndVisit(row)"
-                v-if="row.status === 'visiting'"
+                v-if="row.status === 'VISITING'"
                 class="action-btn"
               ><el-icon><Timer /></el-icon>结束访问</el-button>
               <el-button 
@@ -244,6 +255,28 @@ import {
   fetchTodayVisitorStats
 } from '@/api/reception'
 
+// Helper function for formatting date-time
+const formatDateTime = (dateTimeString) => {
+  if (!dateTimeString) return ''; // 返回空字符串而非 'N/A'
+  try {
+    const date = new Date(dateTimeString);
+    const year = date.getFullYear();
+    const month = (date.getMonth() + 1).toString().padStart(2, '0');
+    const day = date.getDate().toString().padStart(2, '0');
+    const hours = date.getHours().toString().padStart(2, '0');
+    const minutes = date.getMinutes().toString().padStart(2, '0');
+    const seconds = date.getSeconds().toString().padStart(2, '0');
+    // 检查是否是有效日期
+    if (isNaN(date.getTime())) {
+        return dateTimeString; // 如果转换失败，返回原始字符串
+    }
+    return `${year}-${month}-${day} ${hours}:${minutes}:${seconds}`;
+  } catch (e) {
+    console.error("Error formatting date:", dateTimeString, e);
+    return dateTimeString; // Return original string if formatting fails
+  }
+};
+
 // 搜索表单
 const searchForm = reactive({
   visitorName: '',
@@ -258,12 +291,8 @@ const visitorList = ref([])
 
 // 统计数据
 const todayVisitorCount = ref(0)
-const currentVisitorCount = computed(() => {
-  return visitorList.value.filter(visitor => visitor.status === 'visiting').length || 0
-})
-const completedVisitorCount = computed(() => {
-  return visitorList.value.filter(visitor => visitor.status === 'completed').length || 0
-})
+const currentVisitorCount = ref(0)
+const completedVisitorCount = ref(0)
 
 // 分页
 const currentPage = ref(1)
@@ -279,6 +308,7 @@ const visitorForm = reactive({
   idCard: '',
   roomNumber: '',
   guestName: '',
+  visitedUserId: null,
   visitPurpose: '',
   duration: 1
 })
@@ -360,10 +390,14 @@ const fetchVisitorList = async () => {
     
     // 调用API获取访客列表
     const response = await fetchVisitors(params)
+    console.log('获取访客列表响应:', response)
     
     // 更新列表数据和总数
     visitorList.value = response.data.content
     total.value = response.data.totalElements
+    
+    // 更新统计数据
+    updateStats()
     
     loading.value = false
   } catch (error) {
@@ -418,6 +452,10 @@ const handleVerifyRoom = async () => {
       
       if (response.data.guest && response.data.guest.name) {
         visitorForm.guestName = response.data.guest.name
+        // 保存访客ID，用于提交表单
+        if (response.data.guest.id) {
+          visitorForm.visitedUserId = response.data.guest.id
+        }
         ElMessage({
           message: '房间验证成功',
           type: 'success',
@@ -430,6 +468,7 @@ const handleVerifyRoom = async () => {
           duration: 3000
         })
         visitorForm.guestName = ''
+        visitorForm.visitedUserId = null
       }
     } else {
       throw new Error('无效的响应数据')
@@ -466,6 +505,7 @@ const handleVerifyRoom = async () => {
       duration: 3000
     })
     visitorForm.guestName = ''
+    visitorForm.visitedUserId = null
   } finally {
     if (loadingInstance) {
       loadingInstance.close()
@@ -493,9 +533,12 @@ const handleSubmit = async () => {
           idCard: visitorForm.idCard,
           roomNumber: visitorForm.roomNumber,
           guestName: visitorForm.guestName,
-          visitPurpose: visitorForm.visitPurpose,
-          duration: visitorForm.duration
+          visitedUserId: visitorForm.visitedUserId,
+          purpose: visitorForm.visitPurpose,
+          // duration: visitorForm.duration // duration 似乎后端没用，暂时注释掉
         }
+        
+        console.log('提交访客登记表单数据:', visitorData);
         
         // 调用API创建访客记录
         await createVisitor(visitorData)
@@ -514,7 +557,7 @@ const handleSubmit = async () => {
         dialogVisible.value = false
       } catch (error) {
         console.error('访客登记失败:', error)
-        ElMessage.error('访客登记失败')
+        ElMessage.error('访客登记失败: ' + (error.response?.data?.message || error.message || '未知错误'))
       }
     } else {
       ElMessage.warning('请完善访客信息')
@@ -539,7 +582,9 @@ const handleEndVisit = async (row) => {
     })
     
     // 调用API结束访问
-    await endVisit(row.id)
+    console.log('结束访问ID:', row.id)
+    const response = await endVisit(row.id)
+    console.log('结束访问响应:', response)
     loading.close()
     
     // 刷新列表数据
@@ -553,7 +598,7 @@ const handleEndVisit = async (row) => {
   } catch (error) {
     if (error !== 'cancel') {
       console.error('结束访问失败:', error)
-      ElMessage.error('操作失败')
+      ElMessage.error('操作失败: ' + (error.response?.data?.message || error.message || '未知错误'))
     }
   }
 }
@@ -574,8 +619,8 @@ const handleView = async (row) => {
         <p><strong>被访客房：</strong>${visitorDetail.roomNumber}</p>
         <p><strong>被访客人：</strong>${visitorDetail.guestName}</p>
         <p><strong>访问目的：</strong>${visitorDetail.visitPurpose}</p>
-        <p><strong>到访时间：</strong>${visitorDetail.startTime}</p>
-        <p><strong>离开时间：</strong>${visitorDetail.endTime || '未离开'}</p>
+        <p><strong>到访时间：</strong>${formatDateTime(visitorDetail.startTime)}</p>
+        <p><strong>离开时间：</strong>${formatDateTime(visitorDetail.endTime) || '未离开'}</p>
         <p><strong>状态：</strong>${visitorDetail.status === 'visiting' ? '访问中' : '已结束'}</p>
       </div>`,
       '访客详情',
@@ -601,10 +646,27 @@ const fetchTodayVisitorCount = async () => {
   }
 }
 
+// 更新统计数据
+const updateStats = () => {
+  try {
+    currentVisitorCount.value = visitorList.value.filter(visitor => visitor.status === 'VISITING').length || 0
+    completedVisitorCount.value = visitorList.value.filter(visitor => visitor.status === 'COMPLETED').length || 0
+    console.log('统计数据更新:', {
+      today: todayVisitorCount.value,
+      current: currentVisitorCount.value,
+      completed: completedVisitorCount.value
+    })
+  } catch (error) {
+    console.error('更新统计数据失败:', error)
+  }
+}
+
 // 初始化数据
 onMounted(() => {
   fetchVisitorList()
   fetchTodayVisitorCount()
+  // 初始化后调用一次统计更新
+  setTimeout(updateStats, 1000)
 })
 </script>
 

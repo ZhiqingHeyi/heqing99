@@ -5,6 +5,7 @@ import com.hotel.entity.VisitorRecord;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor;
 import org.springframework.data.jpa.repository.Query;
+import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -30,4 +31,6 @@ public interface VisitorRecordRepository extends JpaRepository<VisitorRecord, Lo
 
     @Query("SELECT v FROM VisitorRecord v WHERE v.status = 'VISITING' AND v.visitedUser = ?1")
     List<VisitorRecord> findCurrentVisitorsByUser(User visitedUser);
+
+    long countByVisitTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
 }
