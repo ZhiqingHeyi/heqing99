@@ -642,7 +642,16 @@ const handleView = async (row) => {
 const fetchTodayVisitorCount = async () => {
   try {
     const response = await fetchTodayVisitorStats()
-    todayVisitorCount.value = response.data.todayCount
+    console.log('今日访客统计API响应:', response); // 添加日志，检查API返回数据
+    if (response && typeof response.data === 'number') {
+      todayVisitorCount.value = response.data
+    } else if (response && response.data && typeof response.data.todayCount === 'number') {
+      // 兼容旧的可能返回 { todayCount: ... } 的情况
+      todayVisitorCount.value = response.data.todayCount
+    } else {
+      console.error('获取今日访客统计失败: 无效的响应数据格式', response.data);
+      todayVisitorCount.value = 0
+    }
   } catch (error) {
     console.error('获取今日访客统计失败:', error)
     todayVisitorCount.value = 0

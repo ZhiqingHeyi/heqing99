@@ -271,8 +271,9 @@ public class VisitorRecordServiceImpl implements VisitorRecordService {
 
     @Override
     public long countTodayVisitors() {
-        LocalDateTime startOfDay = LocalDate.now().atStartOfDay();
-        LocalDateTime endOfDay = LocalDate.now().atTime(23, 59, 59, 999_999_999);
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.plusDays(1).atStartOfDay();
         return visitorRecordRepository.countByVisitTimeBetween(startOfDay, endOfDay);
     }
 

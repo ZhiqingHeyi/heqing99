@@ -32,5 +32,6 @@ public interface VisitorRecordRepository extends JpaRepository<VisitorRecord, Lo
     @Query("SELECT v FROM VisitorRecord v WHERE v.status = 'VISITING' AND v.visitedUser = ?1")
     List<VisitorRecord> findCurrentVisitorsByUser(User visitedUser);
 
-    long countByVisitTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    @Query("SELECT COUNT(vr) FROM VisitorRecord vr WHERE vr.visitTime >= :startOfDay AND vr.visitTime < :endOfDay")
+    long countByVisitTimeBetween(@Param("startOfDay") LocalDateTime startOfDay, @Param("endOfDay") LocalDateTime endOfDay);
 }
