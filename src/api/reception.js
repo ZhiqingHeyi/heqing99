@@ -132,7 +132,7 @@ export const createVisitor = (visitorData) => {
  */
 export const endVisit = (id) => {
   console.log('结束访问，访客ID:', id);
-  return apiClient.put(`/visitor/record/${id}/end`)
+  return apiClient.put(`/visitor/record/${id}/leave`)
     .then(response => {
       console.log('结束访问成功，响应:', response);
       return response;

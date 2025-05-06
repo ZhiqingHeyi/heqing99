@@ -613,25 +613,28 @@ const handleView = async (row) => {
     // 展示详情
     ElMessageBox.alert(
       `<div class="visitor-detail">
-        <p><strong>访客姓名：</strong>${visitorDetail.visitorName}</p>
-        <p><strong>联系电话：</strong>${visitorDetail.phone}</p>
-        <p><strong>身份证号：</strong>${visitorDetail.idCard}</p>
-        <p><strong>被访客房：</strong>${visitorDetail.roomNumber}</p>
-        <p><strong>被访客人：</strong>${visitorDetail.guestName}</p>
-        <p><strong>访问目的：</strong>${visitorDetail.visitPurpose}</p>
-        <p><strong>到访时间：</strong>${formatDateTime(visitorDetail.startTime)}</p>
-        <p><strong>离开时间：</strong>${formatDateTime(visitorDetail.endTime) || '未离开'}</p>
-        <p><strong>状态：</strong>${visitorDetail.status === 'visiting' ? '访问中' : '已结束'}</p>
+        <p><strong>访客姓名：</strong>${visitorDetail.visitorName || '未填写'}</p>
+        <p><strong>联系电话：</strong>${visitorDetail.phone || '未填写'}</p>
+        <p><strong>身份证号：</strong>${visitorDetail.idCard || '未填写'}</p>
+        <p><strong>被访客房：</strong>${visitorDetail.roomNumber || '未填写'}</p>
+        <p><strong>被访客人：</strong>${visitorDetail.guestName || '未填写'}</p>
+        <p><strong>访问目的：</strong>${visitorDetail.purpose || visitorDetail.visitPurpose || '未填写'}</p>
+        <p><strong>到访时间：</strong>${formatDateTime(visitorDetail.visitTime || visitorDetail.startTime) || '未记录'}</p>
+        <p><strong>离开时间：</strong>${formatDateTime(visitorDetail.leaveTime || visitorDetail.endTime) || '未离开'}</p>
+        <p><strong>状态：</strong>${visitorDetail.status === 'VISITING' ? '访问中' : (visitorDetail.status === 'COMPLETED' ? '已结束' : '已取消')}</p>
+        <p><strong>预计时长：</strong>${visitorDetail.duration ? visitorDetail.duration + '小时' : '未设置'}</p>
+        <p><strong>备注：</strong>${visitorDetail.remark || '无'}</p>
       </div>`,
       '访客详情',
       {
         dangerouslyUseHTMLString: true,
-        confirmButtonText: '关闭'
+        confirmButtonText: '关闭',
+        customClass: 'visitor-detail-dialog'
       }
     )
   } catch (error) {
     console.error('获取访客详情失败:', error)
-    ElMessage.error('获取详情失败')
+    ElMessage.error('获取详情失败: ' + (error.response?.data?.message || error.message || '未知错误'))
   }
 }
 
@@ -1009,6 +1012,7 @@ onMounted(() => {
 
 .visitor-detail {
   line-height: 1.8;
+  padding: 15px;
 }
 
 .visitor-detail p {
@@ -1016,15 +1020,60 @@ onMounted(() => {
   border-bottom: 1px dashed #eaedf3;
   padding-bottom: 10px;
   display: flex;
+  align-items: flex-start;
 }
 
 .visitor-detail p strong {
   min-width: 100px;
   color: #495057;
+  font-weight: 600;
 }
 
 .visitor-detail p:last-child {
   border-bottom: none;
+  margin-bottom: 0;
+}
+
+:deep(.visitor-detail-dialog) {
+  .el-message-box__content {
+    padding: 0;
+  }
+  
+  .el-message-box__container {
+    padding: 0;
+  }
+  
+  .el-message-box {
+    padding: 0;
+    border-radius: 8px;
+    max-width: 600px;
+    width: 90%;
+  }
+  
+  .el-message-box__header {
+    padding: 15px 20px;
+    background: #f8fafc;
+    border-bottom: 1px solid #eaedf3;
+  }
+  
+  .el-message-box__title {
+    font-size: 18px;
+    font-weight: 600;
+  }
+  
+  .el-message-box__headerbtn {
+    top: 15px;
+    right: 15px;
+  }
+  
+  .el-message-box__content {
+    padding: 0;
+    color: #333;
+  }
+  
+  .el-message-box__status {
+    display: none;
+  }
 }
 
 /* 响应式设计优化 */
