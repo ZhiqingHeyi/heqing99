@@ -36,6 +36,8 @@ import java.util.List;
 import java.util.Map;
 import java.time.ZonedDateTime;
 import java.time.format.DateTimeParseException;
+import com.hotel.entity.User;
+import com.hotel.repository.UserRepository;
 
 @Service
 @Transactional
@@ -58,12 +60,41 @@ public class CheckInServiceImpl implements CheckInService {
     @Autowired
     private RoomService roomService;
     
+    @Autowired
+    private UserRepository userRepository;
+    
     @Override
     public CheckInRecord checkIn(CheckInRecord checkInRecord) {
         // --- 修正：获取 bookingId 并检查 ---
-        Long bookingId = checkInRecord.getBookingId();
-        if (bookingId == null) {
+        final Long originalBookingId = checkInRecord.getBookingId();
+        if (originalBookingId == null) {
             throw new IllegalArgumentException("预订ID (bookingId) 不能为空");
+        }
+        
+        // --- 增加：处理无预订入住的情况 ---
+        boolean isDirectCheckIn = (originalBookingId == 0); // 如果bookingId为0，表示直接入住，无预订
+        Reservation reservation = null;
+        // 创建一个局部变量保存最终使用的bookingId
+        final Long bookingId;
+        
+        if (isDirectCheckIn) {
+            // 创建临时预订记录
+            reservation = createTemporaryReservation(checkInRecord);
+            // 更新checkInRecord的bookingId为新创建的预订ID
+            bookingId = reservation.getId();
+            checkInRecord.setBookingId(bookingId);
+            log.info("为直接入住创建临时预订: ID={}", bookingId);
+        } else {
+            // 使用原始bookingId
+            bookingId = originalBookingId;
+            // 如果有预订ID，查找预订记录
+            reservation = reservationRepository.findById(bookingId)
+                    .orElseThrow(() -> new ResourceNotFoundException("未找到 ID 为 " + bookingId + " 的预订记录"));
+                
+            // 检查预订状态是否允许入住 (例如，必须是 CONFIRMED)
+            if (reservation.getStatus() != Reservation.ReservationStatus.CONFIRMED) {
+                throw new IllegalStateException("预订状态为 " + reservation.getStatus() + "，无法办理入住");
+            }
         }
         // --- 修正结束 ---
 
@@ -85,16 +116,6 @@ public class CheckInServiceImpl implements CheckInService {
             throw new IllegalArgumentException("无效的预计离店日期格式，需要 ISO 8601 格式 (例如: 2025-05-15T08:00:00.000Z)", e);
         }
 
-        // --- 修正：获取关联的 Reservation 对象 --- 
-        Reservation reservation = reservationRepository.findById(bookingId)
-                .orElseThrow(() -> new ResourceNotFoundException("未找到 ID 为 " + bookingId + " 的预订记录"));
-        // --- 修正结束 ---
-        
-        // 检查预订状态是否允许入住 (例如，必须是 CONFIRMED)
-        if (reservation.getStatus() != Reservation.ReservationStatus.CONFIRMED) {
-            throw new IllegalStateException("预订状态为 " + reservation.getStatus() + "，无法办理入住");
-        }
-
         // 生成入住单号
         checkInRecord.setCheckInNumber(generateCheckInNumber());
         
@@ -113,17 +134,21 @@ public class CheckInServiceImpl implements CheckInService {
         checkInRecord.setRoomType(room.getRoomType() != null ? room.getRoomType().getName() : "未知房型");
         
         // --- 修正：使用 Reservation 对象填充信息 ---
-        checkInRecord.setGuestIdType("ID_CARD"); // 保持默认值
-        checkInRecord.setGuestIdNumber("UNKNOWN"); // 保持默认值
-        checkInRecord.setGuestCount(1); // 设置默认入住人数为 1，或根据业务需要从 Reservation 获取
-        checkInRecord.setTotalAmount(reservation.getTotalPrice() != null ? reservation.getTotalPrice() : calculateDefaultTotalAmount(room, checkInRecord)); // 从 reservation 获取总价
-        checkInRecord.setSpecialRequests(reservation.getSpecialRequests()); // 从 reservation 获取特殊要求
+        if (!isDirectCheckIn) {
+            // 如果是预订入住，从预订获取信息
+            checkInRecord.setTotalAmount(reservation.getTotalPrice() != null ? reservation.getTotalPrice() : calculateDefaultTotalAmount(room, checkInRecord));
+            checkInRecord.setSpecialRequests(reservation.getSpecialRequests());
+        } else {
+            // 直接入住的情况
+            checkInRecord.setTotalAmount(calculateDefaultTotalAmount(room, checkInRecord));
+            // 使用表单上已填写的信息，不需要从预订获取
+        }
         // --- 修正结束 ---
         
         // --- 添加：设置默认支付方式 --- 
         if (checkInRecord.getPaymentMethod() == null) {
             checkInRecord.setPaymentMethod(CheckInRecord.PaymentMethod.CASH); // 设置默认值为现金
-            log.info("Payment method not provided, defaulting to CASH for CheckInRecord with bookingId: {}", bookingId);
+            log.info("Payment method not provided, defaulting to CASH for CheckInRecord with bookingId: {}", checkInRecord.getBookingId());
         }
         // --- 添加结束 --- 
         
@@ -593,5 +618,90 @@ public class CheckInServiceImpl implements CheckInService {
         long nights = ChronoUnit.DAYS.between(record.getCheckInDate(), record.getCheckOutDate());
         if (nights <= 0) nights = 1; 
         return room.getRoomType().getBasePrice().multiply(BigDecimal.valueOf(nights));
+    }
+
+    /**
+     * 为直接入住创建临时预订记录
+     * @param checkInRecord 入住记录
+     * @return 新创建的预订记录
+     */
+    private Reservation createTemporaryReservation(CheckInRecord checkInRecord) {
+        // 创建新的临时预订
+        Reservation reservation = new Reservation();
+        
+        // 设置基本信息
+        reservation.setGuestName(checkInRecord.getGuestName());
+        reservation.setGuestPhone(checkInRecord.getGuestMobile());
+        
+        // 根据入住记录设置日期
+        LocalDateTime checkInDateTime = LocalDateTime.now(); // 默认今天
+        LocalDateTime checkOutDateTime = null;
+        
+        // 如果有期望的退房时间，解析它
+        if (checkInRecord.getExpectedCheckOutTime() != null && !checkInRecord.getExpectedCheckOutTime().isEmpty()) {
+            try {
+                ZonedDateTime zdt = ZonedDateTime.parse(checkInRecord.getExpectedCheckOutTime(), DateTimeFormatter.ISO_DATE_TIME);
+                // 将 LocalDate 转换为 LocalDateTime
+                checkOutDateTime = zdt.toLocalDateTime();
+            } catch (DateTimeParseException e) {
+                // 已在checkIn方法中验证过，这里不太可能出错，但仍然进行捕获
+                checkOutDateTime = checkInDateTime.plusDays(1); // 默认入住一天
+                log.warn("解析离店日期失败，使用默认值 (今天+1): {}", e.getMessage());
+            }
+        } else {
+            checkOutDateTime = checkInDateTime.plusDays(1); // 默认入住一天
+        }
+        
+        reservation.setCheckInTime(checkInDateTime);
+        reservation.setCheckOutTime(checkOutDateTime);
+        
+        // 设置房间信息
+        if (checkInRecord.getRoomId() != null) {
+            Room room = roomRepository.findById(checkInRecord.getRoomId())
+                    .orElseThrow(() -> new ResourceNotFoundException("未找到 ID 为 " + checkInRecord.getRoomId() + " 的房间"));
+            
+            reservation.setRoom(room);
+            reservation.setRoomCount(1); // 默认1间房
+            
+            // 计算总价（入住天数 * 房间单价）
+            BigDecimal roomPrice = room.getRoomType() != null ? room.getRoomType().getBasePrice() : BigDecimal.ZERO;
+            long days = ChronoUnit.DAYS.between(checkInDateTime.toLocalDate(), checkOutDateTime.toLocalDate());
+            if (days < 1) days = 1; // 至少一天
+            
+            BigDecimal totalPrice = roomPrice.multiply(BigDecimal.valueOf(days));
+            reservation.setTotalPrice(totalPrice);
+        }
+        
+        // 获取当前用户（操作员）作为预订的用户
+        User currentUser = getCurrentUser();
+        if (currentUser != null) {
+            reservation.setUser(currentUser);
+        } else {
+            throw new IllegalStateException("无法获取当前用户信息，无法创建临时预订");
+        }
+        
+        // 设置预订状态为确认状态，允许直接入住
+        reservation.setStatus(Reservation.ReservationStatus.CONFIRMED);
+        // 设置支付状态
+        reservation.setPaymentStatus("UNPAID"); // 或根据实际需求设置
+        
+        // 保存并返回预订
+        return reservationRepository.save(reservation);
+    }
+
+    /**
+     * 获取当前登录用户
+     * @return 当前用户对象
+     */
+    private User getCurrentUser() {
+        // 从安全上下文中获取当前用户
+        Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        if (principal instanceof UserDetails) {
+            UserDetails userDetails = (UserDetails) principal;
+            // 假设你有一个根据用户名获取完整用户对象的方法
+            return userRepository.findByUsername(userDetails.getUsername())
+                    .orElseThrow(() -> new ResourceNotFoundException("未找到用户: " + userDetails.getUsername()));
+        }
+        return null;
     }
 } 

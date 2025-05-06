@@ -95,10 +95,13 @@
         <el-row :gutter="20">
           <el-col :span="12">
             <el-form-item label="房间类型" prop="roomType">
-              <el-select v-model="checkinForm.roomType" placeholder="请选择房间类型" style="width: 100%">
-                <el-option label="豪华大床房" value="deluxe" />
-                <el-option label="行政套房" value="executive" />
-                <el-option label="家庭套房" value="family" />
+              <el-select v-model="checkinForm.roomType" placeholder="请选择房间类型" style="width: 100%" @change="handleRoomTypeChange">
+                <el-option 
+                  v-for="item in roomTypeOptions" 
+                  :key="item.id" 
+                  :label="item.name" 
+                  :value="item.id" 
+                />
               </el-select>
             </el-form-item>
           </el-col>
@@ -113,9 +116,9 @@
               >
                 <el-option
                   v-for="room in availableRooms"
-                  :key="room.number"
-                  :label="`${room.number} (${room.type})`"
-                  :value="room.number"
+                  :key="room.id"
+                  :label="`${room.roomNumber} (${room.roomTypeName})`"
+                  :value="room.id"
                 />
               </el-select>
             </el-form-item>
@@ -177,8 +180,8 @@
       class="custom-dialog"
     >
       <el-table :data="filteredRooms" style="width: 100%" border stripe highlight-current-row class="room-table">
-        <el-table-column prop="number" label="房间号" width="100" />
-        <el-table-column prop="typeName" label="房间类型" width="120" />
+        <el-table-column prop="roomNumber" label="房间号" width="100" />
+        <el-table-column prop="roomTypeName" label="房间类型" width="120" />
         <el-table-column prop="status" label="状态">
           <template #default="scope">
             <el-tag :type="getRoomStatusType(scope.row.status)" effect="light" class="status-tag">
@@ -195,7 +198,7 @@
               <el-button 
                 type="primary" 
                 size="small" 
-                v-if="currentRoomType === 'available'"
+                v-if="currentRoomType === 'AVAILABLE'"
                 @click="selectRoomForCheckin(scope.row)"
                 class="action-btn"
               >
@@ -204,7 +207,7 @@
               <el-button 
                 type="warning" 
                 size="small" 
-                v-if="currentRoomType === 'occupied'"
+                v-if="currentRoomType === 'OCCUPIED'"
                 @click="showCheckoutDialog(scope.row)"
                 class="action-btn"
               >
@@ -213,7 +216,7 @@
               <el-button 
                 type="success" 
                 size="small" 
-                v-if="currentRoomType === 'cleaning'"
+                v-if="currentRoomType === 'CLEANING'"
                 @click="markRoomAsClean(scope.row)"
                 class="action-btn"
               >
@@ -228,164 +231,113 @@
 </template>
 
 <script setup>
-import { ref, reactive, computed } from 'vue'
+import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage, ElMessageBox } from 'element-plus'
 import { 
   House, Key, Tools, Check, Document, Search, 
   Refresh, Select, SwitchButton, View
 } from '@element-plus/icons-vue'
+import { 
+  fetchRooms, fetchRoomTypes, checkInBooking, fetchDashboardStats
+} from '@/api/reception'
 
 // 房间状态数据
 const roomStatusList = reactive([
   {
     title: '空闲房间',
-    count: 25,
-    type: 'available',
+    count: 0,
+    type: 'AVAILABLE',
     icon: House
   },
   {
     title: '已入住',
-    count: 45,
-    type: 'occupied',
+    count: 0,
+    type: 'OCCUPIED',
     icon: Key
   },
   {
     title: '待清洁',
-    count: 8,
-    type: 'cleaning',
+    count: 0,
+    type: 'CLEANING',
     icon: Tools
   },
   {
     title: '今日预订',
-    count: 12,
-    type: 'booked',
+    count: 0,
+    type: 'BOOKED',
     icon: Check
   }
 ])
 
 // 可用房间列表
-const availableRooms = ref([
-  { number: '201', type: '标准单人间' },
-  { number: '202', type: '标准单人间' },
-  { number: '301', type: '豪华大床房' },
-  { number: '302', type: '豪华大床房' },
-  { number: '501', type: '行政套房' }
-])
+const availableRooms = ref([])
+const roomTypeOptions = ref([])
 
 // 房间列表对话框相关
 const roomListDialogVisible = ref(false)
 const roomListDialogTitle = ref('')
 const currentRoomType = ref('')
 
-// 模拟所有房间数据
-const allRooms = reactive([
-  { 
-    number: '201', 
-    typeName: '标准单人间', 
-    type: 'single', 
-    status: 'available', 
-    price: 198, 
-    guestName: '', 
-    checkoutDate: '' 
-  },
-  { 
-    number: '202', 
-    typeName: '标准单人间', 
-    type: 'single', 
-    status: 'available', 
-    price: 198, 
-    guestName: '', 
-    checkoutDate: '' 
-  },
-  { 
-    number: '203', 
-    typeName: '标准单人间', 
-    type: 'single', 
-    status: 'occupied', 
-    price: 198, 
-    guestName: '李四', 
-    checkoutDate: '2023-07-15 12:00' 
-  },
-  { 
-    number: '301', 
-    typeName: '豪华大床房', 
-    type: 'double', 
-    status: 'occupied', 
-    price: 298, 
-    guestName: '王五', 
-    checkoutDate: '2023-07-14 12:00' 
-  },
-  { 
-    number: '302', 
-    typeName: '豪华大床房', 
-    type: 'double', 
-    status: 'cleaning', 
-    price: 298, 
-    guestName: '', 
-    checkoutDate: '' 
-  },
-  { 
-    number: '303', 
-    typeName: '豪华大床房', 
-    type: 'double', 
-    status: 'cleaning', 
-    price: 298, 
-    guestName: '', 
-    checkoutDate: '' 
-  },
-  { 
-    number: '401', 
-    typeName: '行政套房', 
-    type: 'suite', 
-    status: 'booked', 
-    price: 598, 
-    guestName: '赵六', 
-    checkoutDate: '2023-07-18 12:00' 
-  },
-  { 
-    number: '402', 
-    typeName: '行政套房', 
-    type: 'suite', 
-    status: 'booked', 
-    price: 598, 
-    guestName: '钱七', 
-    checkoutDate: '2023-07-17 12:00' 
-  }
-])
+// 所有房间数据
+const allRooms = ref([])
 
 // 根据房间类型过滤房间列表
 const filteredRooms = computed(() => {
   if (!currentRoomType.value) return []
-  return allRooms.filter(room => room.status === currentRoomType.value)
+  return allRooms.value.filter(room => room.status === currentRoomType.value)
 })
 
 // 显示指定类型的房间列表
-const showRoomsByType = (type) => {
+const showRoomsByType = async (type) => {
   currentRoomType.value = type
   switch (type) {
-    case 'available':
+    case 'AVAILABLE':
       roomListDialogTitle.value = '空闲房间列表'
       break
-    case 'occupied':
+    case 'OCCUPIED':
       roomListDialogTitle.value = '已入住房间列表'
       break
-    case 'cleaning':
+    case 'CLEANING':
       roomListDialogTitle.value = '待清洁房间列表'
       break
-    case 'booked':
+    case 'BOOKED':
       roomListDialogTitle.value = '今日预订房间列表'
       break
   }
+  
+  // 获取对应状态的房间列表
+  try {
+    const params = { status: type }
+    const response = await fetchRooms(params)
+    if (response.data && response.data.content) {
+      allRooms.value = response.data.content.map(room => ({
+        id: room.id,
+        roomNumber: room.roomNumber,
+        roomTypeName: room.roomType ? room.roomType.name : '未知',
+        status: room.status,
+        price: room.roomType ? room.roomType.price : 0,
+        guestName: room.currentGuest || '',
+        checkoutDate: room.checkoutDate || ''
+      }))
+    } else {
+      allRooms.value = []
+    }
+  } catch (error) {
+    console.error('获取房间列表失败:', error)
+    ElMessage.error('获取房间列表失败，请重试')
+    allRooms.value = []
+  }
+  
   roomListDialogVisible.value = true
 }
 
 // 获取房间状态标签类型
 const getRoomStatusType = (status) => {
   switch (status) {
-    case 'available': return 'success'
-    case 'occupied': return 'primary'
-    case 'cleaning': return 'warning'
-    case 'booked': return 'info'
+    case 'AVAILABLE': return 'success'
+    case 'OCCUPIED': return 'primary'
+    case 'CLEANING': return 'warning'
+    case 'BOOKED': return 'info'
     default: return ''
   }
 }
@@ -393,22 +345,21 @@ const getRoomStatusType = (status) => {
 // 获取房间状态文本
 const getRoomStatusText = (status) => {
   switch (status) {
-    case 'available': return '空闲'
-    case 'occupied': return '已入住'
-    case 'cleaning': return '待清洁'
-    case 'booked': return '已预订'
+    case 'AVAILABLE': return '空闲'
+    case 'OCCUPIED': return '已入住'
+    case 'CLEANING': return '待清洁'
+    case 'BOOKED': return '已预订'
     default: return ''
   }
 }
 
 // 选择房间进行入住
 const selectRoomForCheckin = (room) => {
-  checkinForm.roomType = room.type === 'single' ? 'single' : 
-                         room.type === 'double' ? 'deluxe' : 'executive'
-  checkinForm.roomNumber = room.number
+  checkinForm.roomType = room.roomTypeId || ''
+  checkinForm.roomNumber = room.id
   roomListDialogVisible.value = false
   ElMessage({
-    message: `已选择房间${room.number}，请填写入住信息`,
+    message: `已选择房间${room.roomNumber}，请填写入住信息`,
     type: 'success',
     duration: 2000
   })
@@ -417,7 +368,7 @@ const selectRoomForCheckin = (room) => {
 // 显示退房对话框
 const showCheckoutDialog = (room) => {
   ElMessageBox.confirm(
-    `确认为房间${room.number}的客人${room.guestName}办理退房吗？`,
+    `确认为房间${room.roomNumber}的客人${room.guestName}办理退房吗？`,
     '退房确认',
     {
       confirmButtonText: '确认退房',
@@ -426,20 +377,11 @@ const showCheckoutDialog = (room) => {
       draggable: true
     }
   ).then(() => {
-    // 模拟退房操作
-    const index = allRooms.findIndex(r => r.number === room.number)
-    if (index !== -1) {
-      allRooms[index].status = 'cleaning'
-      allRooms[index].guestName = ''
-      allRooms[index].checkoutDate = ''
-    }
-    // 更新房间状态数量
-    roomStatusList[1].count--
-    roomStatusList[2].count++
+    // 调用退房API
     ElMessage({
-      message: `房间${room.number}退房成功，已标记为待清洁状态`,
-      type: 'success',
-      duration: 2000
+      message: `请前往退房页面为房间${room.roomNumber}办理退房`,
+      type: 'info',
+      duration: 3000
     })
     roomListDialogVisible.value = false
   }).catch(() => {})
@@ -447,18 +389,11 @@ const showCheckoutDialog = (room) => {
 
 // 标记房间清洁完成
 const markRoomAsClean = (room) => {
-  // 模拟标记清洁完成操作
-  const index = allRooms.findIndex(r => r.number === room.number)
-  if (index !== -1) {
-    allRooms[index].status = 'available'
-  }
-  // 更新房间状态数量
-  roomStatusList[0].count++
-  roomStatusList[2].count--
+  // 这里应当调用API更新房间状态
   ElMessage({
-    message: `房间${room.number}已清洁完成，标记为空闲状态`,
-    type: 'success',
-    duration: 2000
+    message: `请通知清洁人员房间${room.roomNumber}需要清洁`,
+    type: 'info',
+    duration: 3000
   })
   roomListDialogVisible.value = false
 }
@@ -467,6 +402,7 @@ const markRoomAsClean = (room) => {
 const checkinFormRef = ref(null)
 const checkinForm = reactive({
   bookingNo: '',
+  bookingId: null, // 添加一个字段存储查询到的预订ID
   checkinType: 'normal',
   guestName: '',
   phone: '',
@@ -509,6 +445,35 @@ const checkinFormRules = {
   ]
 }
 
+// 根据房间类型获取可用房间
+const handleRoomTypeChange = async () => {
+  if (!checkinForm.roomType) {
+    availableRooms.value = []
+    return
+  }
+  
+  try {
+    const params = { 
+      status: 'AVAILABLE', 
+      roomTypeId: checkinForm.roomType 
+    }
+    const response = await fetchRooms(params)
+    if (response.data && response.data.content) {
+      availableRooms.value = response.data.content.map(room => ({
+        id: room.id,
+        roomNumber: room.roomNumber,
+        roomTypeName: room.roomType ? room.roomType.name : '未知'
+      }))
+    } else {
+      availableRooms.value = []
+    }
+  } catch (error) {
+    console.error('获取可用房间失败:', error)
+    ElMessage.error('获取可用房间失败，请重试')
+    availableRooms.value = []
+  }
+}
+
 // 查询预订信息
 const handleSearchBooking = async () => {
   if (!checkinForm.bookingNo) {
@@ -524,25 +489,44 @@ const handleSearchBooking = async () => {
       duration: 0
     })
     
-    // TODO: 调用后端API查询预订信息
+    // 调用后端API查询预订信息
+    // TODO: 实现根据预订号查询预订信息的API，这里暂时使用模拟数据
     await new Promise(resolve => setTimeout(resolve, 1000))
     
     // 关闭加载提示
     loading.close()
     
-    // 模拟数据
+    // TODO: 实际应从API获取，这里模拟数据
+    // 实际开发中应当检查预订状态是否为CONFIRMED，只有确认状态的预订才能办理入住
     const bookingInfo = {
+      id: parseInt(checkinForm.bookingNo), // 保存预订ID
       guestName: '张三',
       phone: '13800138000',
       idCard: '110101199001011234',
-      roomType: 'deluxe',
-      dateRange: [new Date(), new Date(Date.now() + 86400000 * 2)]
+      roomType: 1, // 假设这是房间类型ID
+      dateRange: [new Date(), new Date(Date.now() + 86400000 * 2)],
+      status: 'CONFIRMED' // 预订状态，只有CONFIRMED状态才能入住
+    }
+    
+    // 如果预订状态不是CONFIRMED，提示用户
+    if (bookingInfo.status !== 'CONFIRMED') {
+      ElMessage.error(`预订状态为${bookingInfo.status}，无法办理入住`)
+      return
     }
     
     Object.keys(bookingInfo).forEach(key => {
-      checkinForm[key] = bookingInfo[key]
+      if (key !== 'id' && key !== 'status') { // 不直接设置id和status字段
+        checkinForm[key] = bookingInfo[key]
+      }
     })
+    // 单独设置预订ID到一个隐藏字段
+    checkinForm.bookingId = bookingInfo.id
     checkinForm.checkinType = 'booking'
+    
+    // 如果房间类型ID有效，尝试加载对应的可用房间
+    if (checkinForm.roomType) {
+      handleRoomTypeChange()
+    }
     
     ElMessage({
       message: '预订信息查询成功',
@@ -569,41 +553,65 @@ const handleSubmit = async () => {
           duration: 0
         })
         
-        // TODO: 调用后端API保存入住信息
-        await new Promise(resolve => setTimeout(resolve, 1000))
+        // 构建请求数据
+        const checkInData = {
+          guestName: checkinForm.guestName,
+          guestIdType: 'ID_CARD',
+          guestIdNumber: checkinForm.idCard,
+          guestMobile: checkinForm.phone,
+          guestCount: checkinForm.guestCount,
+          roomId: checkinForm.roomNumber,
+          deposit: checkinForm.deposit,
+          paymentMethod: 'CASH', // 默认支付方式
+          remarks: checkinForm.remarks,
+          expectedCheckOutTime: checkinForm.dateRange && checkinForm.dateRange[1] ? 
+            checkinForm.dateRange[1].toISOString() : null
+        }
+        
+        // 根据入住类型处理
+        if (checkinForm.checkinType === 'booking') {
+          // 预订入住，需要传入预订ID
+          if (!checkinForm.bookingId) {
+            loading.close()
+            ElMessage.error('请先通过预订号查询预订信息')
+            return
+          }
+          checkInData.bookingId = checkinForm.bookingId
+        } else {
+          // 普通入住，不关联预订
+          // 实际系统中，可能需要创建一个临时预订或直接处理普通入住
+          // 这里简单处理，使用一个默认值或请求后端生成一个临时预订ID
+          checkInData.bookingId = 0 // 使用0或其他特殊值表示无预订入住
+        }
+        
+        console.log('准备提交入住数据:', checkInData)
+        
+        // 调用入住API
+        const response = await checkInBooking(checkInData)
         
         // 关闭加载提示
         loading.close()
         
-        ElMessage({
-          message: '入住登记成功',
-          type: 'success',
-          duration: 2000
-        })
-        
-        // 更新房间状态
-        if (checkinForm.roomNumber) {
-          const index = allRooms.findIndex(r => r.number === checkinForm.roomNumber)
-          if (index !== -1) {
-            allRooms[index].status = 'occupied'
-            allRooms[index].guestName = checkinForm.guestName
-            
-            // 计算退房时间
-            if (checkinForm.dateRange && checkinForm.dateRange[1]) {
-              const checkoutDate = new Date(checkinForm.dateRange[1])
-              allRooms[index].checkoutDate = `${checkoutDate.getFullYear()}-${String(checkoutDate.getMonth() + 1).padStart(2, '0')}-${String(checkoutDate.getDate()).padStart(2, '0')} 12:00`
-            }
-            
-            // 更新房间状态数量
-            roomStatusList[0].count--
-            roomStatusList[1].count++
-          }
+        if (response && response.data && response.data.success) {
+          ElMessage({
+            message: '入住登记成功',
+            type: 'success',
+            duration: 2000
+          })
+          
+          // 刷新房间状态数据
+          fetchRoomStatusData()
+          
+          // 重置表单
+          resetForm()
+        } else {
+          throw new Error(response?.data?.message || '入住登记失败')
         }
-        
-        resetForm()
       } catch (error) {
         console.error('入住登记失败:', error)
-        ElMessage.error('入住登记失败，请重试')
+        // 显示具体的错误信息
+        const errorMsg = error.response?.data?.message || error.message || '请重试'
+        ElMessage.error(`入住登记失败: ${errorMsg}`)
       }
     } else {
       ElMessage.warning('请填写完整的入住信息')
@@ -620,6 +628,47 @@ const resetForm = () => {
   checkinForm.deposit = 500
   checkinForm.dateRange = null
 }
+
+// 获取房间类型列表
+const fetchRoomTypeList = async () => {
+  try {
+    const response = await fetchRoomTypes()
+    if (response && response.data && response.data.data) {
+      roomTypeOptions.value = response.data.data
+    } else {
+      roomTypeOptions.value = []
+    }
+  } catch (error) {
+    console.error('获取房间类型失败:', error)
+    roomTypeOptions.value = []
+  }
+}
+
+// 获取房间状态统计数据
+const fetchRoomStatusData = async () => {
+  try {
+    const response = await fetchDashboardStats()
+    if (response && response.data && response.data.data) {
+      const { availableRooms, occupiedRooms, cleaningRooms, todayBookings } = response.data.data
+      
+      roomStatusList[0].count = availableRooms || 0
+      roomStatusList[1].count = occupiedRooms || 0
+      roomStatusList[2].count = cleaningRooms || 0
+      roomStatusList[3].count = todayBookings || 0
+    }
+  } catch (error) {
+    console.error('获取房间状态统计失败:', error)
+  }
+}
+
+// 生命周期函数
+onMounted(async () => {
+  // 获取房间类型列表
+  await fetchRoomTypeList()
+  
+  // 获取房间状态统计
+  await fetchRoomStatusData()
+})
 </script>
 
 <style scoped>
@@ -702,19 +751,19 @@ const resetForm = () => {
   color: white;
 }
 
-.status-card-available .status-icon {
+.status-card-AVAILABLE .status-icon {
   background: linear-gradient(135deg, #10b981, #059669);
 }
 
-.status-card-occupied .status-icon {
+.status-card-OCCUPIED .status-icon {
   background: linear-gradient(135deg, #f97316, #ea580c);
 }
 
-.status-card-cleaning .status-icon {
+.status-card-CLEANING .status-icon {
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
 }
 
-.status-card-booked .status-icon {
+.status-card-BOOKED .status-icon {
   background: linear-gradient(135deg, #8b5cf6, #7c3aed);
 }
 
