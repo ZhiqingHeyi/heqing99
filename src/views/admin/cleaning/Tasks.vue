@@ -130,6 +130,9 @@
       <el-button type="primary" circle size="large" @click="handleAdd" class="add-button">
         <el-icon><Plus /></el-icon>
       </el-button>
+      <el-button type="success" circle size="large" @click="handleGenerateTasks" class="generate-button">
+        <el-icon><Loading /></el-icon>
+      </el-button>
     </div>
 
     <!-- 分配任务对话框 -->
@@ -302,78 +305,6 @@
         </div>
       </template>
     </el-dialog>
-
-    <!-- 任务列表头部 -->
-    <div class="tasks-header">
-      <h3>{{ taskFilterTitle }}</h3>
-      <div class="header-actions">
-        <el-button type="primary" @click="handleCreateTask" size="small" :icon="Plus">新建任务</el-button>
-        <el-button type="success" @click="handleGenerateTasks" size="small">生成任务</el-button>
-      </div>
-    </div>
-
-    <!-- 任务列表 -->
-    <div v-loading="loading" class="tasks-container">
-      <!-- 待处理任务 -->
-      <template v-if="filteredTasks.length > 0">
-        <el-card v-for="task in filteredTasks" :key="task.id" class="task-card">
-          <div class="task-header">
-            <div class="room-info">
-              <div class="room-number">{{ task.roomNumber }}</div>
-              <div class="room-type">{{ task.roomType }}</div>
-            </div>
-            <div class="task-status" :class="task.status">
-              {{ getStatusLabel(task.status) }}
-            </div>
-          </div>
-          
-          <div class="task-priority" :class="task.priority">
-            {{ getPriorityLabel(task.priority) }}
-          </div>
-          
-          <div class="task-info">
-            <div class="info-row">
-              <span class="info-label">创建时间:</span>
-              <span class="info-value">{{ formatDateTime(task.createTime) }}</span>
-            </div>
-            <div v-if="task.cleaner" class="info-row">
-              <span class="info-label">保洁员:</span>
-              <span class="info-value">{{ task.cleaner }}</span>
-            </div>
-            <div v-if="task.notes" class="info-row notes">
-              <span class="info-label">备注:</span>
-              <span class="info-value">{{ task.notes }}</span>
-            </div>
-          </div>
-          
-          <div class="task-actions">
-            <el-button 
-              v-if="task.status === 'pending'" 
-              type="primary" 
-              @click="handleStart(task)"
-              size="small"
-            >开始处理</el-button>
-            
-            <el-button 
-              v-if="task.status === 'processing'" 
-              type="success" 
-              @click="handleComplete(task)"
-              size="small"
-            >完成任务</el-button>
-            
-            <el-button 
-              v-if="task.status === 'completed'" 
-              type="info" 
-              @click="handleInspect(task)"
-              size="small"
-            >查看详情</el-button>
-          </div>
-        </el-card>
-      </template>
-      
-      <!-- 空状态 -->
-      <el-empty v-else :description="`暂无${taskFilterTitle}`" />
-    </div>
   </div>
 </template>
 
@@ -1092,15 +1023,18 @@ onMounted(() => {
   right: 20px;
   bottom: 30px;
   z-index: 10;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
 }
 
-.add-button {
+.add-button, .generate-button {
   width: 60px;
   height: 60px;
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-.add-button .el-icon {
+.add-button .el-icon, .generate-button .el-icon {
   font-size: 24px;
 }
 
@@ -1217,25 +1151,5 @@ onMounted(() => {
   .checkbox-grid {
     grid-template-columns: 1fr;
   }
-}
-
-/* 添加新样式 */
-.tasks-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 0 15px;
-  margin-bottom: 15px;
-}
-
-.tasks-header h3 {
-  margin: 0;
-  font-size: 18px;
-  font-weight: 600;
-}
-
-.header-actions {
-  display: flex;
-  gap: 8px;
 }
 </style>
