@@ -433,6 +433,43 @@ const fetchDashboardData = async () => {
     // dataCards[3].change = '--' // 变化数据待后端提供
     // dataCards[3].trend = ''
 
+    // 更新房间状态图表数据
+    if (roomStatusChartInstance) {
+      // 从API响应获取房间状态数据
+      const roomStatusData = [
+        { value: stats.occupiedRooms || 0, name: '已入住' },
+        { value: stats.needsCleaningRooms || 0, name: '待清洁' },
+        { value: stats.availableRooms || 0, name: '空闲可用' },
+        { value: stats.maintenanceRooms || 0, name: '维护中' },
+        { value: stats.cleaningRooms || 0, name: '清洁中' },
+        { value: stats.reservedRooms || 0, name: '已预订' }
+      ]
+      
+      // 过滤掉值为0的状态，避免图表显示空项
+      const filteredRoomStatusData = roomStatusData.filter(item => item.value > 0)
+      
+      roomStatusChartInstance.setOption({
+        series: [{
+          data: filteredRoomStatusData
+        }]
+      })
+    }
+
+    // 更新清洁任务完成情况图表
+    if (cleaningTaskChartInstance) {
+      const cleaningData = [
+        stats.cleaningTasksCompleted || 0,
+        stats.cleaningTasksInProgress || 0,
+        stats.cleaningTasksPending || 0
+      ]
+      
+      cleaningTaskChartInstance.setOption({
+        series: [{
+          data: cleaningData
+        }]
+      })
+    }
+
   } catch (e) {
     console.error("加载仪表盘数据失败:", e)
     error.value = '加载数据失败: ' + (e.message || '未知错误')
@@ -539,12 +576,7 @@ onMounted(() => {
       series: [{
         type: 'pie',
         radius: '50%',
-        data: [
-          { value: 60, name: '已入住' },
-          { value: 20, name: '待清洁' },
-          { value: 15, name: '空闲' },
-          { value: 5, name: '维护中' }
-        ],
+        data: [], // 初始化为空数组，稍后会通过API数据更新
         emphasis: {
           itemStyle: {
             shadowBlur: 10,
@@ -577,7 +609,7 @@ onMounted(() => {
         type: 'value'
       },
       series: [{
-        data: [25, 8, 5],
+        data: [0, 0, 0], // 初始化为空数据，稍后通过API更新
         type: 'bar',
         showBackground: true,
         backgroundStyle: {

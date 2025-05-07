@@ -154,6 +154,9 @@ public class SecurityConfig {
                 .antMatchers(HttpMethod.GET, "/api/admin/rooms/random-occupied").hasAnyRole("ADMIN", "RECEPTIONIST")
                 // --- 新增结束 ---
 
+                // 新增：允许特定角色标记房间清洁完成
+                .antMatchers(HttpMethod.POST, "/api/admin/rooms/{roomId}/mark-cleaned").hasAnyRole("ADMIN", "RECEPTIONIST", "STAFF")
+
                 // 管理员相关 API 需要管理员角色 (Keep this general rule after specific ones)
                 .antMatchers("/api/admin/**").hasRole("ADMIN")
                 .antMatchers(HttpMethod.DELETE, "/api/users/{id}").hasRole("ADMIN")

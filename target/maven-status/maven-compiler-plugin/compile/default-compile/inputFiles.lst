@@ -77,6 +77,7 @@ E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\UserServiceImpl.
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\TokenBlacklistService.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\Visitor.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\service\impl\PointsExpiryServiceImpl.java
+E:\桌面\javahotel\heqing99\src\main\java\com\hotel\entity\IdType.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\ReservationController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\VisitorController.java
 E:\桌面\javahotel\heqing99\src\main\java\com\hotel\controller\MemberLevelChangeController.java

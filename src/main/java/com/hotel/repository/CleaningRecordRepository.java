@@ -50,4 +50,9 @@ public interface CleaningRecordRepository extends JpaRepository<CleaningRecord, 
 
     @Query("SELECT COUNT(c) FROM CleaningRecord c WHERE c.status = ?1 AND c.endTime >= ?2 AND c.endTime <= ?3")
     long countByStatusAndEndTimeBetween(CleaningRecord.CleaningStatus status, LocalDateTime startTime, LocalDateTime endTime);
+
+    /**
+     * 统计指定状态的任务数量
+     */
+    long countByStatus(CleaningRecord.CleaningStatus status);
 }

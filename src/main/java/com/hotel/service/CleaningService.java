@@ -87,4 +87,10 @@ public interface CleaningService {
      * 获取所有清洁记录
      */
     List<CleaningRecord> getAllCleaningRecords();
+
+    /**
+     * 获取清洁任务统计数据
+     * @return Map<String, Long> 包含各种状态任务数量的映射
+     */
+    java.util.Map<String, Long> getTasksStatistics();
 }

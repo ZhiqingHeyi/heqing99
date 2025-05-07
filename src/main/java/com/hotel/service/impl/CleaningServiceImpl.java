@@ -178,4 +178,25 @@ public class CleaningServiceImpl implements CleaningService {
     public List<CleaningRecord> getAllCleaningRecords() {
         return cleaningRecordRepository.findAll();
     }
+
+    @Override
+    public java.util.Map<String, Long> getTasksStatistics() {
+        java.util.Map<String, Long> statistics = new java.util.HashMap<>();
+        
+        // 统计已完成的任务
+        long completedTasks = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.COMPLETED) 
+                            + cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.VERIFIED);
+        statistics.put("completed", completedTasks);
+        
+        // 统计进行中的任务
+        long inProgressTasks = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.IN_PROGRESS);
+        statistics.put("inProgress", inProgressTasks);
+        
+        // 统计待处理的任务
+        long pendingTasks = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.PENDING)
+                          + cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.ASSIGNED);
+        statistics.put("pending", pendingTasks);
+        
+        return statistics;
+    }
 }

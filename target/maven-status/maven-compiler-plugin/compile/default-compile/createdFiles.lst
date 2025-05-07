@@ -148,6 +148,7 @@ com\hotel\entity\PointsExchangeRecord.class
 com\hotel\controller\UserController.class
 com\hotel\entity\ConsumptionRecord.class
 com\hotel\service\impl\CleaningServiceImpl.class
+com\hotel\entity\IdType.class
 com\hotel\controller\AdminCheckoutController.class
 com\hotel\entity\PointsExchangeRecord$ExchangeStatus.class
 com\hotel\service\impl\ReservationServiceImpl.class

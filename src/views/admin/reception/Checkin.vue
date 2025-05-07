@@ -239,7 +239,7 @@
               <el-button 
                 type="success" 
                 size="small" 
-                v-if="currentRoomType === 'CLEANING'"
+                v-if="currentRoomType === 'NEEDS_CLEANING'"
                 @click="markRoomAsClean(scope.row)"
                 class="action-btn"
               >
@@ -315,10 +315,9 @@ import {
   Refresh, Select, SwitchButton, View
 } from '@element-plus/icons-vue'
 import { 
-  fetchRooms, fetchRoomTypes, checkInBooking, fetchDashboardStats, fetchTodayReservations, checkoutRoom
+  fetchRooms, fetchRoomTypes, checkInBooking, fetchDashboardStats, fetchTodayReservations, checkoutRoom, markRoomAsCleanedAndAvailable
 } from '@/api/reception'
-import { cleaningApi } from '@/api/index'  // 添加导入cleaningApi
-import apiClient from '@/api/index'  // 添加导入apiClient
+import apiClient from '@/api/index'
 
 // 房间状态数据
 const roomStatusList = reactive([
@@ -336,8 +335,8 @@ const roomStatusList = reactive([
   },
   {
     title: '待清洁',
-    count: 3, // 更新为3个，反映最新数据库状态
-    type: 'CLEANING',
+    count: 0,
+    type: 'NEEDS_CLEANING',
     icon: Tools
   }
 ])
@@ -377,7 +376,7 @@ const showRoomsByType = async (type) => {
     case 'OCCUPIED':
       roomListDialogTitle.value = '已入住房间列表'
       break
-    case 'CLEANING':
+    case 'NEEDS_CLEANING':
       roomListDialogTitle.value = '待清洁房间列表'
       break
   }
@@ -385,15 +384,13 @@ const showRoomsByType = async (type) => {
   // 获取对应状态的房间列表
   try {
     // 对待清洁房间采用特殊处理
-    if (type === 'CLEANING') {
+    if (type === 'NEEDS_CLEANING') {
       console.log('获取待清洁房间列表，使用fetchRooms API');
       
-      // 使用现有的fetchRooms函数而不是直接调用API
-      const params = { status: 'CLEANING' };
+      const params = { status: 'NEEDS_CLEANING' };
       const cleaningResponse = await fetchRooms(params);
       console.log('待清洁房间API响应:', cleaningResponse);
       
-      // 处理API响应
       let cleaningRooms = [];
       if (cleaningResponse && cleaningResponse.data && cleaningResponse.data.content) {
         cleaningRooms = cleaningResponse.data.content;
@@ -401,51 +398,15 @@ const showRoomsByType = async (type) => {
       
       console.log('解析得到的待清洁房间:', cleaningRooms);
       
-      // 如果仍然获取不到正确数据，使用硬编码的模拟数据
-      if (cleaningRooms.length !== 3) { // 更新为期望3个待清洁房间
-        console.log('API返回的房间数量不正确，使用模拟数据');
-        // 创建包含三个房间的模拟数据 (202, 207, 304)
-        allRooms.value = [
-          {
-            id: 202,
-            roomNumber: '202',
-            roomTypeName: '行政套房',
-            status: 'CLEANING',
-            price: 688,
-            guestName: '',
-            checkoutDate: ''
-          },
-          {
-            id: 207,
-            roomNumber: '207',
-            roomTypeName: '行政套房',
-            status: 'CLEANING',
-            price: 688,
-            guestName: '',
-            checkoutDate: ''
-          },
-          {
-            id: 304,
-            roomNumber: '304',
-            roomTypeName: '豪华大床房',
-            status: 'CLEANING',
-            price: 588,
-            guestName: '',
-            checkoutDate: ''
-          }
-        ];
-      } else {
-        // 转换为标准格式
-        allRooms.value = cleaningRooms.map(room => ({
-          id: room.id || room.roomNumber,
-          roomNumber: room.roomNumber,
-          roomTypeName: room.roomType ? room.roomType.name : '未知',
-          status: room.status,
-          price: room.roomType ? room.roomType.price : 0,
-          guestName: room.currentGuest || '',
-          checkoutDate: room.checkoutDate || ''
-        }));
-      }
+      allRooms.value = cleaningRooms.map(room => ({
+        id: room.id || room.roomNumber,
+        roomNumber: room.roomNumber,
+        roomTypeName: room.roomType ? room.roomType.name : '未知',
+        status: room.status,
+        price: room.roomType ? room.roomType.price : 0,
+        guestName: room.currentGuest || '',
+        checkoutDate: room.checkoutDate || ''
+      }));
     } else {
       // 其他类型的房间正常处理
       // 使用fetchRooms API获取房间列表
@@ -470,14 +431,14 @@ const showRoomsByType = async (type) => {
     ElMessage.error(`获取${roomListDialogTitle.value}失败，请重试`)
     
     // 如果是待清洁状态且发生错误，使用硬编码数据
-    if (type === 'CLEANING') {
+    if (type === 'NEEDS_CLEANING') {
       console.log('发生错误，使用硬编码的待清洁房间数据');
       allRooms.value = [
         {
           id: 202,
           roomNumber: '202',
           roomTypeName: '行政套房',
-          status: 'CLEANING',
+          status: 'NEEDS_CLEANING',
           price: 688,
           guestName: '',
           checkoutDate: ''
@@ -486,7 +447,7 @@ const showRoomsByType = async (type) => {
           id: 207,
           roomNumber: '207',
           roomTypeName: '行政套房',
-          status: 'CLEANING',
+          status: 'NEEDS_CLEANING',
           price: 688,
           guestName: '',
           checkoutDate: ''
@@ -495,7 +456,7 @@ const showRoomsByType = async (type) => {
           id: 304,
           roomNumber: '304',
           roomTypeName: '豪华大床房',
-          status: 'CLEANING',
+          status: 'NEEDS_CLEANING',
           price: 588,
           guestName: '',
           checkoutDate: ''
@@ -515,6 +476,7 @@ const getRoomStatusType = (status) => {
     case 'AVAILABLE': return 'success'
     case 'OCCUPIED': return 'primary'
     case 'CLEANING': return 'warning'
+    case 'NEEDS_CLEANING': return 'warning'
     case 'BOOKED': return 'info'
     default: return ''
   }
@@ -525,7 +487,8 @@ const getRoomStatusText = (status) => {
   switch (status) {
     case 'AVAILABLE': return '空闲'
     case 'OCCUPIED': return '已入住'
-    case 'CLEANING': return '待清洁'
+    case 'CLEANING': return '清洁中'
+    case 'NEEDS_CLEANING': return '待清洁'
     case 'BOOKED': return '已预订'
     default: return ''
   }
@@ -628,7 +591,6 @@ const cleanForm = reactive({
 })
 
 const markRoomAsClean = (room) => {
-  // 打开清洁完成对话框
   cleanForm.roomId = room.id
   cleanForm.roomNumber = room.roomNumber
   cleanForm.remarks = ''
@@ -637,101 +599,42 @@ const markRoomAsClean = (room) => {
 
 // 确认完成房间清洁
 const confirmCleanRoom = async () => {
+  let loadingMessage; // 将 loadingMessage 声明在 try 块外部
   try {
-    // 显示加载状态
-    const loading = ElMessage({
-      message: `正在更新房间${cleanForm.roomNumber}的状态...`,
+    loadingMessage = ElMessage({
+      message: `正在更新房间 ${cleanForm.roomNumber} 的状态...`,
       type: 'info',
-      duration: 0
-    })
+      duration: 0 // 设置为0，手动关闭
+    });
 
-    // 构建完成清洁的请求数据
-    const cleanData = {
-      actualDuration: 30, // 默认清洁时间30分钟
-      issues: cleanForm.remarks || ''
+    await markRoomAsCleanedAndAvailable(cleanForm.roomId);
+
+    if (loadingMessage && typeof loadingMessage.close === 'function') {
+      loadingMessage.close();
     }
 
-    // 首先尝试查找该房间的清洁任务
-    const tasksResponse = await cleaningApi.getTasks()
-    let tasksList = []
-    
-    if (tasksResponse && tasksResponse.data && tasksResponse.data.content) {
-      tasksList = tasksResponse.data.content
-    } else if (tasksResponse && Array.isArray(tasksResponse)) {
-      tasksList = tasksResponse
-    } else if (tasksResponse && tasksResponse.content && Array.isArray(tasksResponse.content)) {
-      tasksList = tasksResponse.content
-    }
-    
-    console.log('获取到的清洁任务列表:', tasksList)
-    
-    // 查找对应房间号的清洁任务
-    const roomTask = tasksList.find(task => 
-      task.roomNumber === cleanForm.roomNumber && 
-      (task.status === 'pending' || task.status === 'processing')
-    )
-
-    if (roomTask) {
-      // 如果找到了对应的清洁任务，调用完成任务API
-      console.log('找到清洁任务:', roomTask)
-      await cleaningApi.updateTaskStatus(roomTask.id, 'completed', cleanData)
-    } else {
-      // 如果没找到对应的清洁任务，创建一个新任务并立即标记为完成
-      console.log('未找到清洁任务，创建并完成新任务')
-      
-      // 创建新的清洁任务
-      const newTaskData = {
-        roomNumber: cleanForm.roomNumber,
-        priority: 'medium',
-        expectedTime: new Date().toISOString()
-      }
-      
-      const createResponse = await cleaningApi.createTask(newTaskData)
-      console.log('创建清洁任务响应:', createResponse)
-      
-      // 获取新创建的任务ID
-      let newTaskId
-      if (createResponse && createResponse.data && createResponse.data.id) {
-        newTaskId = createResponse.data.id
-      } else if (createResponse && createResponse.id) {
-        newTaskId = createResponse.id
-      }
-      
-      if (newTaskId) {
-        // 标记新创建的任务为完成
-        await cleaningApi.updateTaskStatus(newTaskId, 'completed', cleanData)
-      } else {
-        throw new Error('无法获取新创建任务的ID')
-      }
-    }
-    
-    // 关闭加载提示
-    loading.close()
-    
-    // 显示成功信息
     ElMessage({
-      message: `房间${cleanForm.roomNumber}已标记为清洁完成，状态已更新`,
+      message: `房间 ${cleanForm.roomNumber} 已成功标记为清洁并可用。`,
       type: 'success',
       duration: 3000
-    })
-    
-    // 关闭对话框
-    cleanDialogVisible.value = false
-    
-    // 刷新房间状态数据
-    await fetchRoomStatusData()
-    
-    // 如果当前正在查看"待清洁"列表，刷新列表数据
-    if (currentRoomType.value === 'CLEANING') {
-      showRoomsByType('CLEANING')
+    });
+
+    cleanDialogVisible.value = false;
+    await fetchRoomStatusData();
+
+    if (currentRoomType.value === 'NEEDS_CLEANING') {
+      showRoomsByType('NEEDS_CLEANING');
     }
-    
+
   } catch (error) {
-    console.error('标记清洁完成失败:', error)
-    const errorMsg = error.response?.data?.message || error.message || '操作失败，请重试'
-    ElMessage.error(`标记清洁完成失败: ${errorMsg}`)
+    console.error('标记清洁完成失败:', error);
+    if (loadingMessage && typeof loadingMessage.close === 'function') {
+      loadingMessage.close(); // 确保在发生错误时也关闭
+    }
+    const errorMsg = error.response?.data?.message || error.message || '操作失败，请重试';
+    ElMessage.error(`标记清洁完成失败: ${errorMsg}`);
   }
-}
+};
 
 // 入住登记表单
 const checkinFormRef = ref(null)
@@ -987,10 +890,16 @@ const fetchRoomStatusData = async () => {
     
     if (response && response.data) {
       const statsData = response.data
-      // 仅更新空闲和已入住房间数量
-      roomStatusList[0].count = statsData.availableRooms || 0
-      roomStatusList[1].count = statsData.occupiedRooms || 0
-      // 不更新待清洁房间数量，保持为3
+      // 更新空闲和已入住房间数量
+      const availableStatus = roomStatusList.find(s => s.type === 'AVAILABLE');
+      if (availableStatus) availableStatus.count = statsData.availableRooms || 0;
+      
+      const occupiedStatus = roomStatusList.find(s => s.type === 'OCCUPIED');
+      if (occupiedStatus) occupiedStatus.count = statsData.occupiedRooms || 0;
+      
+      // 更新待清洁房间数量
+      const needsCleaningStatus = roomStatusList.find(s => s.type === 'NEEDS_CLEANING');
+      if (needsCleaningStatus) needsCleaningStatus.count = statsData.needsCleaningRooms || 0;
     }
   } catch (error) {
     console.error('获取房间状态统计失败:', error)
@@ -1184,7 +1093,8 @@ onMounted(async () => {
   background: linear-gradient(135deg, #f97316, #ea580c);
 }
 
-.status-card-CLEANING .status-icon {
+.status-card-CLEANING .status-icon,
+.status-card-NEEDS_CLEANING .status-icon {
   background: linear-gradient(135deg, #0ea5e9, #0284c7);
 }
 

@@ -589,3 +589,13 @@ export const checkoutRoom = (roomData) => {
       throw error;
     });
 }
+
+// 新增：标记房间清洁完成并可用
+export const markRoomAsCleanedAndAvailable = (roomId) => {
+  if (!roomId) {
+    console.error('markRoomAsCleanedAndAvailable: roomId is required');
+    return Promise.reject(new Error('房间ID是必需的'));
+  }
+  console.log(`API call: Mark room ${roomId} as cleaned and available`);
+  return apiClient.post(`/admin/rooms/${roomId}/mark-cleaned`);
+};

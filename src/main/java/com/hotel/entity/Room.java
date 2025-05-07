@@ -36,6 +36,7 @@ public class Room {
     private Integer floor;
 
     @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
     private RoomStatus status = RoomStatus.AVAILABLE;
 
     @Column(name = "notes")

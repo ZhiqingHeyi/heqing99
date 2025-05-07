@@ -8,10 +8,12 @@ import com.hotel.service.UserService;
 import com.hotel.service.RoomService;
 import com.hotel.service.ReservationService;
 import com.hotel.service.CheckInService;
+import com.hotel.service.CleaningService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.security.access.prepost.PreAuthorize;
 
 import java.util.HashMap;
 import java.util.List;
@@ -26,16 +28,19 @@ public class AdminDashboardController {
     private final RoomService roomService;
     private final ReservationService reservationService;
     private final CheckInService checkInService;
+    private final CleaningService cleaningService;
 
     @Autowired
     public AdminDashboardController(UserService userService,
                                    RoomService roomService,
                                    ReservationService reservationService,
-                                   CheckInService checkInService) {
+                                   CheckInService checkInService,
+                                   CleaningService cleaningService) {
         this.userService = userService;
         this.roomService = roomService;
         this.reservationService = reservationService;
         this.checkInService = checkInService;
+        this.cleaningService = cleaningService;
     }
 
     /**
@@ -49,6 +54,10 @@ public class AdminDashboardController {
         statistics.put("totalRooms", roomService.getAllRooms().size());
         statistics.put("availableRooms", roomService.countByStatus(Room.RoomStatus.AVAILABLE));
         statistics.put("occupiedRooms", roomService.countByStatus(Room.RoomStatus.OCCUPIED));
+        statistics.put("needsCleaningRooms", roomService.countByStatus(Room.RoomStatus.NEEDS_CLEANING));
+        statistics.put("maintenanceRooms", roomService.countByStatus(Room.RoomStatus.MAINTENANCE));
+        statistics.put("cleaningRooms", roomService.countByStatus(Room.RoomStatus.CLEANING));
+        statistics.put("reservedRooms", roomService.countByStatus(Room.RoomStatus.RESERVED));
         
         // 预订统计
         statistics.put("todayReservations", reservationService.countTodayReservations());
@@ -61,6 +70,22 @@ public class AdminDashboardController {
         // 用户统计
         statistics.put("totalUsers", userService.countAllUsers());
         statistics.put("newUsersThisMonth", userService.countNewUsersThisMonth());
+        
+        // 清洁任务统计 - 如果项目中有清洁任务服务，则可以获取相应的统计数据
+        try {
+            // 尝试从CleaningService获取清洁任务统计
+            Map<String, Long> cleaningStats = cleaningService.getTasksStatistics();
+            statistics.put("cleaningTasksCompleted", cleaningStats.getOrDefault("completed", 0L));
+            statistics.put("cleaningTasksInProgress", cleaningStats.getOrDefault("inProgress", 0L));
+            statistics.put("cleaningTasksPending", cleaningStats.getOrDefault("pending", 0L));
+        } catch (Exception e) {
+            // 如果出现异常（可能是因为cleaningService未注入），提供默认值
+            statistics.put("cleaningTasksCompleted", 0L);
+            statistics.put("cleaningTasksInProgress", 0L);
+            statistics.put("cleaningTasksPending", 0L);
+            // 记录异常，但不中断整个响应
+            System.err.println("无法获取清洁任务统计: " + e.getMessage());
+        }
         
         return ResponseEntity.ok(statistics);
     }
@@ -349,5 +374,24 @@ public class AdminDashboardController {
         map.put("createTime", roomType.getCreateTime());
         map.put("updateTime", roomType.getUpdateTime());
         return map;
+    }
+
+    // 新增API：标记房间清洁完成
+    @PostMapping("/rooms/{roomId}/mark-cleaned")
+    @PreAuthorize("hasAnyRole('ADMIN', 'RECEPTION', 'STAFF')")
+    public ResponseEntity<?> markRoomAsCleaned(@PathVariable Long roomId) {
+        try {
+            roomService.confirmRoomCleaned(roomId);
+            Map<String, Object> response = new HashMap<>();
+            response.put("success", true);
+            response.put("message", "房间 " + roomId + " 已成功标记为清洁并可用。");
+            return ResponseEntity.ok(response);
+        } catch (Exception e) {
+            // 更具体的异常处理，例如房间未找到等
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
     }
 } 
