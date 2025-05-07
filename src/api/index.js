@@ -1016,7 +1016,30 @@ export const cleaningApi = {
       throw error
     }
   },
-  getCleaningRecords: () => apiClient.get('/api/cleaning/records'),
+  getCleaningRecords: (params = {}) => {
+    console.log('调用获取清洁记录API，参数:', params);
+    return apiClient.get('/api/cleaning/records', { params })
+      .then(response => {
+        console.log('获取清洁记录API响应:', response);
+        return response;
+      })
+      .catch(error => {
+        console.error('获取清洁记录API错误:', error);
+        throw error;
+      });
+  },
+  getCleaningRecordById: (id) => {
+    console.log('调用获取清洁记录详情API，ID:', id);
+    return apiClient.get(`/api/cleaning/records/${id}`)
+      .then(response => {
+        console.log('获取清洁记录详情API响应:', response);
+        return response;
+      })
+      .catch(error => {
+        console.error('获取清洁记录详情API错误:', error);
+        throw error;
+      });
+  },
   getTaskStatistics: () => apiClient.get('/api/cleaning/tasks/statistics'),
   getAvailableRooms: () => apiClient.get('/api/cleaning/available-rooms'),
   getAvailableCleaners: () => apiClient.get('/api/cleaning/available-cleaners'),

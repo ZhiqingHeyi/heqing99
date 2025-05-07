@@ -16,13 +16,13 @@
         >全部</div>
         <div 
           class="tab-item" 
-          :class="{ active: filterForm.status === 'completed' }"
-          @click="quickFilter('completed')"
+          :class="{ active: filterForm.status === 'COMPLETED' }"
+          @click="quickFilter('COMPLETED')"
         >已完成</div>
         <div 
           class="tab-item" 
-          :class="{ active: filterForm.status === 'processing' }"
-          @click="quickFilter('processing')"
+          :class="{ active: filterForm.status === 'IN_PROGRESS' }"
+          @click="quickFilter('IN_PROGRESS')"
         >进行中</div>
       </div>
       
@@ -184,6 +184,7 @@
 import { ref, reactive, computed, onMounted } from 'vue'
 import { ElMessage } from 'element-plus'
 import { Refresh } from '@element-plus/icons-vue'
+import { cleaningApi } from '@/api/index'
 
 // 当前时间
 const currentTime = ref('')
@@ -235,9 +236,11 @@ const getStatusType = (status) => {
 // 获取状态文本
 const getStatusText = (status) => {
   const statusMap = {
-    pending: '待处理',
-    processing: '进行中',
-    completed: '已完成'
+    PENDING: '待处理',
+    ASSIGNED: '已分配',
+    IN_PROGRESS: '进行中',
+    COMPLETED: '已完成',
+    VERIFIED: '已验证'
   }
   return statusMap[status] || status
 }
@@ -256,45 +259,32 @@ const formatTime = (datetime) => {
 const fetchRecords = async () => {
   loading.value = true
   try {
-    // TODO: 调用后端API获取记录列表
-    await new Promise(resolve => setTimeout(resolve, 1000))
-    // 模拟数据
-    records.value = [
-      {
-        id: 1,
-        roomNumber: '301',
-        cleaner: '张阿姨',
-        status: 'completed',
-        startTime: '2025-03-31 09:00:00',
-        endTime: '2025-03-31 10:30:00',
-        duration: '1.5小时',
-        remarks: '正常完成清洁工作'
-      },
-      {
-        id: 2,
-        roomNumber: '302',
-        cleaner: '李阿姨',
-        status: 'completed',
-        startTime: '2025-03-31 10:00:00',
-        endTime: '2025-03-31 11:15:00',
-        duration: '1.25小时',
-        remarks: '客人提前退房，进行了额外清洁'
-      },
-      {
-        id: 3,
-        roomNumber: '401',
-        cleaner: '王阿姨',
-        status: 'processing',
-        startTime: '2025-03-31 13:00:00',
-        endTime: '',
-        duration: '进行中',
-        remarks: ''
-      }
-    ]
-    total.value = 100
+    // 构建请求参数
+    const params = {}
+    
+    // 处理状态过滤
+    if (filterForm.status) {
+      params.status = filterForm.status
+    }
+    
+    // 处理日期范围过滤
+    if (filterForm.dateRange && filterForm.dateRange.length === 2) {
+      params.startDate = filterForm.dateRange[0]
+      params.endDate = filterForm.dateRange[1]
+    }
+    
+    // 调用API获取记录
+    const response = await cleaningApi.getCleaningRecords(params)
+    
+    if (response && response.success) {
+      records.value = response.records || []
+      total.value = response.total || 0
+    } else {
+      ElMessage.error('获取清洁记录失败')
+    }
   } catch (error) {
     console.error('获取记录失败:', error)
-    ElMessage.error('获取记录失败')
+    ElMessage.error(error.message || '获取记录失败')
   } finally {
     loading.value = false
   }
@@ -302,15 +292,34 @@ const fetchRecords = async () => {
 
 // 快速筛选
 const quickFilter = (status) => {
-  filterForm.status = status
-  currentPage.value = 1
-  fetchRecords()
+  filterForm.status = status ? status.toUpperCase() : '';
+  currentPage.value = 1;
+  fetchRecords();
 }
 
 // 查看详情
-const viewDetails = (row) => {
+const viewDetails = async (row) => {
+  try {
+    loading.value = true
+    const response = await cleaningApi.getCleaningRecordById(row.id)
+    
+    if (response && response.success) {
+      currentRecord.value = response.record || row
+    } else {
+      // 如果API调用失败，使用列表中的数据作为备选
+      currentRecord.value = { ...row }
+      ElMessage.warning('获取详情失败，显示基础信息')
+    }
+    
+    detailsVisible.value = true
+  } catch (error) {
+    console.error('获取详情失败:', error)
+    // 如果出错，使用列表中的数据作为备选
   currentRecord.value = { ...row }
   detailsVisible.value = true
+  } finally {
+    loading.value = false
+  }
 }
 
 // 刷新记录
@@ -453,17 +462,17 @@ fetchRecords()
   font-weight: 500;
 }
 
-.record-status.completed {
+.record-status.COMPLETED {
   background-color: #f0f9eb;
   color: #67c23a;
 }
 
-.record-status.processing {
+.record-status.IN_PROGRESS {
   background-color: #ebf5ff;
   color: #409eff;
 }
 
-.record-status.pending {
+.record-status.PENDING {
   background-color: #f4f4f5;
   color: #909399;
 }
@@ -610,12 +619,12 @@ fetchRecords()
   font-weight: 500;
 }
 
-.detail-status.completed {
+.detail-status.COMPLETED {
   background-color: #f0f9eb;
   color: #67c23a;
 }
 
-.detail-status.processing {
+.detail-status.IN_PROGRESS {
   background-color: #ebf5ff;
   color: #409eff;
 }

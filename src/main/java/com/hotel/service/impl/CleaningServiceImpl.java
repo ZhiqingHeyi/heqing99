@@ -160,4 +160,9 @@ public class CleaningServiceImpl implements CleaningService {
 
         return cleaningRecordRepository.save(existingRecord);
     }
+    
+    @Override
+    public List<CleaningRecord> getAllCleaningRecords() {
+        return cleaningRecordRepository.findAll();
+    }
 }

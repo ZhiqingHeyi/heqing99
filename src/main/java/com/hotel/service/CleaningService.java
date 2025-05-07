@@ -82,4 +82,9 @@ public interface CleaningService {
      * 更新清洁记录
      */
     CleaningRecord updateCleaningRecord(CleaningRecord cleaningRecord);
+
+    /**
+     * 获取所有清洁记录
+     */
+    List<CleaningRecord> getAllCleaningRecords();
 }
