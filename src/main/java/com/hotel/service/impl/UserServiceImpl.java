@@ -9,6 +9,8 @@ import com.hotel.entity.InvitationCode;
 import com.hotel.service.InvitationCodeService;
 import com.hotel.service.UserService;
 import com.hotel.util.JwtUtil;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageRequest;
@@ -18,6 +20,10 @@ import org.springframework.data.jpa.domain.Specification;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.security.core.Authentication;
+import org.springframework.security.core.context.SecurityContextHolder;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 
 import javax.persistence.criteria.Predicate;
 import java.math.BigDecimal;
@@ -31,6 +37,8 @@ import java.util.Optional;
 @Service
 @Transactional
 public class UserServiceImpl implements UserService {
+
+    private static final Logger log = LoggerFactory.getLogger(UserServiceImpl.class);
 
     @Autowired
     private UserRepository userRepository;
@@ -614,5 +622,29 @@ public class UserServiceImpl implements UserService {
 
         // 11. 返回用户
         return savedUser;
+    }
+
+    @Override
+    public User getCurrentUser() {
+        Authentication authentication = SecurityContextHolder.getContext().getAuthentication();
+        if (authentication == null || !authentication.isAuthenticated() || "anonymousUser".equals(authentication.getPrincipal())) {
+            // 用户未认证或为匿名用户
+            return null; 
+        }
+
+        Object principal = authentication.getPrincipal();
+        if (principal instanceof UserDetails) {
+            String username = ((UserDetails) principal).getUsername();
+            return userRepository.findByUsername(username)
+                    .orElse(null); // 或者抛出异常，例如 new UsernameNotFoundException("User not found in repository for authenticated principal: " + username)
+        } else if (principal instanceof String) {
+            // 有时 principal 直接是 username 字符串
+            String username = (String) principal;
+            return userRepository.findByUsername(username)
+                    .orElse(null); // 同上
+        }
+        
+        log.warn("Could not determine user from principal of type: {}", principal.getClass().getName());
+        return null; // 无法从 principal 确定用户
     }
 }

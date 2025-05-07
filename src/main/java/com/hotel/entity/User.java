@@ -36,6 +36,7 @@ public class User {
 
     private String phone;
 
+    @Column(nullable = false)
     private String email;
     
     @Column
@@ -43,6 +44,13 @@ public class User {
     
     @Column
     private LocalDate birthday;
+
+    @Column(name = "id_type")
+    @Enumerated(EnumType.STRING)
+    private IdType idType;
+
+    @Column(name = "id_number")
+    private String idNumber;
 
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)

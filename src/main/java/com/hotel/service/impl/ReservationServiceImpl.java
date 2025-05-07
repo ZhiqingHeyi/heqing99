@@ -37,6 +37,7 @@ import java.math.BigDecimal;
 import java.util.Arrays;
 import com.hotel.dto.ReservationSummaryDTO;
 import com.hotel.entity.Reservation.ReservationStatus;
+import javax.persistence.EntityNotFoundException;
 
 @Service
 @Transactional
@@ -463,12 +464,165 @@ public class ReservationServiceImpl implements ReservationService {
     
     @Override
     @Transactional
-    public CheckInRecord processCheckIn(CheckInRecord checkInRecord) {
-        // 设置入住时间
-        checkInRecord.setActualCheckInTime(LocalDateTime.now());
+    public CheckInRecord processCheckIn(CheckInRecord checkInRecordFromRequest) {
+        // Parameter Validation
+        if (checkInRecordFromRequest.getBookingId() == null) {
+            throw new IllegalArgumentException("预订ID不能为空");
+        }
+        if (checkInRecordFromRequest.getRoomId() == null) {
+            throw new IllegalArgumentException("房间ID不能为空");
+        }
+        if (!StringUtils.hasText(checkInRecordFromRequest.getRoomNumber())) {
+            throw new IllegalArgumentException("房间号不能为空");
+        }
+
+        // Load associated entities
+        Reservation reservation = reservationRepository.findById(checkInRecordFromRequest.getBookingId())
+            .orElseThrow(() -> new EntityNotFoundException("未找到ID为 " + checkInRecordFromRequest.getBookingId() + " 的预订记录"));
+
+        Room actualRoom = roomRepository.findById(checkInRecordFromRequest.getRoomId())
+            .orElseThrow(() -> new EntityNotFoundException("未找到ID为 " + checkInRecordFromRequest.getRoomId() + " 的房间"));
+
+        if (!actualRoom.getRoomNumber().equals(checkInRecordFromRequest.getRoomNumber())) {
+            throw new IllegalStateException("请求的房间号 " + checkInRecordFromRequest.getRoomNumber() + 
+                                        " 与ID为 " + actualRoom.getId() + " 的房间实际房号 " + actualRoom.getRoomNumber() + " 不匹配");
+        }
+
+        // Validate if the actual room matches the reserved room, if a specific room was reserved
+        Room reservedRoomViaReservation = reservation.getRoom();
+        if (reservedRoomViaReservation != null && !reservedRoomViaReservation.getId().equals(actualRoom.getId())) {
+            // If a specific room was part of the reservation, and it doesn't match the actual room for check-in
+            // This logic might need refinement based on business rules (e.g., allow room changes at check-in)
+            // For now, strict check: if reservation had a room, check-in must be for that room.
+            throw new IllegalStateException("入住操作指定的房间 (ID: " + actualRoom.getId() + ", 号码: " + actualRoom.getRoomNumber() + 
+                                        ") 与预订记录中的房间 (ID: " + reservedRoomViaReservation.getId() + ", 号码: " + reservedRoomViaReservation.getRoomNumber() + 
+                                        ") 不符。如需换房，请先修改预订或取消后重新预订。");
+        }
         
-        // 保存记录
-        return checkInRecordRepository.save(checkInRecord);
+        // Check Reservation Status
+        if (!(reservation.getStatus() == Reservation.ReservationStatus.CONFIRMED || 
+              reservation.getStatus() == Reservation.ReservationStatus.PENDING)) { // Assuming PENDING is also allowed for check-in
+            throw new IllegalStateException("预订状态 " + reservation.getStatus() + " 不允许办理入住。");
+        }
+
+        // Check Room Status for actualRoom
+        // A room can be checked into if it's AVAILABLE.
+        // Or if it's RESERVED, but it must be reserved by *this* reservation.
+        boolean roomCanBeCheckedIn = false;
+        if (actualRoom.getStatus() == Room.RoomStatus.AVAILABLE) {
+            roomCanBeCheckedIn = true;
+        } else if (actualRoom.getStatus() == Room.RoomStatus.RESERVED) {
+            // If the room is RESERVED, we need to ensure it's this reservation holding it.
+            // This can be complex if a room can have multiple overlapping reservations (not typical).
+            // A simpler check might be to see if the reservation.getRoom() matches actualRoom.
+            if (reservedRoomViaReservation != null && reservedRoomViaReservation.getId().equals(actualRoom.getId())) {
+                 // And this reservation is the one being checked in
+                if (reservation.getId().equals(checkInRecordFromRequest.getBookingId())) {
+                     roomCanBeCheckedIn = true;
+                }
+            } else {
+                // If reservedRoomViaReservation is null, it means reservation was for a room type.
+                // In this scenario, an actualRoom with status RESERVED might be an issue unless it's reserved for *this* booking somehow.
+                // This part of logic depends heavily on how room<->reservation linkage occurs for room-type bookings.
+                // For now, if it's a room-type booking, a room marked RESERVED is problematic unless explicitly cleared for this booking.
+                // A safer bet for room-type bookings is that the chosen actualRoom should be AVAILABLE.
+                 log.warn("Room {} is RESERVED, and the current reservation (ID: {}) was for a room type or a different room. Manual verification might be needed.", actualRoom.getRoomNumber(), reservation.getId());
+                 // Allowing check-in to a RESERVED room for a room-type booking might be risky without more specific logic.
+                 // Defaulting to false for this ambiguous case, prefer AVAILABLE rooms.
+            }
+        }
+        // Consider CLEANING status as well if business allows checking into a room being cleaned.
+        // else if (actualRoom.getStatus() == Room.RoomStatus.CLEANING) {
+        //    roomCanBeCheckedIn = true;
+        // }
+
+        if (!roomCanBeCheckedIn) {
+             throw new IllegalStateException("房间 " + actualRoom.getRoomNumber() + " 当前状态为 " + actualRoom.getStatus() + "，无法办理入住。");
+        }
+
+        // Create and populate new CheckInRecord instance
+        CheckInRecord newCheckInRecord = new CheckInRecord();
+
+        newCheckInRecord.setBookingId(reservation.getId());
+        newCheckInRecord.setRoomId(actualRoom.getId());
+        newCheckInRecord.setRoomNumber(actualRoom.getRoomNumber());
+        if (actualRoom.getRoomType() != null) {
+            newCheckInRecord.setRoomType(actualRoom.getRoomType().getName());
+        } else {
+            // Fallback or throw error if room type is unexpectedly null for an actual room
+            log.error("Room ID {} ({}) has a null RoomType.", actualRoom.getId(), actualRoom.getRoomNumber());
+            throw new IllegalStateException("房间 " + actualRoom.getRoomNumber() + " 的房型信息丢失，无法办理入住。");
+        }
+
+        // Guest Info from Reservation (and its associated User)
+        newCheckInRecord.setGuestName(reservation.getGuestName());
+        newCheckInRecord.setGuestMobile(reservation.getGuestPhone());
+
+        User reservingUser = reservation.getUser();
+        if (reservingUser != null) {
+            // Assuming User entity has getIdType() and getIdNumber()
+            // And IdType is an enum with a name() method or similar
+            newCheckInRecord.setGuestIdType(reservingUser.getIdType() != null ? reservingUser.getIdType().name() : "IDCARD"); // Default to IDCARD
+            newCheckInRecord.setGuestIdNumber(StringUtils.hasText(reservingUser.getIdNumber()) ? reservingUser.getIdNumber() : "N/A"); // Default to N/A
+        } else {
+            log.warn("Reservation ID {} does not have an associated User. Setting default ID type/number for check-in.", reservation.getId());
+            newCheckInRecord.setGuestIdType("IDCARD"); // Default if user is somehow null
+            newCheckInRecord.setGuestIdNumber("N/A");
+        }
+
+        // Dates and Times
+        newCheckInRecord.setCheckInDate(reservation.getCheckInTime().toLocalDate());
+        newCheckInRecord.setCheckOutDate(reservation.getCheckOutTime().toLocalDate());
+        newCheckInRecord.setActualCheckInTime(LocalDateTime.now());
+
+        // Other mandatory fields
+        newCheckInRecord.setGuestCount(reservation.getRoomCount() != null ? reservation.getRoomCount() : 1); // Default to 1 if null
+        newCheckInRecord.setDeposit(checkInRecordFromRequest.getDeposit()); // From request
+        
+        // TODO: PaymentMethod should ideally come from request or a more robust defaulting mechanism
+        newCheckInRecord.setPaymentMethod(CheckInRecord.PaymentMethod.ALIPAY); // Placeholder, as per plan
+        
+        newCheckInRecord.setStatus(CheckInRecord.CheckInStatus.CHECKED_IN);
+        newCheckInRecord.setTotalAmount(reservation.getTotalPrice()); // From reservation
+
+        // Optional fields
+        newCheckInRecord.setRemarks(checkInRecordFromRequest.getRemarks()); // From request
+        newCheckInRecord.setSpecialRequests(reservation.getSpecialRequests()); // From reservation
+
+        // Operator Info (assuming userService.getCurrentUser() exists and returns a User object with id and username)
+        // This part is conditional on userService and its getCurrentUser method being available.
+        try {
+            User currentUser = userService.getCurrentUser(); // This method needs to be implemented in UserService
+            if (currentUser != null) {
+                newCheckInRecord.setOperatorId(currentUser.getId());
+                newCheckInRecord.setOperatorName(currentUser.getUsername()); // Assuming User has getUsername()
+            } else {
+                log.warn("Could not determine current operator for check-in of reservation ID {}", reservation.getId());
+            }
+        } catch (Exception e) {
+            log.error("Error retrieving current operator for check-in: {}", e.getMessage());
+            // Continue without operator info if it fails
+        }
+
+        // Persist changes
+        CheckInRecord savedCheckInRecord = checkInRecordRepository.save(newCheckInRecord);
+        log.info("Successfully saved new CheckInRecord with ID: {}", savedCheckInRecord.getId());
+
+        reservation.setStatus(Reservation.ReservationStatus.CHECKED_IN);
+        // If the reservation was for a room type and a specific room wasn't set until now,
+        // set it to the actualRoom that was checked into.
+        if (reservation.getRoom() == null) {
+            reservation.setRoom(actualRoom);
+            log.info("Associated actual room (ID: {}) with reservation (ID: {}) during check-in.", actualRoom.getId(), reservation.getId());
+        }
+        reservationRepository.save(reservation);
+        log.info("Successfully updated Reservation (ID: {}) status to CHECKED_IN.", reservation.getId());
+
+        actualRoom.setStatus(Room.RoomStatus.OCCUPIED);
+        roomRepository.save(actualRoom);
+        log.info("Successfully updated Room (ID: {}) status to OCCUPIED.", actualRoom.getId());
+
+        return savedCheckInRecord;
     }
     
     @Override
@@ -479,7 +633,8 @@ public class ReservationServiceImpl implements ReservationService {
                 .orElseThrow(() -> new RuntimeException("房间不存在: " + roomNumber));
         
         // 更新房间状态为待清洁
-        room.setStatus(Room.RoomStatus.CLEANING);
+        room.setStatus(Room.RoomStatus.NEEDS_CLEANING);
+        room.setNeedCleaning(true);
         roomRepository.save(room);
         
         // 查找相关的入住预订

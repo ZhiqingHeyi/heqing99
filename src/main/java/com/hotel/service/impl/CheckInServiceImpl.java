@@ -24,6 +24,7 @@ import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.util.StringUtils;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -134,14 +135,43 @@ public class CheckInServiceImpl implements CheckInService {
         checkInRecord.setRoomType(room.getRoomType() != null ? room.getRoomType().getName() : "未知房型");
         
         // --- 修正：使用 Reservation 对象填充信息 ---
+        User reservingUser = null;
         if (!isDirectCheckIn) {
+            reservingUser = reservation.getUser(); // Get user from reservation
             // 如果是预订入住，从预订获取信息
+            checkInRecord.setGuestCount(reservation.getRoomCount() != null ? reservation.getRoomCount() : 1);
             checkInRecord.setTotalAmount(reservation.getTotalPrice() != null ? reservation.getTotalPrice() : calculateDefaultTotalAmount(room, checkInRecord));
             checkInRecord.setSpecialRequests(reservation.getSpecialRequests());
+            // Guest ID type and number from reservation user if available
+            if (reservingUser != null) {
+                checkInRecord.setGuestIdType(reservingUser.getIdType() != null ? reservingUser.getIdType().name() : "IDCARD");
+                checkInRecord.setGuestIdNumber(StringUtils.hasText(reservingUser.getIdNumber()) ? reservingUser.getIdNumber() : "N/A");
+            } else {
+                log.warn("预订 ID {} 没有关联的用户信息，入住单将使用默认证件信息。", bookingId);
+                checkInRecord.setGuestIdType("IDCARD"); // Default if no user in reservation
+                checkInRecord.setGuestIdNumber("N/A");
+            }
         } else {
-            // 直接入住的情况
+            // 直接入住的情况 (isDirectCheckIn == true)
+            // GuestCount, GuestIdType, GuestIdNumber MUST be provided from the input checkInRecord or have defaults
+            // For now, if not provided in checkInRecord (which they are not from current frontend payload), set defaults and log warning.
+            if (checkInRecord.getGuestCount() == null || checkInRecord.getGuestCount() <= 0) {
+                log.warn("直接入住时未提供有效的 guestCount，默认为 1. BookingId (temp): {}", bookingId);
+                checkInRecord.setGuestCount(1); 
+            }
+            // For GuestIdType and GuestIdNumber, they are nullable=false in DB.
+            // If frontend doesn't send them for direct check-in, we must provide defaults or throw error.
+            if (!StringUtils.hasText(checkInRecord.getGuestIdType())) {
+                log.warn("直接入住时未提供 guestIdType，默认为 IDCARD. BookingId (temp): {}", bookingId);
+                checkInRecord.setGuestIdType("IDCARD");
+            }
+            if (!StringUtils.hasText(checkInRecord.getGuestIdNumber())) {
+                log.warn("直接入住时未提供 guestIdNumber，默认为 N/A. BookingId (temp): {}", bookingId);
+                checkInRecord.setGuestIdNumber("N/A");
+            }
+            // Total amount for direct check-in
             checkInRecord.setTotalAmount(calculateDefaultTotalAmount(room, checkInRecord));
-            // 使用表单上已填写的信息，不需要从预订获取
+            // specialRequests would come from the form if filled
         }
         // --- 修正结束 ---
         
@@ -154,22 +184,26 @@ public class CheckInServiceImpl implements CheckInService {
         
         // 设置操作员信息 (从安全上下文中获取)
         Object principal = SecurityContextHolder.getContext().getAuthentication().getPrincipal();
+        User currentUser = null; // Attempt to get full User object
+        String operatorUsername = null;
+
         if (principal instanceof UserDetails) {
-            UserDetails userDetails = (UserDetails) principal;
-            checkInRecord.setOperatorName(userDetails.getUsername());
-            // 假设 UserDetails 实现包含 getId() 方法
-            // 如果是自定义的UserDetails，需要确保它有获取ID的方法
-            // 暂时注释掉，如果 UserDetails 实现没有 getId() 会报错
-            // if (userDetails instanceof CustomUserDetails) { 
-            //     checkInRecord.setOperatorId(((CustomUserDetails) userDetails).getId());
-            // } else {
-            //     log.warn("无法获取操作员ID，UserDetails 类型不匹配: {}", principal.getClass());
-            // }
+            operatorUsername = ((UserDetails) principal).getUsername();
         } else if (principal != null) {
-            checkInRecord.setOperatorName(principal.toString());
-            log.warn("未知的 Principal 类型: {}", principal.getClass());
+            operatorUsername = principal.toString();
+            log.warn("未知的 Principal 类型: {}，将使用 toString() 作为操作员名称", principal.getClass());
+        }
+
+        if (operatorUsername != null) {
+            checkInRecord.setOperatorName(operatorUsername);
+            currentUser = userRepository.findByUsername(operatorUsername).orElse(null);
+            if (currentUser != null) {
+                checkInRecord.setOperatorId(currentUser.getId());
+            } else {
+                log.warn("无法从数据库找到用户名为 '{}' 的操作员ID", operatorUsername);
+            }
         } else {
-            log.warn("无法获取操作员信息，Principal 为空");
+            log.warn("无法获取操作员信息，Principal 为空或无法解析用户名");
         }
         
         // 更新房间状态为 OCCUPIED

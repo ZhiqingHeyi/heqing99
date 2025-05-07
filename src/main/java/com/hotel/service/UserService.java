@@ -121,4 +121,10 @@ public interface UserService {
 
     // 新增员工注册方法声明
     User registerStaff(StaffRegistrationDto dto);
+
+    /**
+     * 获取当前登录的用户信息
+     * @return 当前登录的User对象，如果用户未登录则可能返回null或抛出异常
+     */
+    User getCurrentUser();
 }
