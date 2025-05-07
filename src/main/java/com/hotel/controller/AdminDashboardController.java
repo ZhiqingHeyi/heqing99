@@ -19,6 +19,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
+import java.math.BigDecimal;
+import java.time.LocalDate;
+import java.time.YearMonth;
+import java.time.Year;
+import java.time.Month;
+import java.time.format.TextStyle;
+import java.util.Locale;
+import java.util.ArrayList;
 
 @RestController
 @RequestMapping("/api/admin")
@@ -391,6 +399,118 @@ public class AdminDashboardController {
             Map<String, Object> errorResponse = new HashMap<>();
             errorResponse.put("success", false);
             errorResponse.put("message", "操作失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
+    /**
+     * 获取入住率趋势数据
+     * @param range 时间范围：week(周)或month(月)
+     */
+    @GetMapping("/dashboard/occupancy-trend")
+    public ResponseEntity<?> getOccupancyTrend(@RequestParam(defaultValue = "week") String range) {
+        try {
+            Map<String, Object> result = new HashMap<>();
+            List<String> xAxisData = new ArrayList<>();
+            List<Double> occupancyData = new ArrayList<>();
+            
+            if ("week".equals(range)) {
+                // 获取过去7天的入住率数据
+                LocalDate today = LocalDate.now();
+                for (int i = 6; i >= 0; i--) {
+                    LocalDate date = today.minusDays(i);
+                    String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.CHINA);
+                    xAxisData.add(dayOfWeek);
+                    
+                    // 获取该日期的入住率
+                    double occupancy = checkInService.calculateDailyOccupancyRate(date);
+                    occupancyData.add(occupancy);
+                }
+            } else if ("month".equals(range)) {
+                // 获取当月每5天的入住率数据
+                YearMonth currentMonth = YearMonth.now();
+                int daysInMonth = currentMonth.lengthOfMonth();
+                
+                // 按5天间隔采样，确保最后一天也包含
+                for (int day = 1; day <= daysInMonth; day += 5) {
+                    LocalDate date = currentMonth.atDay(day);
+                    xAxisData.add(day + "日");
+                    
+                    // 获取该日期的入住率
+                    double occupancy = checkInService.calculateDailyOccupancyRate(date);
+                    occupancyData.add(occupancy);
+                }
+                
+                // 确保包含月末数据
+                if ((daysInMonth % 5) != 0) {
+                    LocalDate date = currentMonth.atEndOfMonth();
+                    xAxisData.add(daysInMonth + "日");
+                    
+                    // 获取该日期的入住率
+                    double occupancy = checkInService.calculateDailyOccupancyRate(date);
+                    occupancyData.add(occupancy);
+                }
+            }
+            
+            result.put("xAxis", xAxisData);
+            result.put("data", occupancyData);
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "获取入住率趋势数据失败: " + e.getMessage());
+            return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
+        }
+    }
+    
+    /**
+     * 获取收入统计数据
+     * @param range 时间范围：week(周)或month(月)
+     */
+    @GetMapping("/dashboard/revenue-stats")
+    public ResponseEntity<?> getRevenueStats(@RequestParam(defaultValue = "week") String range) {
+        try {
+            Map<String, Object> result = new HashMap<>();
+            List<String> xAxisData = new ArrayList<>();
+            List<BigDecimal> revenueData = new ArrayList<>();
+            
+            if ("week".equals(range)) {
+                // 获取过去7天的收入数据
+                LocalDate today = LocalDate.now();
+                for (int i = 6; i >= 0; i--) {
+                    LocalDate date = today.minusDays(i);
+                    String dayOfWeek = date.getDayOfWeek().getDisplayName(TextStyle.SHORT, Locale.CHINA);
+                    xAxisData.add(dayOfWeek);
+                    
+                    // 获取该日期的收入
+                    BigDecimal revenue = checkInService.calculateDailyRevenue(date);
+                    revenueData.add(revenue);
+                }
+            } else if ("month".equals(range)) {
+                // 获取当年每月的收入数据
+                int currentYear = Year.now().getValue();
+                
+                for (Month month : Month.values()) {
+                    xAxisData.add((month.getValue()) + "月");
+                    
+                    // 获取该月的收入
+                    YearMonth yearMonth = YearMonth.of(currentYear, month);
+                    BigDecimal revenue = checkInService.calculateMonthlyRevenue(yearMonth);
+                    revenueData.add(revenue);
+                }
+            }
+            
+            result.put("xAxis", xAxisData);
+            result.put("data", revenueData);
+            
+            return ResponseEntity.ok(result);
+        } catch (Exception e) {
+            e.printStackTrace();
+            Map<String, Object> errorResponse = new HashMap<>();
+            errorResponse.put("success", false);
+            errorResponse.put("message", "获取收入统计数据失败: " + e.getMessage());
             return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR).body(errorResponse);
         }
     }

@@ -616,27 +616,95 @@ public class CheckInServiceImpl implements CheckInService {
 
     @Override
     public CheckInRecord getCurrentCheckInByRoomNumber(String roomNumber) {
-        Room room = roomRepository.findByRoomNumber(roomNumber).orElse(null);
-        
-        if (room == null) {
-            throw new ResourceNotFoundException("房间号为 " + roomNumber + " 的房间不存在");
+        if (roomNumber == null || roomNumber.trim().isEmpty()) {
+            throw new IllegalArgumentException("房间号不能为空");
         }
         
-        if (room.getStatus() != Room.RoomStatus.OCCUPIED) {
-            return null; // 房间未被入住
-        }
+        // 查找房间
+        Room room = roomRepository.findByRoomNumber(roomNumber)
+                .orElseThrow(() -> new ResourceNotFoundException("房间不存在: " + roomNumber));
         
-        // 3. 如果房间是 OCCUPIED，根据房间 ID 和 CheckInStatus.CHECKED_IN 查找 CheckInRecord
-        List<CheckInRecord> records = checkInRecordRepository.findByRoomIdAndStatus(
+        // 查找该房间最新的且状态为CHECKED_IN的入住记录
+        return checkInRecordRepository.findTopByRoomIdAndStatusOrderByActualCheckInTimeDesc(
                 room.getId(), CheckInRecord.CheckInStatus.CHECKED_IN);
-        
-        // --- 调试日志：打印找到的记录列表大小 ---
-        log.info("findByRoomIdAndStatus found {} records for roomId {} and status CHECKED_IN", records.size(), room.getId());
-        // --- 调试日志结束 ---
+    }
 
-        return records.stream()
-                .findFirst() // 取列表中的第一个（理论上一个 OCCUPIED 房间只有一个 CHECKED_IN 记录）
-                .orElse(null); // 如果找不到 CHECKED_IN 记录，返回 null
+    @Override
+    public double calculateDailyOccupancyRate(LocalDate date) {
+        // 获取当天所有的入住记录
+        List<CheckInRecord> checkInRecords = checkInRecordRepository.findByCheckInDate(date);
+        
+        // 获取所有房间总数
+        long totalRooms = roomRepository.count();
+        
+        // 如果没有房间，返回0
+        if (totalRooms == 0) {
+            return 0.0;
+        }
+        
+        // 计算入住率
+        double occupancyRate = ((double) checkInRecords.size() / totalRooms) * 100;
+        
+        // 保留一位小数
+        return Math.round(occupancyRate * 10) / 10.0;
+    }
+    
+    @Override
+    public BigDecimal calculateDailyRevenue(LocalDate date) {
+        // 获取当天所有的退房记录（已完成的入住记录）
+        List<CheckInRecord> completedCheckIns = checkInRecordRepository.findByCheckOutDateAndStatus(
+                date, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        
+        // 计算总收入
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        
+        for (CheckInRecord record : completedCheckIns) {
+            // 基础房费
+            if (record.getTotalAmount() != null) {
+                totalRevenue = totalRevenue.add(record.getTotalAmount());
+            }
+            
+            // 额外消费
+            List<AdditionalCharge> charges = additionalChargeRepository.findByCheckInRecordId(record.getId());
+            for (AdditionalCharge charge : charges) {
+                if (charge.getAmount() != null) {
+                    totalRevenue = totalRevenue.add(charge.getAmount());
+                }
+            }
+        }
+        
+        return totalRevenue;
+    }
+    
+    @Override
+    public BigDecimal calculateMonthlyRevenue(java.time.YearMonth yearMonth) {
+        // 获取该月份的第一天和最后一天
+        LocalDate firstDay = yearMonth.atDay(1);
+        LocalDate lastDay = yearMonth.atEndOfMonth();
+        
+        // 获取该月份内所有的退房记录
+        List<CheckInRecord> completedCheckIns = checkInRecordRepository.findByCheckOutDateBetweenAndStatus(
+                firstDay, lastDay, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        
+        // 计算总收入
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        
+        for (CheckInRecord record : completedCheckIns) {
+            // 基础房费
+            if (record.getTotalAmount() != null) {
+                totalRevenue = totalRevenue.add(record.getTotalAmount());
+            }
+            
+            // 额外消费
+            List<AdditionalCharge> charges = additionalChargeRepository.findByCheckInRecordId(record.getId());
+            for (AdditionalCharge charge : charges) {
+                if (charge.getAmount() != null) {
+                    totalRevenue = totalRevenue.add(charge.getAmount());
+                }
+            }
+        }
+        
+        return totalRevenue;
     }
 
     // 新增一个计算默认总价的方法 (简化)

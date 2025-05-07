@@ -360,7 +360,7 @@ const chartData = {
   }
 }
 
-// 更新入住率图表
+// 更新入住率图表 (仅作为备用方法，API失败时使用)
 const updateOccupancyChart = () => {
   if (!occupancyChartInstance) return
   
@@ -377,7 +377,7 @@ const updateOccupancyChart = () => {
   })
 }
 
-// 更新收入统计图表
+// 更新收入统计图表 (仅作为备用方法，API失败时使用)
 const updateRevenueChart = () => {
   if (!revenueChartInstance) return
   
@@ -395,12 +395,61 @@ const updateRevenueChart = () => {
 
 // 监听时间范围变化
 watch(occupancyTimeRange, () => {
-  updateOccupancyChart()
+  fetchOccupancyTrendData();
 })
 
 watch(revenueTimeRange, () => {
-  updateRevenueChart()
+  fetchRevenueStatsData();
 })
+
+// 获取入住率趋势数据
+const fetchOccupancyTrendData = async () => {
+  try {
+    const response = await adminApi.getOccupancyTrend(occupancyTimeRange.value);
+    
+    // 更新图表数据
+    if (occupancyChartInstance) {
+      occupancyChartInstance.setOption({
+        xAxis: {
+          data: response.xAxis || []
+        },
+        series: [{
+          data: response.data || [],
+          type: 'line',
+          smooth: true
+        }]
+      });
+    }
+  } catch (e) {
+    console.error("获取入住率趋势数据失败:", e);
+    // 使用模拟数据作为备用
+    updateOccupancyChart();
+  }
+}
+
+// 获取收入统计数据
+const fetchRevenueStatsData = async () => {
+  try {
+    const response = await adminApi.getRevenueStats(revenueTimeRange.value);
+    
+    // 更新图表数据
+    if (revenueChartInstance) {
+      revenueChartInstance.setOption({
+        xAxis: {
+          data: response.xAxis || []
+        },
+        series: [{
+          data: response.data || [],
+          type: 'bar'
+        }]
+      });
+    }
+  } catch (e) {
+    console.error("获取收入统计数据失败:", e);
+    // 使用模拟数据作为备用
+    updateRevenueChart();
+  }
+}
 
 // 定义 fetchDashboardData 函数
 const fetchDashboardData = async () => {
@@ -492,7 +541,7 @@ onMounted(() => {
       },
       xAxis: {
         type: 'category',
-        data: chartData.occupancy.week.xAxis
+        data: [] // 初始为空，稍后通过API获取
       },
       yAxis: {
         type: 'value',
@@ -503,7 +552,7 @@ onMounted(() => {
         }
       },
       series: [{
-        data: chartData.occupancy.week.data,
+        data: [], // 初始为空，稍后通过API获取
         type: 'line',
         smooth: true,
         itemStyle: {
@@ -525,6 +574,9 @@ onMounted(() => {
         }
       }]
     })
+    
+    // 获取入住率趋势数据
+    fetchOccupancyTrendData();
 
     // 收入统计图
     revenueChartInstance = echarts.init(revenueChart.value)
@@ -534,7 +586,7 @@ onMounted(() => {
       },
       xAxis: {
         type: 'category',
-        data: chartData.revenue.week.xAxis
+        data: [] // 初始为空，稍后通过API获取
       },
       yAxis: {
         type: 'value',
@@ -543,7 +595,7 @@ onMounted(() => {
         }
       },
       series: [{
-        data: chartData.revenue.week.data,
+        data: [], // 初始为空，稍后通过API获取
         type: 'bar',
         itemStyle: {
           color: {
@@ -562,6 +614,12 @@ onMounted(() => {
         }
       }]
     })
+    
+    // This can be removed if not needed anymore
+    //updateRevenueChart();
+    
+    // 获取收入统计数据
+    fetchRevenueStatsData();
 
     // 房间状态统计图
     roomStatusChartInstance = echarts.init(roomStatusChart.value)

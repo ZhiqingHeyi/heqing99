@@ -118,4 +118,25 @@ public interface CheckInService {
      * @return 入住记录
      */
     CheckInRecord getCurrentCheckInByRoomNumber(String roomNumber);
+    
+    /**
+     * 计算指定日期的入住率
+     * @param date 日期
+     * @return 入住率(百分比值，例如：80.5代表80.5%)
+     */
+    double calculateDailyOccupancyRate(LocalDate date);
+    
+    /**
+     * 计算指定日期的收入
+     * @param date 日期
+     * @return 当天收入
+     */
+    BigDecimal calculateDailyRevenue(LocalDate date);
+    
+    /**
+     * 计算指定月份的收入
+     * @param yearMonth 年月
+     * @return 当月收入
+     */
+    BigDecimal calculateMonthlyRevenue(java.time.YearMonth yearMonth);
 } 

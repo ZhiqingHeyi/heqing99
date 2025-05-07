@@ -205,4 +205,29 @@ public interface CheckInRecordRepository extends JpaRepository<CheckInRecord, Lo
             @Param("guestName") String guestName,
             @Param("startDateTime") LocalDateTime startDateTime,
             @Param("endDateTime") LocalDateTime endDateTime);
+
+    /**
+     * 查找指定房间ID和状态的最新入住记录
+     * @param roomId 房间ID
+     * @param status 入住状态
+     * @return 最新的入住记录
+     */
+    CheckInRecord findTopByRoomIdAndStatusOrderByActualCheckInTimeDesc(Long roomId, CheckInStatus status);
+
+    /**
+     * 查找指定退房日期和状态的入住记录
+     * @param date 退房日期
+     * @param status 入住状态
+     * @return 入住记录列表
+     */
+    List<CheckInRecord> findByCheckOutDateAndStatus(LocalDate date, CheckInStatus status);
+
+    /**
+     * 查找指定退房日期范围和状态的入住记录
+     * @param startDate 开始日期
+     * @param endDate 结束日期
+     * @param status 入住状态
+     * @return 入住记录列表
+     */
+    List<CheckInRecord> findByCheckOutDateBetweenAndStatus(LocalDate startDate, LocalDate endDate, CheckInStatus status);
 }

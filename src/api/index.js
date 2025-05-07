@@ -1063,6 +1063,34 @@ export const adminApi = {
       });
   },
 
+  // 获取入住率趋势数据
+  getOccupancyTrend: (range = 'week') => {
+    console.log('调用获取入住率趋势数据API, 范围:', range);
+    return apiClient.get(`/api/admin/dashboard/occupancy-trend?range=${range}`)
+      .then(response => {
+        console.log('获取入住率趋势数据API响应:', response);
+        return response;
+      })
+      .catch(error => {
+        console.error('获取入住率趋势数据API错误:', error);
+        throw error;
+      });
+  },
+
+  // 获取收入统计数据
+  getRevenueStats: (range = 'week') => {
+    console.log('调用获取收入统计数据API, 范围:', range);
+    return apiClient.get(`/api/admin/dashboard/revenue-stats?range=${range}`)
+      .then(response => {
+        console.log('获取收入统计数据API响应:', response);
+        return response;
+      })
+      .catch(error => {
+        console.error('获取收入统计数据API错误:', error);
+        throw error;
+      });
+  }
+
   // ... 未来可以添加更多 admin 相关的 API 函数
 };
 
