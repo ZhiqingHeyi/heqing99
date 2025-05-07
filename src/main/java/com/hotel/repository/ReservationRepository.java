@@ -47,6 +47,9 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
     // 添加根据入住时间范围计数的方法
     int countByCheckInTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
     
+    // 添加根据创建时间范围计数的方法
+    long countByCreateTimeBetween(LocalDateTime startTime, LocalDateTime endTime);
+    
     // 添加根据入住时间之后计数的方法
     int countByCheckInTimeAfter(LocalDateTime time);
 
@@ -90,5 +93,18 @@ public interface ReservationRepository extends JpaRepository<Reservation, Long> 
             @Param("startDate") LocalDateTime startDate,
             @Param("endDate") LocalDateTime endDate,
             @Param("bookingNo") String bookingNo
+    );
+    
+    /**
+     * 查询指定创建时间范围内并且支付状态在指定列表中的预订
+     * @param start 开始时间
+     * @param end 结束时间
+     * @param paymentStatuses 支付状态列表
+     * @return 符合条件的预订列表
+     */
+    List<Reservation> findByCreateTimeBetweenAndPaymentStatusIn(
+            LocalDateTime start,
+            LocalDateTime end,
+            List<String> paymentStatuses
     );
 }

@@ -1,4 +1,4 @@
-<template>
+﻿<template>
   <div class="dashboard-container">
     <!-- 管理员才能看到的内容 -->
     <div v-if="userRole === 'ADMIN'">
@@ -15,7 +15,7 @@
 
       <el-row :gutter="24" v-if="!isLoading && !error">
         <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="card in dataCards" :key="card.title">
-          <el-card class="data-card luxury-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover shadow="hover">
+          <el-card class="data-card luxury-card" :class="card.type" :body-style="{ padding: '0' }" hover shadow="hover">
             <div class="card-content">
               <div class="card-icon-wrapper" :class="card.type">
                 <el-icon class="card-icon">
@@ -25,9 +25,6 @@
               <div class="card-info">
                 <div class="card-title">{{ card.title }}</div>
                 <div class="card-value">{{ card.value }}</div>
-                <div class="card-change" :class="card.trend">
-                  {{ card.change }}
-                </div>
               </div>
             </div>
           </el-card>
@@ -104,7 +101,7 @@
             <template #header>
               <div class="card-header">
                 <div class="header-left">
-                  <span class="header-title">清洁任务完成情况</span>
+                  <span class="header-title">清洁和维护任务完成情况</span>
                   <span class="header-subtitle">服务质量监控</span>
                 </div>
               </div>
@@ -148,11 +145,13 @@
         
         <div v-if="currentCard?.type === 'primary'" class="details-content">
           <el-descriptions title="收入详情" :column="2" border>
-            <el-descriptions-item label="本月收入">{{ currentCard?.value }}</el-descriptions-item>
-            <el-descriptions-item label="上月收入">¥115,200</el-descriptions-item>
+            <el-descriptions-item label="本月总收入">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="上月总收入">¥{{ formatNumber(stats.lastMonthRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="本月入住收入">¥{{ formatNumber(stats.monthlyCheckInRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="上月入住收入">¥{{ formatNumber(stats.lastMonthCheckInRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="本月预订收入">¥{{ formatNumber(stats.monthlyReservationRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="上月预订收入">¥{{ formatNumber(stats.lastMonthReservationRevenue || 0) }}</el-descriptions-item>
             <el-descriptions-item label="同比增长">{{ currentCard?.change }}</el-descriptions-item>
-            <el-descriptions-item label="去年同期">¥98,500</el-descriptions-item>
-            <el-descriptions-item label="本年累计">¥458,700</el-descriptions-item>
             <el-descriptions-item label="年度目标完成率">48%</el-descriptions-item>
           </el-descriptions>
           
@@ -246,37 +245,29 @@ const isLoading = ref(false)
 const error = ref(null)
 
 // 数据概览卡片数据
-const dataCards = reactive([
+const dataCards = ref([
   {
     title: '今日入住率',
-    value: '--',
-    change: '--',
-    trend: '',
-    icon: House,
+    value: '0%',
+    icon: 'TrendCharts',
     type: 'success'
   },
   {
     title: '本月收入',
-    value: '--',
-    change: '--',
-    trend: '',
-    icon: Money,
+    value: '¥0',
+    icon: 'Money',
     type: 'primary'
   },
   {
-    title: '访客数量',
-    value: '--',
-    change: '--',
-    trend: '',
-    icon: User,
+    title: '用户数量',
+    value: '0',
+    icon: 'User',
     type: 'warning'
   },
   {
-    title: '预订数量',
-    value: '--',
-    change: '--',
-    trend: '',
-    icon: Calendar,
+    title: '今日预订',
+    value: '0',
+    icon: 'Calendar',
     type: 'info'
   }
 ])
@@ -287,9 +278,10 @@ const currentCard = ref(null)
 
 // 详细数据
 const occupancyDetails = ref([
-  { roomType: '豪华大床房', total: 40, occupied: 35, available: 5, rate: '87.5%' },
-  { roomType: '行政套房', total: 25, occupied: 21, available: 4, rate: '84%' },
-  { roomType: '家庭套房', total: 35, occupied: 30, available: 5, rate: '85.7%' }
+  { roomType: '标准间', total: 0, occupied: 0, available: 0, rate: '0%' },
+  { roomType: '豪华间', total: 0, occupied: 0, available: 0, rate: '0%' },
+  { roomType: '套房', total: 0, occupied: 0, available: 0, rate: '0%' },
+  { roomType: '总统套房', total: 0, occupied: 0, available: 0, rate: '0%' }
 ])
 
 const revenueDetails = ref([
@@ -313,12 +305,6 @@ const bookingDetails = ref([
   { id: 'B2404004', customer: '赵六', roomType: '标准单人间', checkIn: '2024-04-07', nights: 4, amount: '¥2,160', status: '已取消' },
   { id: 'B2404005', customer: '钱七', roomType: '豪华套房', checkIn: '2024-04-10', nights: 2, amount: '¥2,680', status: '已确认' }
 ])
-
-// 显示卡片详细数据
-const showCardDetails = (card) => {
-  currentCard.value = card
-  detailsVisible.value = true
-}
 
 // 图表时间范围选择
 const occupancyTimeRange = ref('week')
@@ -382,13 +368,32 @@ const updateRevenueChart = () => {
   if (!revenueChartInstance) return
   
   const data = chartData.revenue[revenueTimeRange.value]
+  
+  // 计算平均值
+  let avg = 0;
+  if (data.data && data.data.length > 0) {
+    avg = data.data.reduce((a, b) => a + b, 0) / data.data.length;
+  }
+  
   revenueChartInstance.setOption({
     xAxis: {
       data: data.xAxis
     },
     series: [{
+      name: '总收入',
       data: data.data,
-      type: 'bar'
+      type: 'bar',
+      markLine: {
+        data: [
+          { 
+            type: 'average', 
+            name: '平均值',
+            label: {
+              formatter: '平均: ¥' + Math.round(avg).toLocaleString('zh-CN')
+            }
+          }
+        ]
+      }
     }]
   })
 }
@@ -431,17 +436,37 @@ const fetchOccupancyTrendData = async () => {
 const fetchRevenueStatsData = async () => {
   try {
     const response = await adminApi.getRevenueStats(revenueTimeRange.value);
-    
+
+    // 计算平均值
+    let avg = 0;
+    if (response.data && response.data.length > 0) {
+      avg = response.data.reduce((a, b) => a + b, 0) / response.data.length;
+    }
+
     // 更新图表数据
     if (revenueChartInstance) {
       revenueChartInstance.setOption({
         xAxis: {
           data: response.xAxis || []
         },
-        series: [{
-          data: response.data || [],
-          type: 'bar'
-        }]
+        series: [
+          {
+            name: '总收入',
+            data: response.data || [],
+            type: 'bar',
+            markLine: {
+              data: [
+                { 
+                  type: 'average', 
+                  name: '平均值',
+                  label: {
+                    formatter: '平均: ¥' + Math.round(avg).toLocaleString('zh-CN')
+                  }
+                }
+              ]
+            }
+          }
+        ]
       });
     }
   } catch (e) {
@@ -453,35 +478,65 @@ const fetchRevenueStatsData = async () => {
 
 // 定义 fetchDashboardData 函数
 const fetchDashboardData = async () => {
-  isLoading.value = true
-  error.value = null
   try {
-    const response = await adminApi.getDashboardStats()
-    const stats = response
-
-    // 数据映射
-    // 今日入住率
-    const occupiedRooms = stats.occupiedRooms || 0
-    const totalRooms = stats.totalRooms || 0
-    dataCards[0].value = totalRooms > 0 ? ((occupiedRooms / totalRooms) * 100).toFixed(1) + '%' : '0%'
-    // dataCards[0].change = '--' // 变化数据待后端提供
-    // dataCards[0].trend = ''
-
-    // 本月收入
-    dataCards[1].value = stats.monthlyRevenue !== undefined ? `¥${stats.monthlyRevenue.toLocaleString()}` : '¥0'
-    // dataCards[1].change = '--' // 变化数据待后端提供
-    // dataCards[1].trend = ''
-
-    // 访客数量 (映射为总用户数)
-    dataCards[2].value = stats.totalUsers !== undefined ? String(stats.totalUsers) : '0'
-    // dataCards[2].change = '--' // 变化数据待后端提供
-    // dataCards[2].trend = ''
-
-    // 预订数量 (映射为今日预订数)
-    dataCards[3].value = stats.todayReservations !== undefined ? String(stats.todayReservations) : '0'
-    // dataCards[3].change = '--' // 变化数据待后端提供
-    // dataCards[3].trend = ''
-
+    isLoading.value = true
+    error.value = ''
+    
+    // 加载仪表盘统计数据
+    const stats = await adminApi.getDashboardStats()
+    console.log('获取到仪表盘统计数据:', stats)
+    
+    if (!stats) {
+      throw new Error('未能获取仪表盘数据')
+    }
+    
+    // 更新数据卡片
+    // 1. 入住率卡片
+    const occupancyRate = stats.occupancyRate || 0
+    const occupancyChange = stats.occupancyRateChange || 0
+    dataCards.value[0].value = `${occupancyRate}%`
+    
+    // 2. 收入卡片
+    const monthlyRevenue = stats.monthlyRevenue || 0
+    const revenueChange = stats.revenueChange || 0
+    dataCards.value[1].value = `¥${formatNumber(monthlyRevenue)}`
+    
+    // 更新收入明细
+    const checkInRevenue = stats.monthlyCheckInRevenue || 0
+    const reservationRevenue = stats.monthlyReservationRevenue || 0
+    const lastMonthRevenue = stats.lastMonthRevenue || 0
+    
+    // 计算百分比
+    const checkInPercentage = monthlyRevenue > 0 ? ((checkInRevenue / monthlyRevenue) * 100).toFixed(1) : '0.0'
+    const reservationPercentage = monthlyRevenue > 0 ? ((reservationRevenue / monthlyRevenue) * 100).toFixed(1) : '0.0'
+    
+    // 更新收入明细表格
+    revenueDetails.value = [
+      { 
+        source: '入住结算收入', 
+        amount: `¥${formatNumber(checkInRevenue)}`, 
+        percentage: `${checkInPercentage}%`,
+        change: `${checkInRevenue > 0 ? '↑' : '↓'} ${Math.abs(stats.revenueChange || 0).toFixed(1)}%`
+      },
+      { 
+        source: '预订收入', 
+        amount: `¥${formatNumber(reservationRevenue)}`, 
+        percentage: `${reservationPercentage}%`,
+        change: `${reservationRevenue > 0 ? '↑' : '↓'} ${Math.abs(stats.revenueChange || 0).toFixed(1)}%` 
+      }
+    ]
+    
+    // 3. 用户数量卡片
+    const totalUsers = stats.totalUsers || 0
+    const newUsersThisMonth = stats.newUsersThisMonth || 0
+    const userGrowthRate = stats.userGrowthRate || 0
+    dataCards.value[2].value = formatNumber(totalUsers)
+    
+    // 4. 预订卡片
+    const todayReservations = stats.todayReservations || 0
+    const reservationsChange = stats.reservationsChange || 0
+    dataCards.value[3].value = formatNumber(todayReservations)
+    
     // 更新房间状态图表数据
     if (roomStatusChartInstance) {
       // 从API响应获取房间状态数据
@@ -503,36 +558,247 @@ const fetchDashboardData = async () => {
         }]
       })
     }
-
-    // 更新清洁任务完成情况图表
+    
+    // 更新清洁任务图表数据
     if (cleaningTaskChartInstance) {
-      const cleaningData = [
-        stats.cleaningTasksCompleted || 0,
-        stats.cleaningTasksInProgress || 0,
-        stats.cleaningTasksPending || 0
-      ]
+      // 获取统计数据并记录日志
+      const completedTasks = stats.cleaningTasksCompleted || 0;
+      const inProgressTasks = stats.cleaningTasksInProgress || 0;
+      const pendingTasks = stats.cleaningTasksPending || 0;
+      const totalTasks = stats.cleaningTasksTotal || 0;
+      
+      console.log('更新清洁任务图表数据:');
+      console.log('- 已完成任务:', completedTasks);
+      console.log('- 进行中任务:', inProgressTasks);
+      console.log('- 待处理任务:', pendingTasks);
+      console.log('- 总记录数:', totalTasks);
+      
+      // 验证数据一致性
+      const sumByStatus = completedTasks + inProgressTasks + pendingTasks;
+      if (sumByStatus !== totalTasks) {
+        console.warn('警告: 清洁任务数据不一致!');
+        console.warn('- 状态总和:', sumByStatus);
+        console.warn('- 记录总数:', totalTasks);
+      }
+      
+      // 清除并重新设置图表
+      cleaningTaskChartInstance.clear();
       
       cleaningTaskChartInstance.setOption({
+        backgroundColor: {
+          type: 'linear',
+          x: 0, y: 0, x2: 0, y2: 1,
+          colorStops: [
+            { offset: 0, color: 'rgba(249, 251, 255, 0.9)' },
+            { offset: 1, color: 'rgba(245, 247, 250, 0.9)' }
+          ]
+        },
+        tooltip: {
+          trigger: 'axis',
+          axisPointer: {
+            type: 'shadow'
+          },
+          formatter: function(params) {
+            return `<div style="font-weight:bold;margin-bottom:4px;">${params[0].name}</div>
+                    <div>
+                      <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${params[0].color};"></span>
+                      数量：${params[0].value}
+                    </div>`;
+          },
+          backgroundColor: 'rgba(255, 255, 255, 0.9)',
+          borderColor: '#eee',
+          textStyle: {
+            color: '#333'
+          }
+        },
+        grid: {
+          left: '3%',
+          right: '4%',
+          bottom: '8%',
+          top: '8%',
+          containLabel: true
+        },
+        xAxis: {
+          type: 'category',
+          data: ['已完成', '进行中', '待处理'],
+          axisLine: {
+            lineStyle: {
+              color: '#ddd'
+            }
+          },
+          axisLabel: {
+            color: '#555',
+            fontWeight: 'bold',
+            fontSize: 12,
+            margin: 16
+          },
+          axisTick: {
+            alignWithLabel: true,
+            lineStyle: {
+              color: '#ddd'
+            }
+          }
+        },
+        yAxis: {
+          type: 'value',
+          splitLine: {
+            lineStyle: {
+              color: '#eee',
+              type: 'dashed'
+            }
+          },
+          axisLabel: {
+            color: '#666',
+            fontWeight: 'bold'
+          },
+          axisLine: {
+            show: false
+          },
+          axisTick: {
+            show: false
+          }
+        },
         series: [{
-          data: cleaningData
+          data: [
+            {
+              value: completedTasks,
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(
+                  0, 0, 0, 1,
+                  [
+                    {offset: 0, color: '#FFD86E'},
+                    {offset: 0.5, color: '#FDAA48'},
+                    {offset: 1, color: '#FA8C35'}
+                  ]
+                )
+              }
+            },
+            {
+              value: inProgressTasks,
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(
+                  0, 0, 0, 1,
+                  [
+                    {offset: 0, color: '#58B9E3'},
+                    {offset: 0.5, color: '#3A97D4'},
+                    {offset: 1, color: '#2C7FC9'}
+                  ]
+                )
+              }
+            },
+            {
+              value: pendingTasks,
+              itemStyle: {
+                color: new echarts.graphic.LinearGradient(
+                  0, 0, 0, 1,
+                  [
+                    {offset: 0, color: '#FF9FA3'},
+                    {offset: 0.5, color: '#FA7F85'},
+                    {offset: 1, color: '#F56267'}
+                  ]
+                )
+              }
+            }
+          ],
+          type: 'bar',
+          showBackground: true,
+          backgroundStyle: {
+            color: 'rgba(220, 220, 220, 0.1)'
+          },
+          barWidth: '50%',
+          itemStyle: {
+            borderRadius: [8, 8, 0, 0],
+            shadowColor: 'rgba(0, 0, 0, 0.2)',
+            shadowBlur: 10
+          },
+          emphasis: {
+            itemStyle: {
+              shadowColor: 'rgba(0, 0, 0, 0.3)',
+              shadowBlur: 15
+            }
+          },
+          label: {
+            show: true,
+            position: 'top',
+            fontSize: 14,
+            fontWeight: 'bold',
+            color: '#606266',
+            formatter: '{c}',
+            distance: 10
+          },
+          animation: true,
+          animationDuration: 1500,
+          animationEasing: 'elasticOut'
         }]
-      })
+      }, true); // 使用true参数强制完全重新渲染图表
+      
+      // 强制重绘
+      setTimeout(() => {
+        cleaningTaskChartInstance.resize();
+      }, 200);
     }
-
+    
+    // 更新详情对话框中的数据
+    // 入住率详情
+    occupancyDetails.value = [
+      { 
+        roomType: '标准间', 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.4) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.4) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.4) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.4), Math.round(stats.totalRooms * 0.4))}%`
+      },
+      { 
+        roomType: '豪华间', 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.3) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.3) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.3) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.3), Math.round(stats.totalRooms * 0.3))}%`
+      },
+      { 
+        roomType: '套房', 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.2) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.2) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.2) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.2), Math.round(stats.totalRooms * 0.2))}%`
+      },
+      { 
+        roomType: '总统套房', 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.1) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.1) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.1) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.1), Math.round(stats.totalRooms * 0.1))}%`
+      }
+    ]
+    
+    isLoading.value = false
   } catch (e) {
-    console.error("加载仪表盘数据失败:", e)
-    error.value = '加载数据失败: ' + (e.message || '未知错误')
-  } finally {
+    console.error('获取仪表盘数据失败:', e)
+    error.value = '获取数据失败，请刷新页面重试: ' + (e.message || e)
     isLoading.value = false
   }
 }
 
-// 初始化图表
-onMounted(() => {
-  // 只有管理员角色才初始化图表和获取数据
-  if (userRole.value === 'ADMIN') {
-    fetchDashboardData()
+// 辅助函数：数字格式化
+const formatNumber = (num) => {
+  if (typeof num !== 'number') {
+    num = Number(num) || 0
+  }
+  return num.toLocaleString('zh-CN')
+}
 
+// 辅助函数：计算入住率
+const calculateRate = (occupied, total) => {
+  if (!total) return 0
+  return Math.round((occupied / total) * 100)
+}
+
+// 用户角色和初始化函数
+const getUserRoleAndInitialize = () => {
+  // 仅对管理员用户初始化图表
+  if (userRole.value === 'ADMIN') {
+    // 初始化各种图表
+    
     // 入住率趋势图
     occupancyChartInstance = echarts.init(occupancyChart.value)
     occupancyChartInstance.setOption({
@@ -581,42 +847,164 @@ onMounted(() => {
     // 收入统计图
     revenueChartInstance = echarts.init(revenueChart.value)
     revenueChartInstance.setOption({
+      backgroundColor: {
+        type: 'linear',
+        x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [
+          { offset: 0, color: 'rgba(249, 251, 255, 0.9)' },
+          { offset: 1, color: 'rgba(245, 247, 250, 0.9)' }
+        ]
+      },
       tooltip: {
-        trigger: 'axis'
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow',
+          shadowStyle: {
+            color: 'rgba(91, 134, 229, 0.1)'
+          }
+        },
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderColor: '#eee',
+        borderWidth: 1,
+        textStyle: {
+          color: '#333',
+          fontSize: 13
+        },
+        formatter: function(params) {
+          let value = params[0].value;
+          return `<div style="font-weight:bold;margin-bottom:4px;">${params[0].name}</div>
+                 <div style="color:#5b86e5;">
+                   <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:#5b86e5;"></span>
+                   总收入：¥${value.toLocaleString('zh-CN')}
+                 </div>`;
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '8%',
+        top: '8%',
+        containLabel: true
+      },
+      legend: {
+        show: false
       },
       xAxis: {
         type: 'category',
-        data: [] // 初始为空，稍后通过API获取
+        data: [], // 初始为空，稍后通过API获取
+        axisLine: {
+          lineStyle: {
+            color: '#ddd'
+          }
+        },
+        axisLabel: {
+          color: '#666',
+          fontSize: 12,
+          margin: 16,
+          fontWeight: 'bold'
+        },
+        axisTick: {
+          alignWithLabel: true,
+          lineStyle: {
+            color: '#ddd'
+          }
+        }
       },
       yAxis: {
         type: 'value',
         axisLabel: {
-          formatter: '¥{value}'
+          formatter: function(value) {
+            if (value >= 10000) {
+              return '¥' + (value / 10000) + '万';
+            }
+            return '¥' + value;
+          },
+          color: '#666',
+          fontSize: 12,
+          fontWeight: 'bold'
+        },
+        splitLine: {
+          lineStyle: {
+            color: '#eee',
+            type: 'dashed',
+            width: 1
+          }
+        },
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: false
         }
       },
-      series: [{
-        data: [], // 初始为空，稍后通过API获取
-        type: 'bar',
-        itemStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: '#667eea'
-            }, {
-              offset: 1, color: '#764ba2'
-            }]
+      series: [
+        {
+          name: '总收入',
+          data: [], // 初始为空，稍后通过API获取
+          type: 'bar',
+          barWidth: '50%',
+          itemStyle: {
+            color: new echarts.graphic.LinearGradient(
+              0, 0, 0, 1,
+              [
+                {offset: 0, color: '#83bff6'},
+                {offset: 0.5, color: '#5b86e5'},
+                {offset: 1, color: '#4862d6'}
+              ]
+            ),
+            borderRadius: [8, 8, 0, 0],
+            shadowColor: 'rgba(72, 98, 214, 0.3)',
+            shadowBlur: 10
           },
-          borderRadius: [4, 4, 0, 0]
+          emphasis: {
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(
+                0, 0, 0, 1,
+                [
+                  {offset: 0, color: '#5b86e5'},
+                  {offset: 0.7, color: '#4862d6'},
+                  {offset: 1, color: '#3447c6'}
+                ]
+              ),
+              shadowColor: 'rgba(72, 98, 214, 0.5)',
+              shadowBlur: 15
+            }
+          },
+          label: {
+            show: true,
+            position: 'top',
+            formatter: function(params) {
+              return '¥' + params.value.toLocaleString('zh-CN');
+            },
+            fontSize: 12,
+            fontWeight: 'bold',
+            color: '#5b86e5',
+            distance: 10
+          },
+          markLine: {
+            silent: true,
+            lineStyle: {
+              color: '#ff9f7f',
+              type: 'dashed',
+              width: 1
+            },
+            data: [
+              { 
+                type: 'average', 
+                name: '平均值',
+                label: {
+                  formatter: '平均: ¥{c}',
+                  position: 'end'
+                }
+              }
+            ]
+          },
+          animation: true,
+          animationDuration: 1500,
+          animationEasing: 'elasticOut'
         }
-      }]
+      ]
     })
-    
-    // This can be removed if not needed anymore
-    //updateRevenueChart();
     
     // 获取收入统计数据
     fetchRevenueStatsData();
@@ -656,38 +1044,150 @@ onMounted(() => {
     // 清洁任务完成情况图
     cleaningTaskChartInstance = echarts.init(cleaningTaskChart.value)
     cleaningTaskChartInstance.setOption({
+      backgroundColor: {
+        type: 'linear',
+        x: 0, y: 0, x2: 0, y2: 1,
+        colorStops: [
+          { offset: 0, color: 'rgba(249, 251, 255, 0.9)' },
+          { offset: 1, color: 'rgba(245, 247, 250, 0.9)' }
+        ]
+      },
       tooltip: {
-        trigger: 'axis'
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        },
+        formatter: function(params) {
+          return `<div style="font-weight:bold;margin-bottom:4px;">${params[0].name}</div>
+                  <div>
+                    <span style="display:inline-block;margin-right:4px;border-radius:10px;width:10px;height:10px;background-color:${params[0].color};"></span>
+                    数量：${params[0].value}
+                  </div>`;
+        },
+        backgroundColor: 'rgba(255, 255, 255, 0.9)',
+        borderColor: '#eee',
+        textStyle: {
+          color: '#333'
+        }
+      },
+      grid: {
+        left: '3%',
+        right: '4%',
+        bottom: '8%',
+        top: '8%',
+        containLabel: true
       },
       xAxis: {
         type: 'category',
-        data: ['已完成', '进行中', '待处理']
+        data: ['已完成', '进行中', '待处理'],
+        axisLine: {
+          lineStyle: {
+            color: '#ddd'
+          }
+        },
+        axisLabel: {
+          color: '#555',
+          fontWeight: 'bold',
+          fontSize: 12,
+          margin: 16
+        },
+        axisTick: {
+          alignWithLabel: true,
+          lineStyle: {
+            color: '#ddd'
+          }
+        }
       },
       yAxis: {
-        type: 'value'
+        type: 'value',
+        splitLine: {
+          lineStyle: {
+            color: '#eee',
+            type: 'dashed'
+          }
+        },
+        axisLabel: {
+          color: '#666',
+          fontWeight: 'bold'
+        },
+        axisLine: {
+          show: false
+        },
+        axisTick: {
+          show: false
+        }
       },
       series: [{
-        data: [0, 0, 0], // 初始化为空数据，稍后通过API更新
+        data: [
+          {
+            value: 0,
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(
+                0, 0, 0, 1,
+                [
+                  {offset: 0, color: '#FFD86E'},
+                  {offset: 0.5, color: '#FDAA48'},
+                  {offset: 1, color: '#FA8C35'}
+                ]
+              )
+            }
+          },
+          {
+            value: 0,
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(
+                0, 0, 0, 1,
+                [
+                  {offset: 0, color: '#58B9E3'},
+                  {offset: 0.5, color: '#3A97D4'},
+                  {offset: 1, color: '#2C7FC9'}
+                ]
+              )
+            }
+          },
+          {
+            value: 0,
+            itemStyle: {
+              color: new echarts.graphic.LinearGradient(
+                0, 0, 0, 1,
+                [
+                  {offset: 0, color: '#FF9FA3'},
+                  {offset: 0.5, color: '#FA7F85'},
+                  {offset: 1, color: '#F56267'}
+                ]
+              )
+            }
+          }
+        ],
         type: 'bar',
         showBackground: true,
         backgroundStyle: {
-          color: 'rgba(180, 180, 180, 0.2)'
+          color: 'rgba(220, 220, 220, 0.1)'
         },
+        barWidth: '50%',
         itemStyle: {
-          color: {
-            type: 'linear',
-            x: 0,
-            y: 0,
-            x2: 0,
-            y2: 1,
-            colorStops: [{
-              offset: 0, color: '#f6d365'
-            }, {
-              offset: 1, color: '#fda085'
-            }]
-          },
-          borderRadius: [4, 4, 0, 0]
-        }
+          borderRadius: [8, 8, 0, 0],
+          shadowColor: 'rgba(0, 0, 0, 0.2)',
+          shadowBlur: 10
+        },
+        emphasis: {
+          itemStyle: {
+            shadowColor: 'rgba(0, 0, 0, 0.3)',
+            shadowBlur: 15
+          }
+        },
+        label: {
+          show: true,
+          position: 'top',
+          fontSize: 14,
+          fontWeight: 'bold',
+          color: '#606266',
+          formatter: '{c}',
+          distance: 10
+        },
+        animation: true,
+        animationDuration: 1500,
+        animationEasing: 'elasticOut'
       }]
     })
 
@@ -699,6 +1199,15 @@ onMounted(() => {
       cleaningTaskChartInstance.resize()
     })
   }
+}
+
+// 确保在onMounted中调用fetchDashboardData函数
+onMounted(() => {
+  // 确认用户角色和权限
+  getUserRoleAndInitialize()
+
+  // 加载仪表盘数据
+  fetchDashboardData()
 })
 </script>
 
@@ -746,9 +1255,9 @@ onMounted(() => {
   align-items: center;
   padding: 20px;
   height: 100%;
-  background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
   position: relative;
   overflow: hidden;
+  border-radius: 8px;
 }
 
 .card-content::after {
@@ -756,9 +1265,9 @@ onMounted(() => {
   position: absolute;
   bottom: 0;
   right: 0;
-  width: 50%;
-  height: 50%;
-  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
+  width: 60%;
+  height: 60%;
+  background: linear-gradient(135deg, transparent 0%, rgba(255, 255, 255, 0.15) 100%);
   z-index: 1;
   border-radius: 50% 0 0 0;
 }
@@ -767,12 +1276,13 @@ onMounted(() => {
   display: flex;
   justify-content: center;
   align-items: center;
-  width: 64px;
-  height: 64px;
-  border-radius: 16px;
+  width: 70px;
+  height: 70px;
+  border-radius: 18px;
   margin-right: 20px;
   position: relative;
   z-index: 2;
+  box-shadow: 0 6px 16px rgba(0, 0, 0, 0.1);
 }
 
 .card-icon-wrapper.success {
@@ -796,30 +1306,46 @@ onMounted(() => {
 }
 
 .card-icon {
-  font-size: 28px;
+  font-size: 30px;
   color: white;
+  width: 36px;
+  height: 36px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+}
+
+/* 为Money图标单独设置放大比例 */
+.card-icon-wrapper.primary .card-icon {
+  transform: scale(1.3);
 }
 
 .card-info {
-  flex: 1;
+  flex-grow: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
   position: relative;
   z-index: 2;
 }
 
 .card-title {
-  font-size: 15px;
-  color: #606266;
-  margin-bottom: 10px;
+  font-size: 16px;
+  color: #303133;
+  margin-bottom: 8px;
   font-weight: 500;
 }
 
 .card-value {
   font-size: 28px;
-  font-weight: 600;
+  font-weight: 700;
   color: #303133;
-  margin-bottom: 8px;
+  margin-bottom: 4px;
   font-family: 'Helvetica Neue', sans-serif;
   letter-spacing: 0.5px;
+  text-shadow: 1px 1px 2px rgba(255, 255, 255, 0.8);
 }
 
 .card-change {
@@ -838,27 +1364,31 @@ onMounted(() => {
 }
 
 .luxury-card.success {
-  background: linear-gradient(to right, rgba(54, 209, 220, 0.05), rgba(91, 134, 229, 0.08));
+  background: linear-gradient(135deg, rgba(54, 209, 220, 0.2), rgba(91, 134, 229, 0.25));
   border-left: 4px solid #5b86e5;
+  box-shadow: 0 8px 20px rgba(91, 134, 229, 0.15);
 }
 
 .luxury-card.primary {
-  background: linear-gradient(to right, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.08));
+  background: linear-gradient(135deg, rgba(102, 126, 234, 0.2), rgba(118, 75, 162, 0.25));
   border-left: 4px solid #764ba2;
+  box-shadow: 0 8px 20px rgba(118, 75, 162, 0.15);
 }
 
 .luxury-card.warning {
-  background: linear-gradient(to right, rgba(246, 211, 101, 0.05), rgba(253, 160, 133, 0.08));
+  background: linear-gradient(135deg, rgba(246, 211, 101, 0.2), rgba(253, 160, 133, 0.25));
   border-left: 4px solid #fda085;
+  box-shadow: 0 8px 20px rgba(253, 160, 133, 0.15);
 }
 
 .luxury-card.info {
-  background: linear-gradient(to right, rgba(161, 196, 253, 0.05), rgba(194, 233, 251, 0.08));
+  background: linear-gradient(135deg, rgba(161, 196, 253, 0.2), rgba(194, 233, 251, 0.25));
   border-left: 4px solid #a1c4fd;
+  box-shadow: 0 8px 20px rgba(194, 233, 251, 0.15);
 }
 
 .chart-row {
-  margin-top: 24px;
+  margin-top: 20px;
 }
 
 .card-header {

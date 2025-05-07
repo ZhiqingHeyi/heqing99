@@ -1,0 +1,1108 @@
+﻿<template>
+  <div class="dashboard-container">
+    <!-- 绠＄悊鍛樻墠鑳界湅鍒扮殑鍐呭 -->
+    <div v-if="userRole === 'ADMIN'">
+      <el-skeleton :rows="5" animated v-if="isLoading" />
+
+      <el-alert
+        v-if="error"
+        :title="error"
+        type="error"
+        show-icon
+        :closable="false"
+        class="error-alert"
+      />
+
+      <el-row :gutter="24" v-if="!isLoading && !error">
+        <el-col :xs="12" :sm="12" :md="6" :lg="6" v-for="card in dataCards" :key="card.title">
+          <el-card class="data-card luxury-card" :class="card.type" :body-style="{ padding: '0' }" @click="showCardDetails(card)" hover shadow="hover">
+            <div class="card-content">
+              <div class="card-icon-wrapper" :class="card.type">
+                <el-icon class="card-icon">
+                  <component :is="card.icon" />
+                </el-icon>
+              </div>
+              <div class="card-info">
+                <div class="card-title">{{ card.title }}</div>
+                <div class="card-value">{{ card.value }}</div>
+              </div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="24" class="chart-row">
+        <!-- 鍏ヤ綇鐜囪秼鍔垮浘 -->
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">鍏ヤ綇鐜囪秼鍔?/span>
+                  <span class="header-subtitle">瀹炴椂鍔ㄦ€佺洃鎺э紝浼樺寲鎴块棿閰嶇疆</span>
+                </div>
+                <el-radio-group v-model="occupancyTimeRange" size="small" class="time-filter">
+                  <el-radio-button label="week">鍛?/el-radio-button>
+                  <el-radio-button label="month">鏈?/el-radio-button>
+                </el-radio-group>
+              </div>
+            </template>
+            <div class="chart-container">
+              <!-- 杩欓噷灏嗕娇鐢╡charts缁樺埗鍥捐〃 -->
+              <div ref="occupancyChart" style="height: 320px;"></div>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 鏀跺叆缁熻鍥?-->
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">鏀跺叆缁熻</span>
+                  <span class="header-subtitle">璐㈠姟鍒嗘瀽涓庨娴?/span>
+                </div>
+                <el-radio-group v-model="revenueTimeRange" size="small" class="time-filter">
+                  <el-radio-button label="week">鍛?/el-radio-button>
+                  <el-radio-button label="month">鏈?/el-radio-button>
+                </el-radio-group>
+              </div>
+            </template>
+            <div class="chart-container">
+              <!-- 杩欓噷灏嗕娇鐢╡charts缁樺埗鍥捐〃 -->
+              <div ref="revenueChart" style="height: 320px;"></div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <el-row :gutter="24" class="chart-row">
+        <!-- 鎴块棿鐘舵€佺粺璁?-->
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">鎴块棿鐘舵€佺粺璁?/span>
+                  <span class="header-subtitle">瀹炴椂鎴挎€佺鐞?/span>
+                </div>
+              </div>
+            </template>
+            <div class="chart-container">
+              <div ref="roomStatusChart" style="height: 320px;"></div>
+            </div>
+          </el-card>
+        </el-col>
+
+        <!-- 娓呮磥浠诲姟瀹屾垚鎯呭喌 -->
+        <el-col :xs="24" :sm="24" :md="12" :lg="12">
+          <el-card class="luxury-chart-card">
+            <template #header>
+              <div class="card-header">
+                <div class="header-left">
+                  <span class="header-title">娓呮磥浠诲姟瀹屾垚鎯呭喌</span>
+                  <span class="header-subtitle">鏈嶅姟璐ㄩ噺鐩戞帶</span>
+                </div>
+              </div>
+            </template>
+            <div class="chart-container">
+              <div ref="cleaningTaskChart" style="height: 320px;"></div>
+            </div>
+          </el-card>
+        </el-col>
+      </el-row>
+
+      <!-- 璇︾粏鏁版嵁瀵硅瘽妗?-->
+      <el-dialog 
+        v-model="detailsVisible" 
+        :title="currentCard?.title + '璇︾粏鏁版嵁'" 
+        width="70%"
+        destroy-on-close
+        class="luxury-dialog"
+      >
+        <div v-if="currentCard?.type === 'success'" class="details-content">
+          <el-descriptions title="鍏ヤ綇鐜囪鎯? :column="2" border>
+            <el-descriptions-item label="浠婃棩鍏ヤ綇鐜?>{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="鏄ㄦ棩鍏ヤ綇鐜?>78%</el-descriptions-item>
+            <el-descriptions-item label="鏈懆骞冲潎">82%</el-descriptions-item>
+            <el-descriptions-item label="涓婂懆骞冲潎">75%</el-descriptions-item>
+            <el-descriptions-item label="鏈湀骞冲潎">80%</el-descriptions-item>
+            <el-descriptions-item label="鍚屾瘮鍙樺寲">{{ currentCard?.change }}</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="room-details">
+            <h3>鎴块棿鍏ヤ綇璇︽儏</h3>
+            <el-table :data="occupancyDetails" border stripe>
+              <el-table-column prop="roomType" label="鎴垮瀷" />
+              <el-table-column prop="total" label="鎬绘暟" />
+              <el-table-column prop="occupied" label="宸插叆浣? />
+              <el-table-column prop="available" label="鍙敤" />
+              <el-table-column prop="rate" label="鍏ヤ綇鐜? />
+            </el-table>
+          </div>
+        </div>
+        
+        <div v-if="currentCard?.type === 'primary'" class="details-content">
+          <el-descriptions title="鏀跺叆璇︽儏" :column="2" border>
+            <el-descriptions-item label="鏈湀鎬绘敹鍏?>{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="涓婃湀鎬绘敹鍏?>楼{{ formatNumber(stats.lastMonthRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="鏈湀鍏ヤ綇鏀跺叆">楼{{ formatNumber(stats.monthlyCheckInRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="涓婃湀鍏ヤ綇鏀跺叆">楼{{ formatNumber(stats.lastMonthCheckInRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="鏈湀棰勮鏀跺叆">楼{{ formatNumber(stats.monthlyReservationRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="涓婃湀棰勮鏀跺叆">楼{{ formatNumber(stats.lastMonthReservationRevenue || 0) }}</el-descriptions-item>
+            <el-descriptions-item label="鍚屾瘮澧為暱">{{ currentCard?.change }}</el-descriptions-item>
+            <el-descriptions-item label="骞村害鐩爣瀹屾垚鐜?>48%</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="revenue-details">
+            <h3>鏀跺叆鏉ユ簮鍒嗘瀽</h3>
+            <el-table :data="revenueDetails" border stripe>
+              <el-table-column prop="source" label="鏀跺叆鏉ユ簮" />
+              <el-table-column prop="amount" label="閲戦" />
+              <el-table-column prop="percentage" label="鍗犳瘮" />
+              <el-table-column prop="change" label="鍚屾瘮鍙樺寲" />
+            </el-table>
+          </div>
+        </div>
+        
+        <div v-if="currentCard?.type === 'warning'" class="details-content">
+          <el-descriptions title="璁垮璇︽儏" :column="2" border>
+            <el-descriptions-item label="浠婃棩璁垮">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="鏄ㄦ棩璁垮">230</el-descriptions-item>
+            <el-descriptions-item label="鏈懆绱">1,250</el-descriptions-item>
+            <el-descriptions-item label="涓婂懆绱">1,180</el-descriptions-item>
+            <el-descriptions-item label="鍚屾瘮鍙樺寲">{{ currentCard?.change }}</el-descriptions-item>
+            <el-descriptions-item label="骞冲潎鍋滅暀鏃堕棿">2.5灏忔椂</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="visitor-details">
+            <h3>璁垮鏉ユ簮鍒嗘瀽</h3>
+            <el-table :data="visitorDetails" border stripe>
+              <el-table-column prop="source" label="鏉ユ簮娓犻亾" />
+              <el-table-column prop="count" label="璁垮鏁? />
+              <el-table-column prop="percentage" label="鍗犳瘮" />
+              <el-table-column prop="conversion" label="杞寲鐜? />
+            </el-table>
+          </div>
+        </div>
+        
+        <div v-if="currentCard?.type === 'info'" class="details-content">
+          <el-descriptions title="棰勮璇︽儏" :column="2" border>
+            <el-descriptions-item label="鎬婚璁㈡暟">{{ currentCard?.value }}</el-descriptions-item>
+            <el-descriptions-item label="鏄ㄦ棩棰勮">12</el-descriptions-item>
+            <el-descriptions-item label="鏈懆绱">35</el-descriptions-item>
+            <el-descriptions-item label="涓婂懆绱">48</el-descriptions-item>
+            <el-descriptions-item label="鍚屾瘮鍙樺寲">{{ currentCard?.change }}</el-descriptions-item>
+            <el-descriptions-item label="棰勮瀹屾垚鐜?>92%</el-descriptions-item>
+          </el-descriptions>
+          
+          <div class="booking-details">
+            <h3>棰勮璇︽儏鍒楄〃</h3>
+            <el-table :data="bookingDetails" border stripe>
+              <el-table-column prop="id" label="棰勮鍙? width="100" />
+              <el-table-column prop="customer" label="瀹㈡埛" />
+              <el-table-column prop="roomType" label="鎴垮瀷" />
+              <el-table-column prop="checkIn" label="鍏ヤ綇鏃ユ湡" />
+              <el-table-column prop="nights" label="鍏ヤ綇澶╂暟" />
+              <el-table-column prop="amount" label="閲戦" />
+              <el-table-column prop="status" label="鐘舵€?>
+                <template #default="{ row }">
+                  <el-tag :type="row.status === '宸茬‘璁? ? 'success' : row.status === '寰呬粯娆? ? 'warning' : 'info'">
+                    {{ row.status }}
+                  </el-tag>
+                </template>
+              </el-table-column>
+            </el-table>
+          </div>
+        </div>
+      </el-dialog>
+    </div>
+    
+    <!-- 鍓嶅彴鎺ュ緟浜哄憳鐨勯粯璁ょ湅鏉?-->
+    <div v-else-if="userRole === 'receptionist'" class="role-dashboard">
+      <el-empty description="鍓嶅彴鎺ュ緟浜哄憳璇蜂娇鐢ㄥ乏渚ц彍鍗曡闂璁㈢鐞嗐€佸叆浣忕櫥璁板拰璁垮鐧昏鍔熻兘"></el-empty>
+    </div>
+    
+    <!-- 淇濇磥浜哄憳鐨勯粯璁ょ湅鏉?-->
+    <div v-else-if="userRole === 'cleaner'" class="role-dashboard">
+      <el-empty description="淇濇磥浜哄憳璇蜂娇鐢ㄥ乏渚ц彍鍗曡闂竻娲佷换鍔″拰娓呮磥璁板綍鍔熻兘"></el-empty>
+    </div>
+  </div>
+</template>
+
+<script setup>
+import { ref, onMounted, reactive, watch } from 'vue'
+import { House, Money, User, Calendar } from '@element-plus/icons-vue'
+import * as echarts from 'echarts'
+import { adminApi } from '../../api'
+
+// 鑾峰彇鐢ㄦ埛瑙掕壊
+const userRole = ref(localStorage.getItem('userRole') || 'admin')
+
+// 鐘舵€佸彉閲?const isLoading = ref(false)
+const error = ref(null)
+
+// 鏁版嵁姒傝鍗＄墖鏁版嵁
+const dataCards = ref([
+  {
+    title: '浠婃棩鍏ヤ綇鐜?,
+    value: '0%',
+    icon: 'TrendCharts',
+    type: 'success',
+    trend: '' // up or down
+  },
+  {
+    title: '鏈湀鏀跺叆',
+    value: '楼0',
+    icon: 'Money',
+    type: 'primary',
+    trend: '' // up or down
+  },
+  {
+    title: '鐢ㄦ埛鏁伴噺',
+    value: '0',
+    icon: 'User',
+    type: 'warning',
+    trend: '' // up or down
+  },
+  {
+    title: '浠婃棩棰勮',
+    value: '0',
+    icon: 'Calendar',
+    type: 'info',
+    trend: '' // up or down
+  }
+])
+
+// 璇︾粏鏁版嵁瀵硅瘽妗?const detailsVisible = ref(false)
+const currentCard = ref(null)
+
+// 璇︾粏鏁版嵁
+const occupancyDetails = ref([
+  { roomType: '鏍囧噯闂?, total: 0, occupied: 0, available: 0, rate: '0%' },
+  { roomType: '璞崕闂?, total: 0, occupied: 0, available: 0, rate: '0%' },
+  { roomType: '濂楁埧', total: 0, occupied: 0, available: 0, rate: '0%' },
+  { roomType: '鎬荤粺濂楁埧', total: 0, occupied: 0, available: 0, rate: '0%' }
+])
+
+const revenueDetails = ref([
+  { source: '鎴胯垂鏀跺叆', amount: '楼98,500', percentage: '76.7%', change: '鈫?10%' },
+  { source: '椁愰ギ鏀跺叆', amount: '楼18,000', percentage: '14.0%', change: '鈫?15%' },
+  { source: 'SPA鏈嶅姟', amount: '楼8,500', percentage: '6.6%', change: '鈫?20%' },
+  { source: '浼氳瀹ょ璧?, amount: '楼3,500', percentage: '2.7%', change: '鈫?5%' }
+])
+
+const visitorDetails = ref([
+  { source: '鐩存帴璁块棶', count: 120, percentage: '46.9%', conversion: '35%' },
+  { source: '鎼滅储寮曟搸', count: 80, percentage: '31.3%', conversion: '28%' },
+  { source: '绀句氦濯掍綋', count: 40, percentage: '15.6%', conversion: '20%' },
+  { source: '閭欢鎺ㄥ箍', count: 16, percentage: '6.2%', conversion: '40%' }
+])
+
+const bookingDetails = ref([
+  { id: 'B2404001', customer: '寮犱笁', roomType: '璞崕濂楁埧', checkIn: '2024-04-05', nights: 2, amount: '楼2,680', status: '宸茬‘璁? },
+  { id: 'B2404002', customer: '鏉庡洓', roomType: '鍟嗗姟濂楁埧', checkIn: '2024-04-06', nights: 3, amount: '楼2,940', status: '寰呬粯娆? },
+  { id: 'B2404003', customer: '鐜嬩簲', roomType: '鏍囧噯鍙屼汉闂?, checkIn: '2024-04-04', nights: 1, amount: '楼680', status: '宸茬‘璁? },
+  { id: 'B2404004', customer: '璧靛叚', roomType: '鏍囧噯鍗曚汉闂?, checkIn: '2024-04-07', nights: 4, amount: '楼2,160', status: '宸插彇娑? },
+  { id: 'B2404005', customer: '閽变竷', roomType: '璞崕濂楁埧', checkIn: '2024-04-10', nights: 2, amount: '楼2,680', status: '宸茬‘璁? }
+])
+
+// 鏄剧ず鍗＄墖璇︾粏鏁版嵁
+const showCardDetails = (card) => {
+  currentCard.value = card
+  detailsVisible.value = true
+}
+
+// 鍥捐〃鏃堕棿鑼冨洿閫夋嫨
+const occupancyTimeRange = ref('week')
+const revenueTimeRange = ref('week')
+
+// 鍥捐〃寮曠敤
+const occupancyChart = ref(null)
+const revenueChart = ref(null)
+const roomStatusChart = ref(null)
+const cleaningTaskChart = ref(null)
+
+// 鍥捐〃瀹炰緥
+let occupancyChartInstance = null
+let revenueChartInstance = null
+let roomStatusChartInstance = null
+let cleaningTaskChartInstance = null
+
+// 鍥捐〃鏁版嵁
+const chartData = {
+  occupancy: {
+    week: {
+      xAxis: ['鍛ㄤ竴', '鍛ㄤ簩', '鍛ㄤ笁', '鍛ㄥ洓', '鍛ㄤ簲', '鍛ㄥ叚', '鍛ㄦ棩'],
+      data: [80, 85, 75, 90, 95, 88, 85]
+    },
+    month: {
+      xAxis: ['1鏃?, '5鏃?, '10鏃?, '15鏃?, '20鏃?, '25鏃?, '30鏃?],
+      data: [75, 82, 88, 92, 86, 78, 83]
+    }
+  },
+  revenue: {
+    week: {
+      xAxis: ['鍛ㄤ竴', '鍛ㄤ簩', '鍛ㄤ笁', '鍛ㄥ洓', '鍛ㄤ簲', '鍛ㄥ叚', '鍛ㄦ棩'],
+      data: [15000, 18000, 16000, 20000, 25000, 28000, 22000]
+    },
+    month: {
+      xAxis: ['1鏈?, '2鏈?, '3鏈?, '4鏈?, '5鏈?, '6鏈?, '7鏈?, '8鏈?, '9鏈?, '10鏈?, '11鏈?, '12鏈?],
+      data: [95000, 88000, 110000, 128500, 145000, 160000, 182000, 195000, 168000, 152000, 138000, 165000]
+    }
+  }
+}
+
+// 鏇存柊鍏ヤ綇鐜囧浘琛?(浠呬綔涓哄鐢ㄦ柟娉曪紝API澶辫触鏃朵娇鐢?
+const updateOccupancyChart = () => {
+  if (!occupancyChartInstance) return
+  
+  const data = chartData.occupancy[occupancyTimeRange.value]
+  occupancyChartInstance.setOption({
+    xAxis: {
+      data: data.xAxis
+    },
+    series: [{
+      data: data.data,
+      type: 'line',
+      smooth: true
+    }]
+  })
+}
+
+// 鏇存柊鏀跺叆缁熻鍥捐〃 (浠呬綔涓哄鐢ㄦ柟娉曪紝API澶辫触鏃朵娇鐢?
+const updateRevenueChart = () => {
+  if (!revenueChartInstance) return
+
+  const data = chartData.revenue[revenueTimeRange.value]
+  revenueChartInstance.setOption({
+    xAxis: {
+      data: data.xAxis
+    },
+    series: [
+      {
+        name: '鎬绘敹鍏?,
+        data: data.data,
+        type: 'bar',
+        barMaxWidth: '30%',
+        itemStyle: {
+          color: '#7b69ee'
+        }
+      },
+      {
+        name: '鍏ヤ綇鏀跺叆',
+        // 鐢熸垚妯℃嫙鏁版嵁锛屽亣璁惧叆浣忔敹鍏ュ崰鎬绘敹鍏ョ殑60%
+        data: data.data.map(value => Math.round(value * 0.6)),
+        type: 'bar',
+        stack: 'breakdown',
+        barMaxWidth: '30%',
+        itemStyle: {
+          color: '#5470c6'
+        }
+      },
+      {
+        name: '棰勮鏀跺叆',
+        // 鐢熸垚妯℃嫙鏁版嵁锛屽亣璁鹃璁㈡敹鍏ュ崰鎬绘敹鍏ョ殑40%
+        data: data.data.map(value => Math.round(value * 0.4)),
+        type: 'bar',
+        stack: 'breakdown',
+        barMaxWidth: '30%',
+        itemStyle: {
+          color: '#91cc75'
+        }
+      }
+    ]
+  })
+}
+
+// 鐩戝惉鏃堕棿鑼冨洿鍙樺寲
+watch(occupancyTimeRange, () => {
+  fetchOccupancyTrendData();
+})
+
+watch(revenueTimeRange, () => {
+  fetchRevenueStatsData();
+})
+
+// 鑾峰彇鍏ヤ綇鐜囪秼鍔挎暟鎹?const fetchOccupancyTrendData = async () => {
+  try {
+    const response = await adminApi.getOccupancyTrend(occupancyTimeRange.value);
+    
+    // 鏇存柊鍥捐〃鏁版嵁
+    if (occupancyChartInstance) {
+      occupancyChartInstance.setOption({
+        xAxis: {
+          data: response.xAxis || []
+        },
+        series: [{
+          data: response.data || [],
+          type: 'line',
+          smooth: true
+        }]
+      });
+    }
+  } catch (e) {
+    console.error("鑾峰彇鍏ヤ綇鐜囪秼鍔挎暟鎹け璐?", e);
+    // 浣跨敤妯℃嫙鏁版嵁浣滀负澶囩敤
+    updateOccupancyChart();
+  }
+}
+
+// 鑾峰彇鏀跺叆缁熻鏁版嵁
+const fetchRevenueStatsData = async () => {
+  try {
+    const response = await adminApi.getRevenueStats(revenueTimeRange.value);
+
+    // 閺囧瓨鏌婇崶鎹愩€冮弫鐗堝祦
+    if (revenueChartInstance) {
+      revenueChartInstance.setOption({
+        xAxis: {
+          data: response.xAxis || []
+        },
+        series: [
+          {
+            name: '鎬绘敹鍏?,
+            data: response.data || [],
+            type: 'bar',
+            barMaxWidth: '30%',
+            itemStyle: {
+              color: '#7b69ee'
+            }
+          },
+          {
+            name: '鍏ヤ綇鏀跺叆',
+            data: response.checkInData || [],
+            type: 'bar',
+            stack: 'breakdown',
+            barMaxWidth: '30%',
+            itemStyle: {
+              color: '#5470c6'
+            }
+          },
+          {
+            name: '棰勮鏀跺叆',
+            data: response.reservationData || [],
+            type: 'bar',
+            stack: 'breakdown',
+            barMaxWidth: '30%',
+            itemStyle: {
+              color: '#91cc75'
+            }
+          }
+        ]
+      });
+    }
+  } catch (e) {
+    console.error("鑾峰彇鏀跺叆缁熻鏁版嵁澶辫触:", e);
+    // 浣跨敤妯℃嫙鏁版嵁浣滀负澶囩敤
+    updateRevenueChart();
+  }
+}
+
+// 瀹氫箟 fetchDashboardData 鍑芥暟
+const fetchDashboardData = async () => {
+  try {
+    isLoading.value = true
+    error.value = ''
+    
+    // 鍔犺浇浠〃鐩樼粺璁℃暟鎹?    const stats = await adminApi.getDashboardStats()
+    console.log('鑾峰彇鍒颁华琛ㄧ洏缁熻鏁版嵁:', stats)
+    
+    if (!stats) {
+      throw new Error('鏈兘鑾峰彇浠〃鐩樻暟鎹?)
+    }
+    
+    // 鏇存柊鏁版嵁鍗＄墖
+    // 1. 鍏ヤ綇鐜囧崱鐗?    const occupancyRate = stats.currentOccupancyRate || 0
+    const occupancyChange = stats.occupancyRateChange || 0
+    dataCards.value[0].value = `${occupancyRate}%`
+    dataCards.value[0].trend = occupancyChange >= 0 ? 'up' : 'down'
+    
+    // 2. 鏀跺叆鍗＄墖
+    const monthlyRevenue = stats.monthlyRevenue || 0
+    const revenueChange = stats.revenueChange || 0
+    dataCards.value[1].value = `楼${formatNumber(monthlyRevenue)}`
+    dataCards.value[1].trend = revenueChange >= 0 ? 'up' : 'down'
+    
+    // 鏇存柊鏀跺叆鏄庣粏
+    const checkInRevenue = stats.monthlyCheckInRevenue || 0
+    const reservationRevenue = stats.monthlyReservationRevenue || 0
+    const lastMonthRevenue = stats.lastMonthRevenue || 0
+    
+    // 璁＄畻鐧惧垎姣?    const checkInPercentage = monthlyRevenue > 0 ? ((checkInRevenue / monthlyRevenue) * 100).toFixed(1) : '0.0'
+    const reservationPercentage = monthlyRevenue > 0 ? ((reservationRevenue / monthlyRevenue) * 100).toFixed(1) : '0.0'
+    
+    // 鏇存柊鏀跺叆鏄庣粏琛ㄦ牸
+    revenueDetails.value = [
+      { 
+        source: '鍏ヤ綇缁撶畻鏀跺叆', 
+        amount: `楼${formatNumber(checkInRevenue)}`, 
+        percentage: `${checkInPercentage}%`,
+        change: `${checkInRevenue > 0 ? '鈫? : '鈫?} ${Math.abs(stats.revenueChange || 0).toFixed(1)}%`
+      },
+      { 
+        source: '棰勮鏀跺叆', 
+        amount: `楼${formatNumber(reservationRevenue)}`, 
+        percentage: `${reservationPercentage}%`,
+        change: `${reservationRevenue > 0 ? '鈫? : '鈫?} ${Math.abs(stats.revenueChange || 0).toFixed(1)}%` 
+      }
+    ]
+    
+    // 3. 鐢ㄦ埛鏁伴噺鍗＄墖
+    const totalUsers = stats.totalUsers || 0
+    const newUsersThisMonth = stats.newUsersThisMonth || 0
+    const userGrowthRate = stats.userGrowthRate || 0
+    dataCards.value[2].value = formatNumber(totalUsers)
+    dataCards.value[2].trend = userGrowthRate >= 0 ? 'up' : 'down'
+    
+    // 4. 棰勮鍗＄墖
+    const todayReservations = stats.todayReservations || 0
+    const reservationsChange = stats.reservationsChange || 0
+    dataCards.value[3].value = formatNumber(todayReservations)
+    dataCards.value[3].trend = reservationsChange >= 0 ? 'up' : 'down'
+    
+    // 鏇存柊鎴块棿鐘舵€佸浘琛ㄦ暟鎹?    if (roomStatusChartInstance) {
+      // 浠嶢PI鍝嶅簲鑾峰彇鎴块棿鐘舵€佹暟鎹?      const roomStatusData = [
+        { value: stats.occupiedRooms || 0, name: '宸插叆浣? },
+        { value: stats.needsCleaningRooms || 0, name: '寰呮竻娲? },
+        { value: stats.availableRooms || 0, name: '绌洪棽鍙敤' },
+        { value: stats.maintenanceRooms || 0, name: '缁存姢涓? },
+        { value: stats.cleaningRooms || 0, name: '娓呮磥涓? },
+        { value: stats.reservedRooms || 0, name: '宸查璁? }
+      ]
+      
+      // 杩囨护鎺夊€间负0鐨勭姸鎬侊紝閬垮厤鍥捐〃鏄剧ず绌洪」
+      const filteredRoomStatusData = roomStatusData.filter(item => item.value > 0)
+      
+      roomStatusChartInstance.setOption({
+        series: [{
+          data: filteredRoomStatusData
+        }]
+      })
+    }
+    
+    // 鏇存柊娓呮磥浠诲姟鍥捐〃鏁版嵁
+    if (cleaningTaskChartInstance) {
+      const cleaningData = [
+        stats.cleaningTasksCompleted || 0,
+        stats.cleaningTasksInProgress || 0, 
+        stats.cleaningTasksPending || 0
+      ]
+      
+      cleaningTaskChartInstance.setOption({
+        series: [{
+          data: cleaningData
+        }]
+      })
+    }
+    
+    // 鏇存柊璇︽儏瀵硅瘽妗嗕腑鐨勬暟鎹?    // 鍏ヤ綇鐜囪鎯?    occupancyDetails.value = [
+      { 
+        roomType: '鏍囧噯闂?, 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.4) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.4) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.4) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.4), Math.round(stats.totalRooms * 0.4))}%`
+      },
+      { 
+        roomType: '璞崕闂?, 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.3) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.3) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.3) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.3), Math.round(stats.totalRooms * 0.3))}%`
+      },
+      { 
+        roomType: '濂楁埧', 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.2) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.2) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.2) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.2), Math.round(stats.totalRooms * 0.2))}%`
+      },
+      { 
+        roomType: '鎬荤粺濂楁埧', 
+        total: stats.totalRooms > 0 ? Math.round(stats.totalRooms * 0.1) : 0,
+        occupied: stats.occupiedRooms > 0 ? Math.round(stats.occupiedRooms * 0.1) : 0,
+        available: stats.availableRooms > 0 ? Math.round(stats.availableRooms * 0.1) : 0,
+        rate: `${calculateRate(Math.round(stats.occupiedRooms * 0.1), Math.round(stats.totalRooms * 0.1))}%`
+      }
+    ]
+    
+    isLoading.value = false
+  } catch (e) {
+    console.error('鑾峰彇浠〃鐩樻暟鎹け璐?', e)
+    error.value = '鑾峰彇鏁版嵁澶辫触锛岃鍒锋柊椤甸潰閲嶈瘯: ' + (e.message || e)
+    isLoading.value = false
+  }
+}
+
+// 杈呭姪鍑芥暟锛氭暟瀛楁牸寮忓寲
+const formatNumber = (num) => {
+  if (typeof num !== 'number') {
+    num = Number(num) || 0
+  }
+  return num.toLocaleString('zh-CN')
+}
+
+// 杈呭姪鍑芥暟锛氳绠楀叆浣忕巼
+const calculateRate = (occupied, total) => {
+  if (!total) return 0
+  return Math.round((occupied / total) * 100)
+}
+
+// 鐢ㄦ埛瑙掕壊鍜屽垵濮嬪寲鍑芥暟
+const getUserRoleAndInitialize = () => {
+  // 浠呭绠＄悊鍛樼敤鎴峰垵濮嬪寲鍥捐〃
+  if (userRole.value === 'ADMIN') {
+    // 鍒濆鍖栧悇绉嶅浘琛?    
+    // 鍏ヤ綇鐜囪秼鍔垮浘
+    occupancyChartInstance = echarts.init(occupancyChart.value)
+    occupancyChartInstance.setOption({
+      tooltip: {
+        trigger: 'axis'
+      },
+      xAxis: {
+        type: 'category',
+        data: [] // 鍒濆涓虹┖锛岀◢鍚庨€氳繃API鑾峰彇
+      },
+      yAxis: {
+        type: 'value',
+        min: 0,
+        max: 100,
+        axisLabel: {
+          formatter: '{value}%'
+        }
+      },
+      series: [{
+        data: [], // 鍒濆涓虹┖锛岀◢鍚庨€氳繃API鑾峰彇
+        type: 'line',
+        smooth: true,
+        itemStyle: {
+          color: '#5b86e5'
+        },
+        areaStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: 'rgba(91, 134, 229, 0.3)'
+            }, {
+              offset: 1, color: 'rgba(91, 134, 229, 0.1)'
+            }]
+          }
+        }
+      }]
+    })
+    
+    // 鑾峰彇鍏ヤ綇鐜囪秼鍔挎暟鎹?    fetchOccupancyTrendData();
+
+    // 鏀跺叆缁熻鍥?    revenueChartInstance = echarts.init(revenueChart.value)
+    revenueChartInstance.setOption({
+      tooltip: {
+        trigger: 'axis',
+        axisPointer: {
+          type: 'shadow'
+        }
+      },
+      legend: {
+        data: ['鎬绘敹鍏?, '鍏ヤ綇鏀跺叆', '棰勮鏀跺叆'],
+        right: 10,
+        top: 0
+      },
+      xAxis: {
+        type: 'category',
+        data: [] // 鍒濆涓虹┖锛岀◢鍚庨€氳繃API鑾峰彇
+      },
+      yAxis: {
+        type: 'value',
+        axisLabel: {
+          formatter: '楼{value}'
+        }
+      },
+      series: [
+        {
+          name: '鎬绘敹鍏?,
+          data: [], // 鍒濆涓虹┖锛岀◢鍚庨€氳繃API鑾峰彇
+          type: 'bar',
+          stack: 'total',
+          barWidth: '40%',
+          itemStyle: {
+            color: {
+              type: 'linear',
+              x: 0,
+              y: 0,
+              x2: 0,
+              y2: 1,
+              colorStops: [{
+                offset: 0, color: '#667eea'
+              }, {
+                offset: 1, color: '#764ba2'
+              }]
+            },
+            borderRadius: [4, 4, 0, 0]
+          }
+        },
+        {
+          name: '鍏ヤ綇鏀跺叆',
+          data: [], // 鍒濆涓虹┖锛岀◢鍚庨€氳繃API鑾峰彇
+          type: 'bar',
+          stack: 'breakdown',
+          barWidth: '40%',
+          itemStyle: {
+            color: '#5b86e5',
+            borderRadius: [4, 4, 0, 0]
+          }
+        },
+        {
+          name: '棰勮鏀跺叆',
+          data: [], // 鍒濆涓虹┖锛岀◢鍚庨€氳繃API鑾峰彇
+          type: 'bar',
+          stack: 'breakdown',
+          barWidth: '40%',
+          itemStyle: {
+            color: '#36d1dc',
+            borderRadius: [4, 4, 0, 0]
+          }
+        }
+      ]
+    })
+    
+    // 鑾峰彇鏀跺叆缁熻鏁版嵁
+    fetchRevenueStatsData();
+
+    // 鎴块棿鐘舵€佺粺璁″浘
+    roomStatusChartInstance = echarts.init(roomStatusChart.value)
+    roomStatusChartInstance.setOption({
+      tooltip: {
+        trigger: 'item'
+      },
+      legend: {
+        orient: 'vertical',
+        left: 'left'
+      },
+      series: [{
+        type: 'pie',
+        radius: '50%',
+        data: [], // 鍒濆鍖栦负绌烘暟缁勶紝绋嶅悗浼氶€氳繃API鏁版嵁鏇存柊
+        emphasis: {
+          itemStyle: {
+            shadowBlur: 10,
+            shadowOffsetX: 0,
+            shadowColor: 'rgba(0, 0, 0, 0.5)'
+          }
+        },
+        itemStyle: {
+          borderRadius: 6,
+          borderWidth: 2,
+          borderColor: '#fff'
+        },
+        label: {
+          formatter: '{b}: {d}%'
+        }
+      }]
+    })
+
+    // 娓呮磥浠诲姟瀹屾垚鎯呭喌鍥?    cleaningTaskChartInstance = echarts.init(cleaningTaskChart.value)
+    cleaningTaskChartInstance.setOption({
+      tooltip: {
+        trigger: 'axis'
+      },
+      xAxis: {
+        type: 'category',
+        data: ['宸插畬鎴?, '杩涜涓?, '寰呭鐞?]
+      },
+      yAxis: {
+        type: 'value'
+      },
+      series: [{
+        data: [0, 0, 0], // 鍒濆鍖栦负绌烘暟鎹紝绋嶅悗閫氳繃API鏇存柊
+        type: 'bar',
+        showBackground: true,
+        backgroundStyle: {
+          color: 'rgba(180, 180, 180, 0.2)'
+        },
+        itemStyle: {
+          color: {
+            type: 'linear',
+            x: 0,
+            y: 0,
+            x2: 0,
+            y2: 1,
+            colorStops: [{
+              offset: 0, color: '#f6d365'
+            }, {
+              offset: 1, color: '#fda085'
+            }]
+          },
+          borderRadius: [4, 4, 0, 0]
+        }
+      }]
+    })
+
+    // 鐩戝惉绐楀彛澶у皬鍙樺寲锛岃皟鏁村浘琛ㄥぇ灏?    window.addEventListener('resize', () => {
+      occupancyChartInstance.resize()
+      revenueChartInstance.resize()
+      roomStatusChartInstance.resize()
+      cleaningTaskChartInstance.resize()
+    })
+  }
+}
+
+// 纭繚鍦╫nMounted涓皟鐢╢etchDashboardData鍑芥暟
+onMounted(() => {
+  // 纭鐢ㄦ埛瑙掕壊鍜屾潈闄?  getUserRoleAndInitialize()
+
+  // 鍔犺浇浠〃鐩樻暟鎹?  fetchDashboardData()
+})
+</script>
+
+<style scoped>
+.dashboard-container {
+  padding: 20px 0;
+  height: 100%;
+  overflow-y: auto;
+}
+
+/* 楂樼骇璞崕鍗＄墖鏍峰紡 */
+.luxury-card {
+  border-radius: 12px;
+  overflow: hidden;
+  transition: all 0.3s ease;
+  border: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  cursor: pointer;
+  height: 130px;
+  position: relative;
+  background: #fff;
+  margin-bottom: 16px;
+}
+
+.luxury-card:hover {
+  transform: translateY(-5px);
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.15);
+}
+
+.luxury-chart-card {
+  border-radius: 12px;
+  overflow: hidden;
+  border: none;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.08);
+  margin-bottom: 24px;
+  transition: all 0.3s ease;
+}
+
+.luxury-chart-card:hover {
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+}
+
+.card-content {
+  display: flex;
+  align-items: center;
+  padding: 20px;
+  height: 100%;
+  background: linear-gradient(to right, rgba(255, 255, 255, 1), rgba(255, 255, 255, 0.9));
+  position: relative;
+  overflow: hidden;
+}
+
+.card-content::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 50%;
+  height: 50%;
+  background: linear-gradient(135deg, transparent 0%, rgba(0, 0, 0, 0.02) 100%);
+  z-index: 1;
+  border-radius: 50% 0 0 0;
+}
+
+.card-icon-wrapper {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 64px;
+  height: 64px;
+  border-radius: 16px;
+  margin-right: 20px;
+  position: relative;
+  z-index: 2;
+}
+
+.card-icon-wrapper.success {
+  background: linear-gradient(135deg, #36d1dc, #5b86e5);
+  box-shadow: 0 4px 12px rgba(91, 134, 229, 0.3);
+}
+
+.card-icon-wrapper.primary {
+  background: linear-gradient(135deg, #667eea, #764ba2);
+  box-shadow: 0 4px 12px rgba(118, 75, 162, 0.3);
+}
+
+.card-icon-wrapper.warning {
+  background: linear-gradient(135deg, #f6d365, #fda085);
+  box-shadow: 0 4px 12px rgba(253, 160, 133, 0.3);
+}
+
+.card-icon-wrapper.info {
+  background: linear-gradient(135deg, #a1c4fd, #c2e9fb);
+  box-shadow: 0 4px 12px rgba(194, 233, 251, 0.3);
+}
+
+.card-icon {
+  font-size: 28px;
+  color: white;
+}
+
+.card-info {
+  flex-grow: 1;
+  padding: 16px;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: flex-start;
+}
+
+.card-title {
+  font-size: 14px;
+  color: #666;
+  margin-bottom: 6px;
+}
+
+.card-value {
+  font-size: 24px;
+  font-weight: bold;
+  margin-bottom: 4px;
+  font-family: 'Helvetica Neue', sans-serif;
+  letter-spacing: 0.5px;
+}
+
+.luxury-card.success {
+  background: linear-gradient(to right, rgba(54, 209, 220, 0.05), rgba(91, 134, 229, 0.08));
+  border-left: 4px solid #5b86e5;
+}
+
+.luxury-card.primary {
+  background: linear-gradient(to right, rgba(102, 126, 234, 0.05), rgba(118, 75, 162, 0.08));
+  border-left: 4px solid #764ba2;
+}
+
+.luxury-card.warning {
+  background: linear-gradient(to right, rgba(246, 211, 101, 0.05), rgba(253, 160, 133, 0.08));
+  border-left: 4px solid #fda085;
+}
+
+.luxury-card.info {
+  background: linear-gradient(to right, rgba(161, 196, 253, 0.05), rgba(194, 233, 251, 0.08));
+  border-left: 4px solid #a1c4fd;
+}
+
+.chart-row {
+  margin-top: 24px;
+}
+
+.card-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 5px 10px;
+}
+
+.header-left {
+  display: flex;
+  flex-direction: column;
+}
+
+.header-title {
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+}
+
+.header-subtitle {
+  font-size: 13px;
+  color: #909399;
+  margin-top: 5px;
+}
+
+.time-filter {
+  background-color: #f5f7fa;
+  border-radius: 18px;
+  padding: 3px;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.chart-container {
+  padding: 20px;
+  position: relative;
+}
+
+.luxury-dialog .el-dialog__header {
+  padding: 20px;
+  border-bottom: 1px solid #ebeef5;
+  background: linear-gradient(to right, #f7f8fb, #f4f5f7);
+}
+
+.luxury-dialog .el-dialog__body {
+  padding: 24px;
+}
+
+.details-content h3 {
+  margin-top: 30px;
+  margin-bottom: 15px;
+  font-size: 18px;
+  font-weight: 600;
+  color: #303133;
+  border-left: 4px solid #5b86e5;
+  padding-left: 12px;
+  position: relative;
+}
+
+.details-content h3::after {
+  content: '';
+  position: absolute;
+  bottom: -5px;
+  left: 0;
+  width: 40px;
+  height: 2px;
+  background: #5b86e5;
+}
+
+.room-details, .revenue-details, .visitor-details, .booking-details {
+  margin-top: 24px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+  .luxury-card {
+    margin-bottom: 16px;
+  }
+}
+
+/* 瑙掕壊涓撶敤椤甸潰鏍峰紡 */
+.role-dashboard {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  min-height: 70vh;
+}
+
+.role-dashboard .el-empty {
+  padding: 40px;
+  background-color: #fff;
+  border-radius: 16px;
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+  text-align: center;
+}
+
+.role-dashboard .el-empty__description {
+  font-size: 16px;
+  color: #606266;
+  max-width: 500px;
+  line-height: 1.8;
+  margin-top: 20px;
+}
+</style>

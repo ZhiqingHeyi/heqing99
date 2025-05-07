@@ -183,19 +183,48 @@ public class CleaningServiceImpl implements CleaningService {
     public java.util.Map<String, Long> getTasksStatistics() {
         java.util.Map<String, Long> statistics = new java.util.HashMap<>();
         
-        // 统计已完成的任务
-        long completedTasks = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.COMPLETED) 
-                            + cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.VERIFIED);
+        // 单独统计每种状态的数量
+        long completedCount = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.COMPLETED);
+        long verifiedCount = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.VERIFIED);
+        long inProgressCount = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.IN_PROGRESS);
+        long pendingCount = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.PENDING);
+        long assignedCount = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.ASSIGNED);
+        
+        logger.info("清洁任务统计原始数据 - COMPLETED: {}, VERIFIED: {}, IN_PROGRESS: {}, PENDING: {}, ASSIGNED: {}", 
+                   completedCount, verifiedCount, inProgressCount, pendingCount, assignedCount);
+        
+        // 确认数据库中实际存在的状态
+        boolean hasVerifiedRecords = verifiedCount > 0;
+        boolean hasAssignedRecords = assignedCount > 0;
+        
+        // 根据实际情况统计已完成的任务
+        // 如果没有VERIFIED状态的记录，则只计算COMPLETED
+        long completedTasks = hasVerifiedRecords ? (completedCount + verifiedCount) : completedCount;
         statistics.put("completed", completedTasks);
+        logger.info("已完成任务总数: {}", completedTasks);
         
-        // 统计进行中的任务
-        long inProgressTasks = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.IN_PROGRESS);
-        statistics.put("inProgress", inProgressTasks);
+        // 进行中的任务
+        statistics.put("inProgress", inProgressCount);
+        logger.info("进行中任务总数: {}", inProgressCount);
         
-        // 统计待处理的任务
-        long pendingTasks = cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.PENDING)
-                          + cleaningRecordRepository.countByStatus(CleaningRecord.CleaningStatus.ASSIGNED);
+        // 根据实际情况统计待处理的任务
+        // 如果没有ASSIGNED状态的记录，则只计算PENDING
+        long pendingTasks = hasAssignedRecords ? (pendingCount + assignedCount) : pendingCount;
         statistics.put("pending", pendingTasks);
+        logger.info("待处理任务总数: {}", pendingTasks);
+        
+        // 添加一个统计所有记录的总数，用于验证
+        long totalRecords = cleaningRecordRepository.count();
+        statistics.put("total", totalRecords);
+        logger.info("清洁记录总数: {}", totalRecords);
+        
+        // 验证统计的总数是否与所有记录总数一致
+        long sumByStatus = completedTasks + inProgressCount + pendingTasks;
+        if (sumByStatus != totalRecords) {
+            logger.warn("清洁任务统计数据不一致! 按状态统计总和: {}, 实际记录总数: {}", sumByStatus, totalRecords);
+        } else {
+            logger.info("清洁任务统计数据一致性验证通过");
+        }
         
         return statistics;
     }

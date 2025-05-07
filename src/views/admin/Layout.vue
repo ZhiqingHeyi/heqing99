@@ -6,7 +6,7 @@
         <el-container class="cleaner-mobile-layout">
           <el-header height="auto" class="cleaner-header"> 
             <div class="logo-container">
-              <img src="../../assets/logo.svg" alt="和庆酒店" class="logo" />
+              <img src="../../assets/logo.svg" alt="鹤清酒店" class="logo" />
               <span class="title">保洁管理</span>
             </div>
             <div class="user-display">
@@ -59,7 +59,7 @@
       <template v-else>
         <el-aside width="240px" class="tech-sidebar">
           <div class="logo-container">
-            <img src="../../assets/logo.svg" alt="和庆酒店" class="logo" />
+            <img src="../../assets/logo.svg" alt="鹤清酒店" class="logo" />
             <span class="title">后台管理系统</span>
           </div>
           <el-menu
@@ -108,7 +108,7 @@
           
           <div class="sidebar-footer">
             <div class="version">V 1.0.0</div>
-            <div class="copyright">© 2023 和庆酒店</div>
+            <div class="copyright">© 2025 鹤清酒店</div>
           </div>
         </el-aside>
         

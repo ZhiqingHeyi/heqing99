@@ -651,9 +651,20 @@ public class CheckInServiceImpl implements CheckInService {
     
     @Override
     public BigDecimal calculateDailyRevenue(LocalDate date) {
-        // 获取当天所有的退房记录（已完成的入住记录）
-        List<CheckInRecord> completedCheckIns = checkInRecordRepository.findByCheckOutDateAndStatus(
-                date, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        if (date == null) {
+            return BigDecimal.ZERO;
+        }
+        
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay().minusNanos(1);
+        
+        log.info("计算日入住收入：从 {} 到 {}", startOfDay, endOfDay);
+        
+        // 获取指定日期内所有的退房记录
+        List<CheckInRecord> completedCheckIns = checkInRecordRepository.findByActualCheckOutTimeBetweenAndStatus(
+                startOfDay, endOfDay, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        
+        log.info("找到日退房记录数量: {}", completedCheckIns.size());
         
         // 计算总收入
         BigDecimal totalRevenue = BigDecimal.ZERO;
@@ -662,6 +673,7 @@ public class CheckInServiceImpl implements CheckInService {
             // 基础房费
             if (record.getTotalAmount() != null) {
                 totalRevenue = totalRevenue.add(record.getTotalAmount());
+                log.debug("退房记录ID: {}, 基础金额: {}", record.getId(), record.getTotalAmount());
             }
             
             // 额外消费
@@ -669,22 +681,33 @@ public class CheckInServiceImpl implements CheckInService {
             for (AdditionalCharge charge : charges) {
                 if (charge.getAmount() != null) {
                     totalRevenue = totalRevenue.add(charge.getAmount());
+                    log.debug("退房记录ID: {}, 额外消费: {}, 累计总额: {}", 
+                            record.getId(), charge.getAmount(), totalRevenue);
                 }
             }
         }
         
+        log.info("计算的日入住总收入: {}", totalRevenue);
         return totalRevenue;
     }
     
     @Override
     public BigDecimal calculateMonthlyRevenue(java.time.YearMonth yearMonth) {
+        if (yearMonth == null) {
+            return BigDecimal.ZERO;
+        }
+        
         // 获取该月份的第一天和最后一天
-        LocalDate firstDay = yearMonth.atDay(1);
-        LocalDate lastDay = yearMonth.atEndOfMonth();
+        LocalDateTime firstDayOfMonth = yearMonth.atDay(1).atStartOfDay();
+        LocalDateTime lastDayOfMonth = yearMonth.atEndOfMonth().plusDays(1).atStartOfDay().minusNanos(1);
+        
+        log.info("计算月度入住收入：从 {} 到 {}", firstDayOfMonth, lastDayOfMonth);
         
         // 获取该月份内所有的退房记录
-        List<CheckInRecord> completedCheckIns = checkInRecordRepository.findByCheckOutDateBetweenAndStatus(
-                firstDay, lastDay, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        List<CheckInRecord> completedCheckIns = checkInRecordRepository.findByActualCheckOutTimeBetweenAndStatus(
+                firstDayOfMonth, lastDayOfMonth, CheckInRecord.CheckInStatus.CHECKED_OUT);
+        
+        log.info("找到月度退房记录数量: {}", completedCheckIns.size());
         
         // 计算总收入
         BigDecimal totalRevenue = BigDecimal.ZERO;
@@ -693,6 +716,7 @@ public class CheckInServiceImpl implements CheckInService {
             // 基础房费
             if (record.getTotalAmount() != null) {
                 totalRevenue = totalRevenue.add(record.getTotalAmount());
+                log.debug("退房记录ID: {}, 基础金额: {}", record.getId(), record.getTotalAmount());
             }
             
             // 额外消费
@@ -700,10 +724,13 @@ public class CheckInServiceImpl implements CheckInService {
             for (AdditionalCharge charge : charges) {
                 if (charge.getAmount() != null) {
                     totalRevenue = totalRevenue.add(charge.getAmount());
+                    log.debug("退房记录ID: {}, 额外消费: {}, 累计总额: {}", 
+                            record.getId(), charge.getAmount(), totalRevenue);
                 }
             }
         }
         
+        log.info("计算的月度入住总收入: {}", totalRevenue);
         return totalRevenue;
     }
 

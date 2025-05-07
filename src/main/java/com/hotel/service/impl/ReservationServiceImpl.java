@@ -406,6 +406,14 @@ public class ReservationServiceImpl implements ReservationService {
     }
 
     @Override
+    public long countTodayCreatedReservations() {
+        LocalDate today = LocalDate.now();
+        LocalDateTime startOfDay = today.atStartOfDay();
+        LocalDateTime endOfDay = today.atTime(23, 59, 59);
+        return reservationRepository.countByCreateTimeBetween(startOfDay, endOfDay);
+    }
+
+    @Override
     public int countUpcomingReservations() {
         LocalDateTime now = LocalDateTime.now();
         return reservationRepository.countByCheckInTimeAfter(now);
@@ -861,6 +869,101 @@ public class ReservationServiceImpl implements ReservationService {
         // --- END TEMPORARY MODIFICATION ---
 
         return resultPage;
+    }
+
+    /**
+     * 计算今日预订收入
+     */
+    @Override
+    public BigDecimal calculateTodayReservationRevenue() {
+        LocalDate today = LocalDate.now();
+        return calculateDailyReservationRevenue(today);
+    }
+    
+    /**
+     * 计算当月预订收入
+     */
+    @Override
+    public BigDecimal calculateMonthlyReservationRevenue() {
+        java.time.YearMonth currentMonth = java.time.YearMonth.now();
+        return calculateMonthlyReservationRevenue(currentMonth);
+    }
+    
+    /**
+     * 计算指定日期的预订收入
+     */
+    @Override
+    public BigDecimal calculateDailyReservationRevenue(LocalDate date) {
+        if (date == null) {
+            return BigDecimal.ZERO;
+        }
+        
+        // 获取指定日期的开始和结束时间
+        LocalDateTime startOfDay = date.atStartOfDay();
+        LocalDateTime endOfDay = date.plusDays(1).atStartOfDay().minusNanos(1);
+        
+        log.info("计算日预订收入：从 {} 到 {}", startOfDay, endOfDay);
+        
+        // 查询指定日期创建的所有预订（与月度计算保持一致）
+        List<Reservation> dailyReservations = reservationRepository.findByCreateTimeBetween(
+                startOfDay, 
+                endOfDay
+        );
+        
+        log.info("找到日预订数量: {}", dailyReservations.size());
+        
+        // 计算总收入
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        for (Reservation reservation : dailyReservations) {
+            if (reservation.getTotalPrice() != null) {
+                // 所有预订都计入收入统计，与consumption_records表保持一致
+                totalRevenue = totalRevenue.add(reservation.getTotalPrice());
+                log.debug("预订ID: {}, 金额: {}, 累计总额: {}", 
+                        reservation.getId(), reservation.getTotalPrice(), totalRevenue);
+            }
+        }
+        
+        log.info("计算的日预订总收入: {}", totalRevenue);
+        return totalRevenue;
+    }
+    
+    /**
+     * 计算指定月份的预订收入
+     */
+    @Override
+    public BigDecimal calculateMonthlyReservationRevenue(java.time.YearMonth yearMonth) {
+        if (yearMonth == null) {
+            return BigDecimal.ZERO;
+        }
+        
+        // 获取该月份的第一天和最后一天
+        LocalDateTime firstDayOfMonth = yearMonth.atDay(1).atStartOfDay();
+        LocalDateTime lastDayOfMonth = yearMonth.atEndOfMonth().plusDays(1).atStartOfDay().minusNanos(1);
+        
+        log.info("计算月度预订收入：从 {} 到 {}", firstDayOfMonth, lastDayOfMonth);
+        
+        // 查询指定月份创建的所有预订（不再仅限于已付款状态）
+        // 修改查询，确保包含所有预订的收入，与consumption_records表保持一致
+        List<Reservation> monthlyReservations = reservationRepository.findByCreateTimeBetween(
+                firstDayOfMonth, 
+                lastDayOfMonth
+        );
+        
+        log.info("找到月度预订数量: {}", monthlyReservations.size());
+        
+        // 计算总收入
+        BigDecimal totalRevenue = BigDecimal.ZERO;
+        for (Reservation reservation : monthlyReservations) {
+            if (reservation.getTotalPrice() != null) {
+                // 所有预订都计入收入统计，与consumption_records表保持一致
+                totalRevenue = totalRevenue.add(reservation.getTotalPrice());
+                log.debug("预订ID: {}, 金额: {}, 累计总额: {}", 
+                        reservation.getId(), reservation.getTotalPrice(), totalRevenue);
+            }
+        }
+        
+        log.info("计算的月度预订总收入: {}", totalRevenue);
+        return totalRevenue;
     }
 
     private boolean hasTimeConflict(Reservation newReservation) {

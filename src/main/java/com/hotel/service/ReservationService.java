@@ -148,4 +148,35 @@ public interface ReservationService {
      * 获取预订列表（分页和过滤），返回DTO
      */
     Page<ReservationSummaryDTO> getAllReservations(Pageable pageable, String status, String guestName, String guestPhone, LocalDateTime startDate, LocalDateTime endDate, String bookingNo);
+
+    /**
+     * 计算今日预订收入
+     * @return 今日预订收入总额
+     */
+    java.math.BigDecimal calculateTodayReservationRevenue();
+    
+    /**
+     * 计算当月预订收入
+     * @return 当月预订收入总额
+     */
+    java.math.BigDecimal calculateMonthlyReservationRevenue();
+    
+    /**
+     * 计算指定日期的预订收入
+     * @param date 日期
+     * @return 指定日期的预订收入
+     */
+    java.math.BigDecimal calculateDailyReservationRevenue(java.time.LocalDate date);
+    
+    /**
+     * 计算指定月份的预订收入
+     * @param yearMonth 年月
+     * @return 指定月份的预订收入
+     */
+    java.math.BigDecimal calculateMonthlyReservationRevenue(java.time.YearMonth yearMonth);
+
+    /**
+     * 计算今日创建的预订数量
+     */
+    long countTodayCreatedReservations();
 }

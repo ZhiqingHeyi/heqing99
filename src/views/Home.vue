@@ -638,7 +638,7 @@ const handleImageError = (event, review) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: linear-gradient(to bottom, rgba(0,0,0,0.3), rgba(0,0,0,0.6));
+  background: linear-gradient(to bottom, rgba(0, 0, 0, 0), rgba(0,0,0, 0));
   z-index: 1;
 }
 
@@ -662,7 +662,7 @@ const handleImageError = (event, review) => {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.2);
+  background: rgba(0, 0, 0, 0.1);
   z-index: 1;
 }
 
@@ -671,9 +671,9 @@ const handleImageError = (event, review) => {
   padding: 80px;
   position: relative;
   z-index: 2;
-  background: rgba(0, 0, 0, 0.4);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
   border-radius: 10px;
   border: 1px solid rgba(255, 255, 255, 0.3);
   box-shadow: 0 8px 32px rgba(0, 0, 0, 0.2);
