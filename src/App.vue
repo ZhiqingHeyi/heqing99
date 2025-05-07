@@ -79,7 +79,7 @@
           </div>
         </div>
         <div class="copyright">
-          <p>© 2024 鹤清酒店 版权所有</p>
+          <p>© 2025 鹤清酒店 版权所有</p>
         </div>
       </footer>
     </template>
@@ -192,7 +192,7 @@ html, body, #app {
   font-family: 'Helvetica Neue', Helvetica, 'PingFang SC', 'Hiragino Sans GB', 'Microsoft YaHei', '\\5FAE\8F6F\96C5\9ED1', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
-  background-color: #f8f5f0; /* Example global background */
+  /*background-color: #f8f5f0; !* Example global background *!*/
 }
 
 /* Example: Global link styling */

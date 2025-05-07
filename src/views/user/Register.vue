@@ -1,6 +1,7 @@
 <template>
   <div class="register-container">
     <div class="background-image"></div>
+    <div class="background-overlay"></div>
     <div class="register-content">
       <el-card class="register-card luxury-card">
         <div class="luxury-header">
@@ -258,7 +259,7 @@ const goToLogin = () => {
 }
 
 .background-image {
-  position: absolute;
+  position: fixed;
   top: 0;
   left: 0;
   width: 100%;
@@ -267,7 +268,18 @@ const goToLogin = () => {
   background-size: cover;
   background-position: center;
   background-repeat: no-repeat;
-  filter: brightness(0.8);
+  z-index: -2;
+}
+
+.background-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.4);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
   z-index: -1;
 }
 
@@ -288,9 +300,9 @@ const goToLogin = () => {
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   overflow: visible;
-  background-color: rgba(255, 255, 255, 0.92);
-  backdrop-filter: blur(15px);
-  -webkit-backdrop-filter: blur(15px);
+  background-color: rgba(255, 255, 255, 0.6);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
   border: 1px solid rgba(255, 255, 255, 0.3);
   padding: 30px;
 }

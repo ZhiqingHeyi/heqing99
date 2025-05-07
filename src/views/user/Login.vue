@@ -1,6 +1,7 @@
 <template>
   <div class="login-container">
     <div class="background-image"></div>
+    <div class="background-overlay"></div>
     <div class="login-content">
       <el-card class="login-card luxury-card">
         <div class="luxury-header">
@@ -196,6 +197,8 @@ const handleLogin = async () => {
   align-items: center;
   padding: 20px;
   font-family: "Times New Roman", "SimSun", serif;
+
+  backdrop-filter: blur(5px);
 }
 
 .background-image {
@@ -211,7 +214,18 @@ const handleLogin = async () => {
   filter: brightness(0.8);
   z-index: -1;
 }
+.background-overlay{
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-color: rgba(0, 0, 0, 0.1);
+  backdrop-filter: blur(5px);
+  -webkit-backdrop-filter: blur(5px);
+  z-index: -1;
 
+}
 .login-content {
   width: 100%;
   max-width: 500px;
@@ -228,7 +242,7 @@ const handleLogin = async () => {
   border-radius: 8px;
   box-shadow: 0 10px 30px rgba(0, 0, 0, 0.25);
   overflow: visible;
-  background-color: rgba(255, 255, 255, 0.92);
+  background-color: rgba(255, 255, 255, 0.6);
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.3);
