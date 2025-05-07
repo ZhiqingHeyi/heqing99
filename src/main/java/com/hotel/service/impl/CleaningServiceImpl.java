@@ -7,6 +7,8 @@ import com.hotel.repository.CleaningRecordRepository;
 import com.hotel.repository.RoomRepository;
 import com.hotel.service.CleaningService;
 import com.hotel.service.RoomService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -17,6 +19,8 @@ import java.util.List;
 @Service
 @Transactional
 public class CleaningServiceImpl implements CleaningService {
+
+    private static final Logger logger = LoggerFactory.getLogger(CleaningServiceImpl.class);
 
     @Autowired
     private CleaningRecordRepository cleaningRecordRepository;
@@ -29,9 +33,18 @@ public class CleaningServiceImpl implements CleaningService {
 
     @Override
     public CleaningRecord createCleaningRecord(CleaningRecord cleaningRecord) {
+        logger.info("Entering createCleaningRecord. Received record status: {}", cleaningRecord.getStatus());
         cleaningRecord.setCreateTime(LocalDateTime.now());
-        cleaningRecord.setStatus(CleaningRecord.CleaningStatus.PENDING);
-        return cleaningRecordRepository.save(cleaningRecord);
+        // 如果传入的记录没有状态，则默认为PENDING
+        if (cleaningRecord.getStatus() == null) {
+            logger.info("Status was null, setting to PENDING.");
+            cleaningRecord.setStatus(CleaningRecord.CleaningStatus.PENDING);
+        } else {
+            logger.info("Status was not null ({}), keeping existing status.", cleaningRecord.getStatus());
+        }
+        CleaningRecord savedRecord = cleaningRecordRepository.save(cleaningRecord);
+        logger.info("Saved CleaningRecord. ID: {}, Final Status in DB: {}", savedRecord.getId(), savedRecord.getStatus());
+        return savedRecord;
     }
 
     @Override

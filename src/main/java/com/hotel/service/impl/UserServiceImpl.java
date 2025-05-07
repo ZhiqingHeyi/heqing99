@@ -175,6 +175,17 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    public Long findUserByRealName(String realName) {
+        if (realName == null || realName.trim().isEmpty()) {
+            throw new RuntimeException("真实姓名不能为空");
+        }
+        
+        return userRepository.findByName(realName)
+                .map(User::getId)
+                .orElseThrow(() -> new RuntimeException("未找到用户: " + realName));
+    }
+
+    @Override
     public User updateUser(User user) {
         User existingUser = getUserById(user.getId());
         

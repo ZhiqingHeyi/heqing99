@@ -2,10 +2,14 @@ package com.hotel.service.impl;
 
 import com.hotel.entity.Task;
 import com.hotel.entity.Room;
+import com.hotel.entity.User;
+import com.hotel.entity.CleaningRecord;
 import com.hotel.dto.TaskDTO;
 import com.hotel.repository.TaskRepository;
 import com.hotel.repository.RoomRepository;
 import com.hotel.service.TaskService;
+import com.hotel.service.CleaningService;
+import com.hotel.service.UserService;
 import com.hotel.exception.BusinessException;
 import org.springframework.beans.BeanUtils;
 import org.springframework.beans.factory.annotation.Autowired;
@@ -31,6 +35,12 @@ public class TaskServiceImpl implements TaskService {
     
     @Autowired
     private RoomRepository roomRepository;
+    
+    @Autowired
+    private CleaningService cleaningService;
+    
+    @Autowired
+    private UserService userService;
 
     @Override
     @Transactional
@@ -90,6 +100,61 @@ public class TaskServiceImpl implements TaskService {
             room.setStatus(Room.RoomStatus.AVAILABLE);
             roomRepository.save(room);
             logger.info("已更新房间状态：房间号={}, 状态=AVAILABLE, 需要清洁=false", room.getRoomNumber());
+            
+            // 创建清洁记录
+            try {
+                CleaningRecord cleaningRecord = new CleaningRecord();
+                cleaningRecord.setRoom(room);
+                
+                Long staffId = null;
+                User staffUser = null;
+                try {
+                    if (task.getCleaner() != null && !task.getCleaner().isEmpty()) {
+                        staffId = userService.findUserByRealName(task.getCleaner());
+                        if (staffId != null) {
+                            staffUser = userService.getUserById(staffId);
+                        }
+                    }
+                } catch (Exception e) {
+                    logger.warn("无法找到对应的清洁员用户: {}, 错误: {}", task.getCleaner(), e.getMessage());
+                }
+                
+                if (staffId == null) {
+                    staffId = 1L; // 默认系统用户ID
+                    try {
+                        staffUser = userService.getUserById(staffId);
+                    } catch (Exception e) {
+                        logger.warn("无法找到ID为1的系统用户，错误: {}", e.getMessage());
+                        List<User> cleaners = userService.getUsersByRole(User.UserRole.CLEANER);
+                        if (!cleaners.isEmpty()) {
+                            staffUser = cleaners.get(0);
+                            staffId = staffUser.getId();
+                        } else {
+                            throw new RuntimeException("无法找到任何清洁人员用户");
+                        }
+                    }
+                }
+                
+                cleaningRecord.setStaff(staffUser);
+                
+                cleaningRecord.setStatus(CleaningRecord.CleaningStatus.COMPLETED);
+                logger.info("TaskServiceImpl: Set CleaningRecord status to COMPLETED for room {}", room.getRoomNumber());
+                
+                cleaningRecord.setStartTime(task.getStartTime());
+                cleaningRecord.setEndTime(task.getCompleteTime());
+                
+                if (task.getIssues() != null && !task.getIssues().isEmpty()) {
+                    cleaningRecord.setNotes(task.getIssues());
+                } else {
+                    cleaningRecord.setNotes("按常规完成清洁");
+                }
+                
+                CleaningRecord savedRecord = cleaningService.createCleaningRecord(cleaningRecord);
+                logger.info("TaskServiceImpl: Called createCleaningRecord. Returned record id: {}, status: {}", savedRecord.getId(), savedRecord.getStatus());
+                
+            } catch (Exception e) {
+                logger.error("创建清洁记录失败 for room {}: {}", task.getRoomNumber(), e.getMessage(), e);
+            }
         }
         
         return taskRepository.save(task);
@@ -157,32 +222,21 @@ public class TaskServiceImpl implements TaskService {
         }
         
         for (Room room : roomsNeedCleaning) {
-            // 首先检查是否已存在该房间的任何状态的任务
+            // 首先检查是否已存在该房间的未完成任务
             List<Task> existingTasks = taskRepository.findByRoomNumber(room.getRoomNumber());
             
-            // 如果不存在任务，或者只存在已完成的任务但房间状态仍为"需要清洁"，则创建新任务
-            boolean shouldCreateTask = existingTasks.isEmpty();
-            
-            if (!shouldCreateTask) {
-                // 检查是否所有任务都已完成但房间状态仍为"需要清洁"
-                boolean allCompleted = true;
-                for (Task existingTask : existingTasks) {
-                    if (!"completed".equals(existingTask.getStatus())) {
-                        allCompleted = false;
-                        break;
-                    }
-                }
-                // 如果所有任务都已完成，但房间状态仍为NEEDS_CLEANING，更新房间状态而不是创建新任务
-                if (allCompleted) {
-                    room.setNeedCleaning(false);
-                    room.setStatus(Room.RoomStatus.AVAILABLE);
-                    roomRepository.save(room);
-                    logger.info("已更新房间 {} 状态为可用，跳过任务创建", room.getRoomNumber());
-                    continue;
+            // 检查是否存在未完成的任务
+            boolean hasUncompletedTask = false;
+            for (Task existingTask : existingTasks) {
+                if (!"completed".equals(existingTask.getStatus())) {
+                    hasUncompletedTask = true;
+                    logger.info("房间 {} 已存在未完成的清洁任务，跳过任务创建", room.getRoomNumber());
+                    break;
                 }
             }
-                
-            if (shouldCreateTask) {
+            
+            // 如果没有未完成的任务，则创建新任务
+            if (!hasUncompletedTask) {
                 // 创建新任务
                 Task task = new Task();
                 task.setRoomNumber(room.getRoomNumber());
@@ -197,8 +251,6 @@ public class TaskServiceImpl implements TaskService {
                 Task savedTask = taskRepository.save(task);
                 createdTasks.add(savedTask);
                 logger.info("为房间 {} 创建了清洁任务，分配给清洁员: {}", room.getRoomNumber(), defaultCleaner);
-            } else {
-                logger.info("房间 {} 已存在有效的清洁任务，跳过任务创建", room.getRoomNumber());
             }
         }
         

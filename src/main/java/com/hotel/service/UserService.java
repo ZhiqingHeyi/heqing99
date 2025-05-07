@@ -36,6 +36,11 @@ public interface UserService {
     User getUserByPhone(String phone);
 
     /**
+     * 通过真实姓名查找用户ID
+     */
+    Long findUserByRealName(String realName);
+
+    /**
      * 创建用户
      */
     User createUser(User user);

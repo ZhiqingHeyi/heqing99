@@ -76,9 +76,9 @@
             ¥{{ scope.row.roomType ? scope.row.roomType.basePrice : '0.00' }}
           </template>
         </el-table-column>
-        <el-table-column label="容量" width="120" sortable>
+        <el-table-column label="备注" min-width="160">
           <template #default="scope">
-            {{ scope.row.roomType ? scope.row.roomType.capacity : '0' }}人
+            {{ scope.row.notes || '-' }}
           </template>
         </el-table-column>
         <el-table-column label="状态" width="150">
@@ -86,12 +86,6 @@
             <el-tag :type="getStatusType(scope.row.status)" effect="light">
               {{ getStatusText(scope.row.status) }}
             </el-tag>
-          </template>
-        </el-table-column>
-        <el-table-column label="清洁状态" width="120">
-          <template #default="scope">
-            <el-tag type="warning" effect="light" v-if="scope.row.needCleaning">需要清洁</el-tag>
-            <el-tag type="success" effect="light" v-else>已清洁</el-tag>
           </template>
         </el-table-column>
         <el-table-column label="更新时间" width="180" sortable>
@@ -145,9 +139,6 @@
           <el-select v-model="roomForm.status" placeholder="选择状态" style="width: 100%">
             <el-option v-for="status in statusOptions" :key="status.value" :label="status.label" :value="status.value"></el-option>
           </el-select>
-        </el-form-item>
-        <el-form-item label="清洁状态" prop="needCleaning">
-          <el-switch v-model="roomForm.needCleaning" active-text="需要清洁" inactive-text="已清洁"></el-switch>
         </el-form-item>
         <el-form-item label="备注" prop="notes">
           <el-input v-model="roomForm.notes" type="textarea" :rows="3" placeholder="房间备注信息"></el-input>
@@ -283,11 +274,6 @@
             </el-select>
           </template>
         </el-table-column>
-        <el-table-column label="清洁状态" width="120">
-          <template #default="scope">
-            <el-switch v-model="scope.row.needCleaning" active-text="需要清洁" inactive-text="已清洁"></el-switch>
-          </template>
-        </el-table-column>
         <el-table-column label="备注" min-width="200">
           <template #default="scope">
             <el-input v-model="scope.row.notes" type="textarea" :rows="2" placeholder="房间备注信息"></el-input>
@@ -378,7 +364,6 @@ const roomForm = reactive({
   floor: 1,
   roomTypeId: null,
   status: 'AVAILABLE',
-  needCleaning: false,
   notes: '',
 });
 
@@ -541,7 +526,6 @@ const openAddRoomDialog = () => {
     floor: 1,
     roomTypeId: null,
     status: 'AVAILABLE',
-    needCleaning: false,
     notes: '',
   });
   addRoomDialogVisible.value = true;
@@ -571,7 +555,6 @@ const editRoom = (room) => {
     floor: room.floor,
     roomTypeId: room.roomType ? room.roomType.id : null,
     status: room.status,
-    needCleaning: room.needCleaning,
     notes: room.notes || '',
   });
   addRoomDialogVisible.value = true;
@@ -934,7 +917,6 @@ const addBatchRow = () => {
     floor: 1,
     roomTypeId: null,
     status: 'AVAILABLE',
-    needCleaning: false,
     notes: '',
   });
 };
