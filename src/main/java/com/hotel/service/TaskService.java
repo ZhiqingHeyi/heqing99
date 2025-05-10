@@ -53,4 +53,10 @@ public interface TaskService {
      * 此方法检查所有需要清洁的房间，如果没有相应的任务则创建
      */
     List<Task> generateCleaningTasksFromRooms();
+    
+    /**
+     * 同步数据库中CLEANING状态的房间为processing状态的任务
+     * 这确保了即使房间状态被直接修改为CLEANING，相应的任务也会同步更新为processing状态
+     */
+    void syncCleaningRoomTasks();
 }

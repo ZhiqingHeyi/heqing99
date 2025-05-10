@@ -92,9 +92,14 @@ public class CleaningTaskController {
             @RequestParam(defaultValue = "10") int size) {
         
         try {
+            logger.info("获取清洁任务列表，参数：status={}, page={}, size={}", status, page, size);
+            
             // 先自动生成清洁任务
             List<Task> generatedTasks = taskService.generateCleaningTasksFromRooms();
             int generatedCount = generatedTasks.size();
+            
+            // 确保同步数据库中CLEANING状态的房间为processing状态的任务
+            taskService.syncCleaningRoomTasks();
             
             Pageable pageable = PageRequest.of(page, size, Sort.by("createTime").descending());
             Page<Task> tasksPage;

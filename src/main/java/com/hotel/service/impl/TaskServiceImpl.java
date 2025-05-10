@@ -61,6 +61,16 @@ public class TaskServiceImpl implements TaskService {
         }
         task.setStatus("processing");
         task.setStartTime(LocalDateTime.now());
+        
+        // 重要：更新房间状态为清洁中
+        Optional<Room> roomOptional = roomRepository.findByRoomNumber(task.getRoomNumber());
+        if (roomOptional.isPresent()) {
+            Room room = roomOptional.get();
+            room.setStatus(Room.RoomStatus.CLEANING);
+            roomRepository.save(room);
+            logger.info("已更新房间状态：房间号={}, 状态=CLEANING", room.getRoomNumber());
+        }
+        
         return taskRepository.save(task);
     }
 
@@ -256,5 +266,74 @@ public class TaskServiceImpl implements TaskService {
         
         logger.info("自动生成清洁任务完成，共创建 {} 个新任务", createdTasks.size());
         return createdTasks;
+    }
+
+    /**
+     * 同步数据库中CLEANING状态的房间为processing状态的任务
+     * 这确保了即使房间状态被直接修改为CLEANING，相应的任务也会同步更新为processing状态
+     */
+    @Override
+    @Transactional
+    public void syncCleaningRoomTasks() {
+        logger.info("开始同步CLEANING状态房间为processing状态任务...");
+        
+        // 查询所有状态为CLEANING的房间
+        List<Room> cleaningRooms = roomRepository.findByStatus(Room.RoomStatus.CLEANING);
+        logger.info("找到 {} 个正在清洁中的房间", cleaningRooms.size());
+        
+        for (Room room : cleaningRooms) {
+            // 查找该房间所有的任务
+            List<Task> roomTasks = taskRepository.findByRoomNumber(room.getRoomNumber());
+            
+            // 检查是否有处理中的任务
+            boolean hasProcessingTask = false;
+            for (Task task : roomTasks) {
+                if ("processing".equals(task.getStatus())) {
+                    hasProcessingTask = true;
+                    break;
+                }
+            }
+            
+            // 如果没有处理中的任务，但有待处理的任务，则将待处理任务更新为处理中
+            if (!hasProcessingTask) {
+                Task pendingTask = null;
+                for (Task task : roomTasks) {
+                    if ("pending".equals(task.getStatus())) {
+                        pendingTask = task;
+                        break;
+                    }
+                }
+                
+                if (pendingTask != null) {
+                    // 更新任务状态为处理中
+                    pendingTask.setStatus("processing");
+                    pendingTask.setStartTime(LocalDateTime.now());
+                    taskRepository.save(pendingTask);
+                    logger.info("已将房间 {} 的任务 {} 状态更新为processing", room.getRoomNumber(), pendingTask.getId());
+                } else {
+                    // 如果没有任何任务，则创建一个处理中的任务
+                    Task newTask = new Task();
+                    newTask.setRoomNumber(room.getRoomNumber());
+                    newTask.setRoomType(room.getRoomType().getName());
+                    newTask.setPriority("medium");
+                    newTask.setStatus("processing");
+                    newTask.setCreateTime(LocalDateTime.now());
+                    newTask.setStartTime(LocalDateTime.now());
+                    newTask.setNotes("系统自动同步生成的清洁任务");
+                    
+                    // 获取默认清洁员
+                    List<TaskDTO> availableCleaners = taskRepository.findAvailableCleaners();
+                    String defaultCleaner = "系统";
+                    if (!availableCleaners.isEmpty() && availableCleaners.get(0) != null) {
+                        defaultCleaner = availableCleaners.get(0).getCleaner();
+                    }
+                    newTask.setCleaner(defaultCleaner);
+                    
+                    taskRepository.save(newTask);
+                    logger.info("为房间 {} 创建了新的处理中任务", room.getRoomNumber());
+                }
+            }
+        }
+        logger.info("同步CLEANING状态房间为processing状态任务完成");
     }
 }
