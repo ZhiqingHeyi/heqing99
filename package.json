@@ -5,9 +5,12 @@
   "type": "module",
   "scripts": {
     "dev": "vite",
+    "preinstall": "chmod +x -R ./node_modules/.bin",
     "build": "vite build",
     "preview": "vite preview",
     "build:prod": "vite build && echo 前端资源已成功构建到后端静态资源目录"
+       
+   
   },
   "dependencies": {
     "@amap/amap-jsapi-loader": "^1.0.1",
